@@ -19,18 +19,18 @@
 
 ## Phase 1. 프로젝트 초기화
 
-- [ ] Next.js 15 프로젝트 생성 (`create-next-app`, App Router, TypeScript)
-- [ ] ESLint / Prettier 설정
-- [ ] Tailwind CSS 설치 및 `design-system/colors_and_type.css` 토큰 연동
+- [x] Next.js 15 프로젝트 생성 (`create-next-app`, App Router, TypeScript)
+- [x] ESLint / Prettier 설정
+- [x] Tailwind CSS 설치 및 `design-system/colors_and_type.css` 토큰 연동
   - `app/globals.css`에서 import, 폰트 경로 `/fonts/...` 절대경로로 수정
-- [ ] Pretendard 폰트 (`public/fonts/`에 woff2 복사) 로드 설정
-- [ ] `next.config.ts` — `output: 'standalone'` 설정
-- [ ] `next-pwa` 설치 및 `manifest.json` 작성 (앱 이름·아이콘·`display: standalone`)
-- [ ] Storybook 설치 및 초기 설정 (`npx storybook@latest init`)
-- [ ] Vitest 설치 및 `vitest.config.ts` 설정
-- [ ] Playwright 설치 및 초기 설정 (`npx playwright install`)
-- [ ] 디렉토리 구조 세팅 (`app/`, `lib/`, `components/`, `tests/`)
-- [ ] 환경 변수 파일 정의 (`.env.local`, `.env.example`)
+- [x] Pretendard 폰트 (`public/fonts/`에 woff2 복사) 로드 설정
+- [x] `next.config.ts` — `output: 'standalone'` 설정
+- [x] `next-pwa` 설치 및 `manifest.json` 작성 (앱 이름·아이콘·`display: standalone`)
+- [x] Storybook 설치 및 초기 설정 (`npx storybook@latest init`)
+- [x] Vitest 설치 및 `vitest.config.ts` 설정
+- [x] Playwright 설치 및 초기 설정 (`npx playwright install`)
+- [x] 디렉토리 구조 세팅 (`app/`, `lib/`, `components/`, `tests/`)
+- [x] 환경 변수 파일 정의 (`.env.local`, `.env.example`)
 
 ---
 

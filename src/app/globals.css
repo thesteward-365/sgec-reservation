@@ -1,0 +1,8 @@
+@import "tailwindcss";
+@import "../design-system/colors_and_type.css";
+
+/* Custom globals if any */
+body {
+  /* design-system/colors_and_type.css already sets body styles, 
+     but we can override here if needed */
+}
