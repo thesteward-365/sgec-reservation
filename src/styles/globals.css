@@ -51,9 +51,9 @@
   --radius-3xl: var(--radius-3xl);
   --radius-pill: var(--radius-pill);
 
-  /* Wanted Specific Tokens */
-  --color-accent-hover: var(--color-accent-hover);
-  --color-border-subtle: var(--color-border-subtle);
+  /* Wanted Specific Tokens — reference token.css values via intermediate vars */
+  --color-accent-hover: var(--tw-accent-hover);
+  --color-border-subtle: var(--tw-border-subtle);
 
   /* Typography Scale */
   --text-display-md: var(--fs-display-md);
@@ -70,20 +70,25 @@
 }
 
 :root {
+  /* Intermediate vars to break naming collision with @theme inline --color-* namespace */
+  --tw-accent-hover: var(--color-accent-hover);
+  --tw-border-subtle: var(--color-border-subtle);
+
+  /* shadcn semantic → design token mapping */
   --background: var(--color-bg);
   --foreground: var(--color-fg);
   --card: var(--color-bg-elevated);
   --card-foreground: var(--color-fg);
   --popover: var(--color-bg-elevated);
   --popover-foreground: var(--color-fg);
-  --primary: var(--color-accent);
+  --primary: var(--color-blue-800);
   --primary-foreground: var(--color-fg-on-accent);
   --secondary: var(--color-bg-subtle);
   --secondary-foreground: var(--color-fg);
   --muted: var(--color-bg-muted);
   --muted-foreground: var(--color-fg-tertiary);
   --accent: var(--color-accent-subtle);
-  --accent-foreground: var(--color-accent);
+  --accent-foreground: var(--color-blue-800);
   --destructive: var(--color-danger);
   --destructive-foreground: var(--color-fg-on-accent);
   --border: var(--color-border-subtle);
