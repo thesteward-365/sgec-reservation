@@ -1,7 +1,7 @@
-@import "tailwindcss";
-@import "../design-system/colors_and_type.css";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
+@import 'tailwindcss';
+@import './token.css';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -25,6 +25,7 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -39,7 +40,7 @@
   --color-card: var(--card);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
-  
+
   /* Radii mapping */
   --radius-xs: var(--radius-xs);
   --radius-sm: var(--radius-sm);
@@ -49,6 +50,23 @@
   --radius-2xl: var(--radius-2xl);
   --radius-3xl: var(--radius-3xl);
   --radius-pill: var(--radius-pill);
+
+  /* Wanted Specific Tokens */
+  --color-accent-hover: var(--color-accent-hover);
+  --color-border-subtle: var(--color-border-subtle);
+
+  /* Typography Scale */
+  --text-display-md: var(--fs-display-md);
+  --text-h1: var(--fs-h1);
+  --text-h2: var(--fs-h2);
+  --text-h3: var(--fs-h3);
+  --text-h4: var(--fs-h4);
+  --text-h5: var(--fs-h5);
+  --text-body-lg: var(--fs-body-lg);
+  --text-body: var(--fs-body);
+  --text-body-sm: var(--fs-body-sm);
+  --text-caption: var(--fs-caption);
+  --text-overline: var(--fs-overline);
 }
 
 :root {
@@ -77,23 +95,9 @@
   --chart-4: var(--color-green-600);
   --chart-5: var(--color-red-600);
   --radius: var(--radius-md);
-  
-  /* Sidebar (optional, mapping to neutral/accent) */
-  --sidebar: var(--color-bg-subtle);
-  --sidebar-foreground: var(--color-fg-secondary);
-  --sidebar-primary: var(--color-accent);
-  --sidebar-primary-foreground: var(--color-fg-on-accent);
-  --sidebar-accent: var(--color-accent-subtle);
-  --sidebar-accent-foreground: var(--color-accent);
-  --sidebar-border: var(--color-border-subtle);
-  --sidebar-ring: var(--color-border-focus);
 }
 
 .dark {
-  /* Dark theme is already handled by [data-theme="dark"] in colors_and_type.css 
-     but shadcn expects .dark class to redefine these variables if not using semantic tokens.
-     Since our tokens are already semantic and change under .dark, 
-     pointing to them here is enough. */
   --background: var(--color-bg);
   --foreground: var(--color-fg);
   --card: var(--color-bg-elevated);
@@ -121,6 +125,6 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "cv11", "ss01";
+    font-feature-settings: 'cv11', 'ss01';
   }
 }

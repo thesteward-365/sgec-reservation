@@ -1,0 +1,114 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../token.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+        background: #fff;
+        font: 500 11px/1.3 var(--font-mono);
+        color: var(--color-fg-tertiary);
+      }
+      .row {
+        display: grid;
+        grid-template-columns: repeat(11, 1fr);
+        gap: 0;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid var(--color-border-subtle);
+        margin-bottom: 10px;
+      }
+      .sw {
+        aspect-ratio: 1.4;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        padding: 5px;
+        font-size: 9px;
+      }
+      .sw.dark {
+        color: #fff;
+      }
+      .lbl {
+        font: 600 11px/1.3 var(--font-sans);
+        color: var(--color-fg);
+        width: 80px;
+        display: inline-block;
+      }
+      .line {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="line">
+      <span class="lbl">Red</span>
+      <div class="row" style="flex: 1; margin: 0">
+        <div class="sw" style="background: #fffafa">50</div>
+        <div class="sw" style="background: #feecec">100</div>
+        <div class="sw" style="background: #fed5d5">200</div>
+        <div class="sw" style="background: #ffb5b5">300</div>
+        <div class="sw" style="background: #ff8c8c">400</div>
+        <div class="sw" style="background: #ff6363">500</div>
+        <div class="sw dark" style="background: #ff4242">600</div>
+        <div class="sw dark" style="background: #e52222">700</div>
+        <div class="sw dark" style="background: #b20c0c">800</div>
+        <div class="sw dark" style="background: #750404">900</div>
+        <div class="sw dark" style="background: #3b0101">1000</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="lbl">Green</span>
+      <div class="row" style="flex: 1; margin: 0">
+        <div class="sw" style="background: #f2fff6">50</div>
+        <div class="sw" style="background: #d9ffe6">100</div>
+        <div class="sw" style="background: #acfcc7">200</div>
+        <div class="sw" style="background: #7df5a5">300</div>
+        <div class="sw" style="background: #49e57d">400</div>
+        <div class="sw" style="background: #1ed45a">500</div>
+        <div class="sw dark" style="background: #00bf40">600</div>
+        <div class="sw dark" style="background: #009632">700</div>
+        <div class="sw dark" style="background: #006e25">800</div>
+        <div class="sw dark" style="background: #004517">900</div>
+        <div class="sw dark" style="background: #00240c">1000</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="lbl">Orange</span>
+      <div class="row" style="flex: 1; margin: 0">
+        <div class="sw" style="background: #fffcf7">50</div>
+        <div class="sw" style="background: #fef4e6">100</div>
+        <div class="sw" style="background: #fee6c6">200</div>
+        <div class="sw" style="background: #ffd49c">300</div>
+        <div class="sw" style="background: #ffc06e">400</div>
+        <div class="sw" style="background: #ffa938">500</div>
+        <div class="sw" style="background: #ff9200">600</div>
+        <div class="sw dark" style="background: #d47800">700</div>
+        <div class="sw dark" style="background: #9c5800">800</div>
+        <div class="sw dark" style="background: #663a00">900</div>
+        <div class="sw dark" style="background: #361e00">1000</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="lbl">Violet</span>
+      <div class="row" style="flex: 1; margin: 0">
+        <div class="sw" style="background: #fbfaff">50</div>
+        <div class="sw" style="background: #f0ecfe">100</div>
+        <div class="sw" style="background: #dbd3fe">200</div>
+        <div class="sw" style="background: #c0b0ff">300</div>
+        <div class="sw" style="background: #9e86fc">400</div>
+        <div class="sw dark" style="background: #7d5ef7">500</div>
+        <div class="sw dark" style="background: #6541f2">600</div>
+        <div class="sw dark" style="background: #5b37ed">700</div>
+        <div class="sw dark" style="background: #4f29e5">800</div>
+        <div class="sw dark" style="background: #3a16c9">900</div>
+        <div class="sw dark" style="background: #23098f">1000</div>
+      </div>
+    </div>
+  </body>
+</html>

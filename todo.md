@@ -6,7 +6,7 @@
 
 ## UI 구현 원칙
 
-> **디자인 기준**: `design-system/colors_and_type.css` 토큰 + `design-system/preview/` 컴포넌트 패턴
+> **디자인 기준**: `styles/token.css` 토큰 + `styles/preview/` 컴포넌트 패턴
 >
 > - 버튼: pill(`--radius-pill`) 기본 CTA, `--radius-sm` 조밀한 행
 > - 카드: `border: 1px solid var(--color-border-subtle)`, `border-radius: var(--radius-2xl)`, shadow 없음
@@ -21,8 +21,8 @@
 
 - [x] Next.js 15 프로젝트 생성 (`create-next-app`, App Router, TypeScript)
 - [x] ESLint / Prettier 설정
-- [x] Tailwind CSS 설치 및 `design-system/colors_and_type.css` 토큰 연동
-  - `app/globals.css`에서 import, 폰트 경로 `/fonts/...` 절대경로로 수정
+- [x] Tailwind CSS 설치 및 `styles/token.css` 토큰 연동
+  - `styles/globals.css`에서 import, 폰트 경로 `/fonts/...` 절대경로로 수정
 - [x] Pretendard 폰트 (`public/fonts/`에 woff2 복사) 로드 설정
 - [x] `next.config.ts` — `output: 'standalone'` 설정
 - [x] `next-pwa` 설치 및 `manifest.json` 작성 (앱 이름·아이콘·`display: standalone`)
@@ -63,16 +63,18 @@
 
 ## Phase 3. 공용 컴포넌트 (shadcn/ui + 디자인 시스템)
 
-> **전략**: `shadcn/ui`의 구조를 기반으로 `design-system/preview/`의 시각적 요소를 적용한다. 
+> **전략**: `shadcn/ui`의 구조를 기반으로 `styles/preview/`의 시각적 요소를 적용한다.
 > 모든 컴포넌트는 Storybook 스토리를 함께 작성한다.
 
 ### 초기 설정
+
 - [x] `shadcn/ui` 초기화 (`npx shadcn@latest init`)
-- [x] `app/globals.css` — shadcn 테마 변수를 `colors_and_type.css` 토큰과 매핑
+- [x] `styles/globals.css` — shadcn 테마 변수를 `token.css` 토큰과 매핑
 - [x] `lib/utils.ts` — `cn` (clsx + tailwind-merge) 유틸리티 확인
 
 ### 기본 UI 컴포넌트 커스터마이징
-- [ ] **Button**: `preview/buttons.html` 기준 (pill, --radius-sm 등 Variant 정의)
+
+- [x] **Button**: `preview/buttons.html` 기준 (pill, --radius-sm 등 Variant 정의)
 - [ ] **Card**: `preview/cards.html` 기준 (border-subtle, --radius-2xl, shadow-none)
 - [ ] **Input**: `preview/inputs.html` 기준 (--radius-sm)
 - [ ] **Badge**: `preview/badges.html` 기준 (태그 및 상태 표시)
@@ -80,6 +82,7 @@
 - [ ] **Drawer (Bottom Sheet)**: 모바일 전용 UI
 
 ### 도메인 특화 컴포넌트
+
 - [ ] **Layout**: 모바일 최대 430px 중앙 정렬 컨테이너
 - [ ] **Weekly Calendar**: 주간 이동 및 날짜 선택 로직
 - [ ] **Bottom Nav**: 하단 고정 네비게이션

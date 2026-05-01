@@ -1,0 +1,112 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../token.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 24px;
+        background: #fff;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        font: 600 14px/1 var(--font-sans);
+        letter-spacing: 0.006em;
+        border: none;
+        cursor: pointer;
+        transition: all 120ms var(--ease-standard);
+      }
+      .btn-primary {
+        background: #0066ff;
+        color: #fff;
+        border-radius: 9999px;
+        padding: 14px 24px;
+      }
+      .btn-primary:hover {
+        background: #005eeb;
+      }
+      .btn-secondary {
+        background: #fff;
+        color: #171719;
+        border: 1px solid rgba(112, 115, 124, 0.22);
+        border-radius: 9999px;
+        padding: 13px 23px;
+      }
+      .btn-secondary:hover {
+        background: #f4f4f5;
+      }
+      .btn-ghost {
+        background: transparent;
+        color: #171719;
+        padding: 13px 16px;
+      }
+      .btn-ghost:hover {
+        background: #f4f4f5;
+        border-radius: 8px;
+      }
+      .btn-danger {
+        background: #ff4242;
+        color: #fff;
+        border-radius: 9999px;
+        padding: 14px 24px;
+      }
+      .btn-md {
+        padding: 10px 18px;
+        font-size: 13px;
+        border-radius: 9999px;
+      }
+      .btn-sm {
+        padding: 8px 14px;
+        font-size: 12px;
+        border-radius: 9999px;
+      }
+      .btn-disabled {
+        background: #f4f4f5;
+        color: #aeb0b6;
+        cursor: not-allowed;
+        border-radius: 9999px;
+        padding: 14px 24px;
+        border: none;
+      }
+      .tag {
+        font: 600 10px/1.2 var(--font-mono);
+        color: var(--color-fg-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.024em;
+        width: 64px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="row">
+      <span class="tag">Primary</span
+      ><button class="btn btn-primary">지원하기</button
+      ><button class="btn btn-primary btn-md">Apply now</button
+      ><button class="btn btn-primary btn-sm">Save</button>
+    </div>
+    <div class="row">
+      <span class="tag">Secondary</span
+      ><button class="btn btn-secondary">관심 등록</button
+      ><button class="btn btn-secondary btn-md">Bookmark</button
+      ><button class="btn btn-ghost">More info</button>
+    </div>
+    <div class="row">
+      <span class="tag">Status</span
+      ><button class="btn btn-danger">Delete</button
+      ><button class="btn btn-disabled">Disabled</button>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,74 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../token.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+        background: #fff;
+        font: 500 11px/1.3 var(--font-mono);
+        color: var(--color-fg-tertiary);
+      }
+      .scale {
+        display: grid;
+        grid-template-columns: repeat(16, 1fr);
+        gap: 0;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--color-border-subtle);
+      }
+      .sw {
+        aspect-ratio: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        padding: 6px;
+        font-size: 9px;
+        letter-spacing: 0.024em;
+      }
+      .sw.dark {
+        color: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      style="
+        margin-bottom: 8px;
+        font: 600 12px/1.4 var(--font-sans);
+        color: var(--color-fg);
+        letter-spacing: 0.006em;
+      "
+    >
+      Mono — pure neutrals
+    </div>
+    <div class="scale">
+      <div
+        class="sw"
+        style="
+          background: #ffffff;
+          border-right: 1px solid var(--color-border-subtle);
+        "
+      >
+        100
+      </div>
+      <div class="sw" style="background: #f7f7f7">200</div>
+      <div class="sw" style="background: #dcdcdc">300</div>
+      <div class="sw" style="background: #c4c4c4">400</div>
+      <div class="sw" style="background: #b0b0b0">500</div>
+      <div class="sw" style="background: #9b9b9b">600</div>
+      <div class="sw" style="background: #8a8a8a">700</div>
+      <div class="sw dark" style="background: #737373">800</div>
+      <div class="sw dark" style="background: #5c5c5c">900</div>
+      <div class="sw dark" style="background: #474747">1000</div>
+      <div class="sw dark" style="background: #303030">1100</div>
+      <div class="sw dark" style="background: #2a2a2a">1200</div>
+      <div class="sw dark" style="background: #1c1c1c">1300</div>
+      <div class="sw dark" style="background: #171717">1400</div>
+      <div class="sw dark" style="background: #0f0f0f">1500</div>
+      <div class="sw dark" style="background: #000000">1600</div>
+    </div>
+  </body>
+</html>

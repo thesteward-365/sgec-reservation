@@ -1,0 +1,74 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../token.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 24px;
+        background: #fff;
+      }
+      .row {
+        display: flex;
+        align-items: baseline;
+        gap: 16px;
+        padding: 14px 0;
+        border-bottom: 1px solid var(--color-border-subtle);
+      }
+      .row:last-child {
+        border-bottom: none;
+      }
+      .label {
+        width: 120px;
+        flex: none;
+        font: var(--fw-medium) 12px/1.4 var(--font-mono);
+        color: var(--color-fg-tertiary);
+        letter-spacing: 0.024em;
+        text-transform: uppercase;
+      }
+      .specimen {
+        font-family: var(--font-display);
+        font-weight: 800;
+        color: var(--color-fg-strong);
+      }
+      .spec {
+        margin-left: auto;
+        font: var(--fw-regular) 12px/1.4 var(--font-mono);
+        color: var(--color-fg-tertiary);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="row">
+      <div class="label">display-xl</div>
+      <div
+        class="specimen"
+        style="font-size: 72px; line-height: 1.2; letter-spacing: -0.022em"
+      >
+        원티드 Wanted
+      </div>
+      <div class="spec">72 / 86 / -.022</div>
+    </div>
+    <div class="row">
+      <div class="label">display-lg</div>
+      <div
+        class="specimen"
+        style="font-size: 56px; line-height: 1.2; letter-spacing: -0.022em"
+      >
+        원티드 Wanted
+      </div>
+      <div class="spec">56 / 67 / -.022</div>
+    </div>
+    <div class="row">
+      <div class="label">display-md</div>
+      <div
+        class="specimen"
+        style="font-size: 36px; line-height: 1.334; letter-spacing: -0.027em"
+      >
+        Find your next career.
+      </div>
+      <div class="spec">36 / 48 / -.027</div>
+    </div>
+  </body>
+</html>
