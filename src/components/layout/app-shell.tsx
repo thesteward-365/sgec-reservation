@@ -13,7 +13,7 @@ function AppShell({ children, className, hideNav = false }: AppShellProps) {
     <div className="flex justify-center min-h-dvh bg-background">
       <div
         className={cn(
-          "relative w-full max-w-107.5 min-h-dvh bg-background",
+          "relative flex flex-col w-full max-w-107.5 min-h-dvh bg-background",
           className
         )}
         style={!hideNav ? { paddingBottom: "calc(4.5rem + env(safe-area-inset-bottom))" } : undefined}

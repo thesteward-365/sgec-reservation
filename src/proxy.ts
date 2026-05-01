@@ -3,31 +3,39 @@ import { getIronSession } from 'iron-session';
 import { sessionOptions, SessionData } from '@/lib/session';
 import { cookies } from 'next/headers';
 
+const PUBLIC_PATHS = ['/login', '/signup'];
+
 export async function proxy(request: NextRequest) {
-  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   const { pathname } = request.nextUrl;
 
-  // 1. 공개 경로 허용
-  const isPublicPath = pathname === '/login' || pathname.startsWith('/api/auth');
-  const isStaticFile = pathname.includes('.') || pathname.startsWith('/_next');
-  
-  if (isPublicPath || isStaticFile) {
+  // 정적 파일 및 API 경로는 무조건 통과
+  if (pathname.includes('.') || pathname.startsWith('/_next') || pathname.startsWith('/api')) {
     return NextResponse.next();
   }
 
-  // 2. 로그인 여부 확인
-  if (!session.user) {
-    return NextResponse.redirect(new URL('/login', request.url));
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  const user = session.user;
+
+  // /login, /signup: approved 사용자는 /reserve로
+  if (PUBLIC_PATHS.includes(pathname)) {
+    if (user?.status === 'approved') {
+      return NextResponse.redirect(new URL('/reserve', request.url));
+    }
+    return NextResponse.next();
   }
 
-  // 3. 승인 상태 확인 (관리자 제외)
-  const isPendingPath = pathname === '/pending';
-  if (session.user.role !== 'admin' && session.user.status !== 'approved' && !isPendingPath) {
-    return NextResponse.redirect(new URL('/pending', request.url));
+  // /pending: 미인증 사용자는 /login으로
+  if (pathname === '/pending') {
+    if (!user) return NextResponse.redirect(new URL('/login', request.url));
+    return NextResponse.next();
   }
 
-  // 4. 관리자 전용 경로 확인
-  if (pathname.startsWith('/admin') && session.user.role !== 'admin') {
+  // 그 외 모든 경로: 인증 + approved 필요
+  if (!user) return NextResponse.redirect(new URL('/login', request.url));
+  if (user.status !== 'approved') return NextResponse.redirect(new URL('/pending', request.url));
+
+  // 관리자 전용 경로 확인
+  if (pathname.startsWith('/admin') && user.role !== 'admin') {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
@@ -35,14 +43,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };
