@@ -10,9 +10,49 @@
 - 디자인 시스템: [design-system.css](design-system.css)
 - 구 화면 디자인 목업 (참고용, 실제 구현 기준 아님): [old-page-designs/](old-page-designs/)
 
+## 기술 스택
+
+| 역할 | 선택 |
+|------|------|
+| 프레임워크 | Next.js 15 (App Router) + TypeScript |
+| DB | SQLite (WAL 모드) |
+| ORM | Drizzle ORM |
+| Auth | iron-session (httpOnly 쿠키 세션) |
+| 스타일 | Tailwind CSS + design-system.css 토큰 병행 |
+| 캘린더 연동 | googleapis npm 패키지 |
+| 배포 | Docker 단일 컨테이너 (`output: 'standalone'`) |
+
+> NAS / 저사양 온프레미스 환경 기준. 컨테이너 1개로 Next.js + SQLite를 함께 실행한다.
+
+### 개발 명령어
+
+```bash
+npm run dev          # 개발 서버 (localhost:3000)
+npm run build        # 프로덕션 빌드
+npm run start        # 프로덕션 서버 실행
+npm run db:generate  # Drizzle 마이그레이션 파일 생성
+npm run db:migrate   # 마이그레이션 적용
+npm run db:studio    # Drizzle Studio (DB GUI)
+```
+
+### 디렉토리 구조
+
+```
+app/                  # Next.js App Router 페이지 및 Route Handlers
+  (auth)/             # 로그인·회원가입 페이지
+  (user)/             # 일반 사용자 페이지 (장소방, 예약 상세, 나의 예약)
+  (admin)/            # 관리자 페이지
+  api/                # Route Handlers (Google Calendar OAuth 콜백 등)
+lib/
+  db/                 # Drizzle 스키마, 마이그레이션, DB 클라이언트
+  auth/               # iron-session 설정, 세션 유틸
+  calendar/           # Google Calendar API 연동 로직
+components/           # 공용 UI 컴포넌트
+```
+
 ## 아키텍처
 
-아직 프레임워크 및 빌드 도구가 설정되지 않았으며, 현재 저장소는 디자인/기획 단계입니다.
+현재 저장소는 디자인/기획 단계이며, 위 스택을 기반으로 구현 예정입니다.
 
 ### 핵심 도메인 개념
 
