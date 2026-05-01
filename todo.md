@@ -53,11 +53,11 @@
 
 ### 인증 (iron-session)
 
-- [ ] `iron-session` 설치 및 세션 설정 (`maxAge: 365일`)
-- [ ] 세션 타입 정의 (`SessionData`)
-- [ ] 로그인 Route Handler (`POST /api/auth/login`) — 이름 + 전화번호
-- [ ] 로그아웃 Route Handler (`POST /api/auth/logout`)
-- [ ] 세션 미들웨어 — 미승인 사용자 접근 차단, 관리자 전용 경로 보호
+- [x] `iron-session` 설치 및 세션 설정 (`maxAge: 365일`)
+- [x] 세션 타입 정의 (`SessionData`)
+- [x] 로그인 Route Handler (`POST /api/auth/login`) — 이름 + 전화번호
+- [x] 로그아웃 Route Handler (`POST /api/auth/logout`)
+- [x] 세션 미들웨어 — 미승인 사용자 접근 차단, 관리자 전용 경로 보호
 
 ---
 
