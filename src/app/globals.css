@@ -1,8 +1,126 @@
 @import "tailwindcss";
 @import "../design-system/colors_and_type.css";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-/* Custom globals if any */
-body {
-  /* design-system/colors_and_type.css already sets body styles, 
-     but we can override here if needed */
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  
+  /* Radii mapping */
+  --radius-xs: var(--radius-xs);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
+  --radius-3xl: var(--radius-3xl);
+  --radius-pill: var(--radius-pill);
+}
+
+:root {
+  --background: var(--color-bg);
+  --foreground: var(--color-fg);
+  --card: var(--color-bg-elevated);
+  --card-foreground: var(--color-fg);
+  --popover: var(--color-bg-elevated);
+  --popover-foreground: var(--color-fg);
+  --primary: var(--color-accent);
+  --primary-foreground: var(--color-fg-on-accent);
+  --secondary: var(--color-bg-subtle);
+  --secondary-foreground: var(--color-fg);
+  --muted: var(--color-bg-muted);
+  --muted-foreground: var(--color-fg-tertiary);
+  --accent: var(--color-accent-subtle);
+  --accent-foreground: var(--color-accent);
+  --destructive: var(--color-danger);
+  --destructive-foreground: var(--color-fg-on-accent);
+  --border: var(--color-border-subtle);
+  --input: var(--color-border-default);
+  --ring: var(--color-border-focus);
+  --chart-1: var(--color-blue-800);
+  --chart-2: var(--color-violet-600);
+  --chart-3: var(--color-orange-600);
+  --chart-4: var(--color-green-600);
+  --chart-5: var(--color-red-600);
+  --radius: var(--radius-md);
+  
+  /* Sidebar (optional, mapping to neutral/accent) */
+  --sidebar: var(--color-bg-subtle);
+  --sidebar-foreground: var(--color-fg-secondary);
+  --sidebar-primary: var(--color-accent);
+  --sidebar-primary-foreground: var(--color-fg-on-accent);
+  --sidebar-accent: var(--color-accent-subtle);
+  --sidebar-accent-foreground: var(--color-accent);
+  --sidebar-border: var(--color-border-subtle);
+  --sidebar-ring: var(--color-border-focus);
+}
+
+.dark {
+  /* Dark theme is already handled by [data-theme="dark"] in colors_and_type.css 
+     but shadcn expects .dark class to redefine these variables if not using semantic tokens.
+     Since our tokens are already semantic and change under .dark, 
+     pointing to them here is enough. */
+  --background: var(--color-bg);
+  --foreground: var(--color-fg);
+  --card: var(--color-bg-elevated);
+  --card-foreground: var(--color-fg);
+  --popover: var(--color-bg-elevated);
+  --popover-foreground: var(--color-fg);
+  --primary: var(--color-accent);
+  --primary-foreground: var(--color-fg-on-accent);
+  --secondary: var(--color-bg-subtle);
+  --secondary-foreground: var(--color-fg);
+  --muted: var(--color-bg-muted);
+  --muted-foreground: var(--color-fg-tertiary);
+  --accent: var(--color-accent-subtle);
+  --accent-foreground: var(--color-accent);
+  --destructive: var(--color-danger);
+  --destructive-foreground: var(--color-fg-on-accent);
+  --border: var(--color-border-subtle);
+  --input: var(--color-border-default);
+  --ring: var(--color-border-focus);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "cv11", "ss01";
+  }
 }

@@ -61,21 +61,30 @@
 
 ---
 
-## Phase 3. 공용 컴포넌트
+## Phase 3. 공용 컴포넌트 (shadcn/ui + 디자인 시스템)
 
-> 각 컴포넌트는 `design-system/preview/` 내 해당 HTML 파일을 시각 기준으로 사용하며, **Storybook 스토리를 함께 작성**한다.
+> **전략**: `shadcn/ui`의 구조를 기반으로 `design-system/preview/`의 시각적 요소를 적용한다. 
+> 모든 컴포넌트는 Storybook 스토리를 함께 작성한다.
 
-- [ ] 레이아웃 컴포넌트 (모바일 최대 430px, 중앙 정렬)
-- [ ] 주간 캘린더 컴포넌트 (주 이동, 날짜 선택)
-- [ ] 바텀 네비게이션
-- [ ] 로딩 스피너 / 스켈레톤 (`preview/motion.html` 참고)
-- [ ] 모달 / 바텀 시트 (`preview/elevation.html` 참고, `--radius-3xl`)
-- [ ] 토스트 알림
-- [ ] 폼 입력 필드 (`preview/inputs.html` 참고, `--radius-sm`)
-- [ ] 버튼 (`preview/buttons.html` 참고)
-- [ ] 배지 (`preview/badges.html` 참고)
-- [ ] 카드 (`preview/cards.html` 참고)
-- [ ] 리스트 행 (`preview/list-rows.html` 참고)
+### 초기 설정
+- [x] `shadcn/ui` 초기화 (`npx shadcn@latest init`)
+- [x] `app/globals.css` — shadcn 테마 변수를 `colors_and_type.css` 토큰과 매핑
+- [x] `lib/utils.ts` — `cn` (clsx + tailwind-merge) 유틸리티 확인
+
+### 기본 UI 컴포넌트 커스터마이징
+- [ ] **Button**: `preview/buttons.html` 기준 (pill, --radius-sm 등 Variant 정의)
+- [ ] **Card**: `preview/cards.html` 기준 (border-subtle, --radius-2xl, shadow-none)
+- [ ] **Input**: `preview/inputs.html` 기준 (--radius-sm)
+- [ ] **Badge**: `preview/badges.html` 기준 (태그 및 상태 표시)
+- [ ] **Dialog (Modal)**: `preview/elevation.html` 기준 (--radius-3xl)
+- [ ] **Drawer (Bottom Sheet)**: 모바일 전용 UI
+
+### 도메인 특화 컴포넌트
+- [ ] **Layout**: 모바일 최대 430px 중앙 정렬 컨테이너
+- [ ] **Weekly Calendar**: 주간 이동 및 날짜 선택 로직
+- [ ] **Bottom Nav**: 하단 고정 네비게이션
+- [ ] **Loading/Skeleton**: `preview/motion.html` 기반 로딩 상태 UI
+- [ ] **Toast**: 알림 UI
 
 ---
 
