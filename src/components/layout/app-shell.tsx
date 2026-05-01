@@ -14,9 +14,9 @@ function AppShell({ children, className, hideNav = false }: AppShellProps) {
       <div
         className={cn(
           "relative w-full max-w-107.5 min-h-dvh bg-background",
-          !hideNav && "pb-18",
           className
         )}
+        style={!hideNav ? { paddingBottom: "calc(4.5rem + env(safe-area-inset-bottom))" } : undefined}
       >
         {children}
         {!hideNav && <BottomNav />}
