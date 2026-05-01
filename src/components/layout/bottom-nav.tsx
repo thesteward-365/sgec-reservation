@@ -49,19 +49,19 @@ function BottomNav() {
           const Icon = isActive ? SolidIcon : OutlineIcon
 
           return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                "flex-1 flex flex-col items-center gap-1 py-3",
-                "transition-colors duration-120 ease-(--ease-standard)",
-                isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <Icon width={22} height={22} />
-              <span className={cn("text-overline", isActive ? "font-bold" : "font-semibold")}>
-                {label}
-              </span>
+            <Link key={href} href={href} className="flex-1">
+              <div
+                className={cn(
+                  "flex flex-col items-center gap-1 py-3",
+                  "transition-colors duration-120 ease-(--ease-standard)",
+                  isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Icon width={22} height={22} />
+                <span className={cn("text-overline", isActive ? "font-bold" : "font-semibold")}>
+                  {label}
+                </span>
+              </div>
             </Link>
           )
         })}
