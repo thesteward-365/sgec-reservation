@@ -1,0 +1,421 @@
+/* ============================================================
+   PRETENDARD — primary typeface (KR/EN/JP via Pretendard JP fallback)
+   ============================================================ */
+@font-face { font-family: "Pretendard"; font-weight: 100; font-style: normal; font-display: swap; src: url("fonts/Pretendard-Thin.woff2") format("woff2"); }
+@font-face { font-family: "Pretendard"; font-weight: 200; font-style: normal; font-display: swap; src: url("fonts/Pretendard-ExtraLight.woff2") format("woff2"); }
+@font-face { font-family: "Pretendard"; font-weight: 300; font-style: normal; font-display: swap; src: url("fonts/Pretendard-Light.woff2") format("woff2"); }
+@font-face { font-family: "Pretendard"; font-weight: 400; font-style: normal; font-display: swap; src: url("fonts/Pretendard-Regular.woff2") format("woff2"); }
+@font-face { font-family: "Pretendard"; font-weight: 500; font-style: normal; font-display: swap; src: url("fonts/Pretendard-Medium.woff2") format("woff2"); }
+@font-face { font-family: "Pretendard"; font-weight: 600; font-style: normal; font-display: swap; src: url("fonts/Pretendard-SemiBold.woff2") format("woff2"); }
+@font-face { font-family: "Pretendard"; font-weight: 700; font-style: normal; font-display: swap; src: url("fonts/Pretendard-Bold.woff2") format("woff2"); }
+@font-face { font-family: "Pretendard"; font-weight: 800; font-style: normal; font-display: swap; src: url("fonts/Pretendard-ExtraBold.woff2") format("woff2"); }
+@font-face { font-family: "Pretendard"; font-weight: 900; font-style: normal; font-display: swap; src: url("fonts/Pretendard-Black.woff2") format("woff2"); }
+
+:root {
+  /* ============================================================
+     WANTED DESIGN SYSTEM — Colors & Typography
+     Source: Wanted Design System (Community).fig — Color/Atomic + Color/Semantic + Typography pages
+     ============================================================ */
+
+  /* ── Atomic palette ────────────────────────────────────────── */
+  /* Mono — pure neutrals (15 stops) */
+  --color-mono-100: #FFFFFF;
+  --color-mono-200: #F7F7F7;
+  --color-mono-300: #DCDCDC;
+  --color-mono-400: #C4C4C4;
+  --color-mono-500: #B0B0B0;
+  --color-mono-600: #9B9B9B;
+  --color-mono-700: #8A8A8A;
+  --color-mono-800: #737373;
+  --color-mono-900: #5C5C5C;
+  --color-mono-1000: #474747;
+  --color-mono-1100: #303030;
+  --color-mono-1200: #2A2A2A;
+  --color-mono-1300: #1C1C1C;
+  --color-mono-1400: #171717;
+  --color-mono-1500: #0F0F0F;
+  --color-mono-1600: #000000;
+
+  /* Neutral — workhorse cool-grey ramp */
+  --color-neutral-100: #FFFFFF;
+  --color-neutral-150: #F7F7F8;
+  --color-neutral-200: #F4F4F5;
+  --color-neutral-300: #EAEBEC;
+  --color-neutral-400: #E1E2E4;
+  --color-neutral-500: #DBDCDF;
+  --color-neutral-600: #C2C4C8;
+  --color-neutral-700: #AEB0B6;
+  --color-neutral-800: #989BA2;
+  --color-neutral-900: #878A93;
+  --color-neutral-1000: #70737C;   /* mid-grey, very common */
+  --color-neutral-1100: #5A5C63;
+  --color-neutral-1200: #46474C;
+  --color-neutral-1300: #37383C;
+  --color-neutral-1400: #333438;
+  --color-neutral-1500: #2E2F33;
+  --color-neutral-1600: #292A2D;
+  --color-neutral-1700: #212225;
+  --color-neutral-1800: #1B1C1E;
+  --color-neutral-1900: #171719;
+  --color-neutral-2000: #141415;
+  --color-neutral-2100: #0F0F10;
+  --color-neutral-2200: #000000;
+
+  /* Blue — primary brand hue */
+  --color-blue-50:  #F7FBFF;
+  --color-blue-100: #EAF2FE;
+  --color-blue-200: #C9DEFE;
+  --color-blue-300: #9EC5FF;
+  --color-blue-400: #69A5FF;
+  --color-blue-500: #4F95FF;
+  --color-blue-600: #3385FF;
+  --color-blue-700: #1A75FF;
+  --color-blue-800: #0066FF;        /* PRIMARY — Wanted Blue */
+  --color-blue-900: #005EEB;
+  --color-blue-1000: #0054D1;
+  --color-blue-1100: #003E9C;
+  --color-blue-1200: #002966;
+  --color-blue-1300: #001536;
+
+  /* Red — error / critical */
+  --color-red-50:  #FFFAFA;
+  --color-red-100: #FEECEC;
+  --color-red-200: #FED5D5;
+  --color-red-300: #FFB5B5;
+  --color-red-400: #FF8C8C;
+  --color-red-500: #FF6363;
+  --color-red-600: #FF4242;          /* PRIMARY ERROR */
+  --color-red-700: #E52222;
+  --color-red-800: #B20C0C;
+  --color-red-900: #750404;
+  --color-red-1000: #3B0101;
+
+  /* Green — success / positive */
+  --color-green-50:  #F2FFF6;
+  --color-green-100: #D9FFE6;
+  --color-green-200: #ACFCC7;
+  --color-green-300: #7DF5A5;
+  --color-green-400: #49E57D;
+  --color-green-500: #1ED45A;
+  --color-green-600: #00BF40;        /* PRIMARY SUCCESS */
+  --color-green-700: #009632;
+  --color-green-800: #006E25;
+  --color-green-900: #004517;
+  --color-green-1000: #00240C;
+
+  /* Orange — warning */
+  --color-orange-50:  #FFFCF7;
+  --color-orange-100: #FEF4E6;
+  --color-orange-200: #FEE6C6;
+  --color-orange-300: #FFD49C;
+  --color-orange-400: #FFC06E;
+  --color-orange-500: #FFA938;
+  --color-orange-600: #FF9200;       /* PRIMARY WARNING */
+  --color-orange-700: #D47800;
+  --color-orange-800: #9C5800;
+  --color-orange-900: #663A00;
+  --color-orange-1000: #361E00;
+
+  /* Red Orange */
+  --color-red-orange-500: #FF7B2E;
+  --color-red-orange-600: #FF5E00;
+
+  /* Lime */
+  --color-lime-500: #6BE016;
+  --color-lime-600: #58CF04;
+
+  /* Cyan */
+  --color-cyan-500: #28D0ED;
+  --color-cyan-600: #00BDDE;
+
+  /* Light Blue */
+  --color-light-blue-500: #3DC2FF;
+  --color-light-blue-600: #00AEFF;
+
+  /* Violet */
+  --color-violet-500: #7D5EF7;
+  --color-violet-600: #6541F2;       /* used for highlight/info accents */
+  --color-violet-700: #5B37ED;
+
+  /* Purple */
+  --color-purple-500: #9747FF;
+  --color-purple-600: #8333FF;
+
+  /* Pink */
+  --color-pink-500: #FF63A3;
+  --color-pink-600: #FF4287;
+
+  /* ── Atomic opacity ────────────────────────────────────────── */
+  --opacity-black-7:   rgba(0,0,0,0.07);
+  --opacity-black-8:   rgba(0,0,0,0.08);
+  --opacity-black-12:  rgba(0,0,0,0.12);
+  --opacity-black-22:  rgba(0,0,0,0.22);
+  --opacity-black-61:  rgba(0,0,0,0.61);
+  --opacity-black-88:  rgba(0,0,0,0.88);
+
+  --opacity-neutral-22: rgba(112,115,124,0.22); /* default border */
+  --opacity-neutral-08: rgba(112,115,124,0.08);
+  --opacity-neutral-16: rgba(112,115,124,0.16);
+
+  /* ============================================================
+     SEMANTIC TOKENS — Light theme (default)
+     ============================================================ */
+
+  /* Surface / background */
+  --color-bg:               #FFFFFF;     /* page */
+  --color-bg-subtle:        #F7F7F8;     /* hairline panels, code blocks */
+  --color-bg-muted:         #F4F4F5;
+  --color-bg-elevated:      #FFFFFF;     /* cards, modals */
+  --color-bg-inverse:       #171719;     /* dark surfaces inside light UI */
+  --color-bg-overlay:       rgba(0,0,0,0.61); /* modal scrim */
+
+  /* Foreground / text */
+  --color-fg:               #171719;     /* primary copy */
+  --color-fg-strong:        #000000;     /* titles, KPIs */
+  --color-fg-secondary:     rgba(46,47,51,0.88);
+  --color-fg-tertiary:      #70737C;     /* helper text */
+  --color-fg-disabled:      #AEB0B6;
+  --color-fg-on-accent:     #FFFFFF;     /* text on Wanted Blue, Black */
+  --color-fg-on-inverse:    #FFFFFF;
+  --color-fg-link:          #0066FF;
+  --color-fg-link-pressed:  #0054D1;
+
+  /* Borders & dividers */
+  --color-border-subtle:    rgba(112,115,124,0.22); /* THE Wanted border */
+  --color-border-default:   rgba(112,115,124,0.32);
+  --color-border-strong:    #171719;
+  --color-border-divider:   #000000;     /* thick section dividers */
+  --color-border-focus:     #0066FF;
+
+  /* Accent — primary */
+  --color-accent:               #0066FF; /* Wanted Blue */
+  --color-accent-hover:         #005EEB;
+  --color-accent-pressed:       #0054D1;
+  --color-accent-subtle:        #EAF2FE;
+  --color-accent-subtle-hover:  #C9DEFE;
+
+  /* Status */
+  --color-success:          #00BF40;
+  --color-success-subtle:   #D9FFE6;
+  --color-warning:          #FF9200;
+  --color-warning-subtle:   #FEF4E6;
+  --color-danger:           #FF4242;
+  --color-danger-subtle:    #FEECEC;
+  --color-info:             #6541F2;
+  --color-info-subtle:      #F0ECFE;
+
+  /* ============================================================
+     TYPOGRAPHY
+     Primary KR/EN/JP face: Pretendard JP (fallback Pretendard, then Wanted Sans)
+     Brand display face:    Wanted Sans Variable (key headlines / wordmark)
+     Mono:                  SF Mono / ui-monospace
+     ============================================================ */
+
+  --font-sans:    "Pretendard", "Pretendard JP", "Wanted Sans Variable",
+                  "Wanted Sans", -apple-system, BlinkMacSystemFont,
+                  "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+  --font-display: "Pretendard", "Wanted Sans Variable", "Wanted Sans",
+                  "Pretendard JP", system-ui, sans-serif;
+  --font-mono:    "SF Mono", ui-monospace, "JetBrains Mono", Menlo,
+                  Consolas, monospace;
+
+  /* Weight ramp (Pretendard JP) */
+  --fw-regular: 400;
+  --fw-medium:  500;
+  --fw-semibold: 600;
+  --fw-bold:    700;
+  --fw-extrabold: 800;
+
+  /* Type scale — derived from Pretendard JP usage in the figma file
+     Body scale lives at 13/14/15/16/17 with line-height 1.5 (≈0.006em letter-spacing).
+     Title scale uses 1.334 line-height with a tightening track. */
+
+  --fs-display-xl:  72px;   --lh-display-xl: 1.20;  --ls-display-xl: -0.022em;
+  --fs-display-lg:  56px;   --lh-display-lg: 1.20;  --ls-display-lg: -0.022em;
+  --fs-display-md:  36px;   --lh-display-md: 1.334; --ls-display-md: -0.027em;
+  --fs-h1:          28px;   --lh-h1:        1.358;  --ls-h1:        -0.024em;
+  --fs-h2:          24px;   --lh-h2:        1.334;  --ls-h2:        -0.023em;
+  --fs-h3:          21px;   --lh-h3:        1.358;  --ls-h3:        -0.018em;
+  --fs-h4:          20px;   --lh-h4:        1.40;   --ls-h4:        -0.012em;
+  --fs-h5:          17px;   --lh-h5:        1.50;   --ls-h5:         0.000em;
+  --fs-body-lg:     16px;   --lh-body-lg:   1.50;   --ls-body-lg:    0.006em;
+  --fs-body:        15px;   --lh-body:      1.50;   --ls-body:       0.006em;
+  --fs-body-sm:     14px;   --lh-body-sm:   1.50;   --ls-body-sm:    0.012em;
+  --fs-caption:     13px;   --lh-caption:   1.50;   --ls-caption:    0.018em;
+  --fs-overline:    12px;   --lh-overline:  1.40;   --ls-overline:   0.024em;
+  --fs-micro:       11px;   --lh-micro:     1.273;  --ls-micro:      0.031em;
+
+  /* ============================================================
+     RADII — Wanted is a "soft but architectural" radius system
+     ============================================================ */
+  --radius-xs:  4px;
+  --radius-sm:  8px;
+  --radius-md:  12px;
+  --radius-lg:  16px;
+  --radius-xl:  20px;
+  --radius-2xl: 24px;
+  --radius-3xl: 32px;
+  --radius-pill: 9999px;
+  --radius-circle: 50%;
+
+  /* ============================================================
+     SPACING — 4-px base, 8-px grid for layout
+     ============================================================ */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 48px;
+  --space-10: 64px;
+  --space-11: 96px;
+  --space-12: 128px;
+
+  /* ============================================================
+     ELEVATION — Wanted uses very soft, color-tinted shadows
+     ============================================================ */
+  --shadow-1:  0 1px 2px rgba(23,23,23,0.06);
+  --shadow-2:  0 2px 6px rgba(23,23,23,0.07), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-3:  0 6px 16px rgba(23,23,23,0.08), 0 2px 4px rgba(0,0,0,0.04);
+  --shadow-4:  0 12px 32px rgba(23,23,23,0.10), 0 4px 8px rgba(0,0,0,0.06);
+  --shadow-5:  0 24px 64px rgba(23,23,23,0.12), 0 8px 16px rgba(0,0,0,0.08);
+  --shadow-focus: 0 0 0 3px rgba(0,102,255,0.32);
+
+  /* ============================================================
+     MOTION
+     ============================================================ */
+  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-emphatic: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in:       cubic-bezier(0.4, 0, 1, 1);
+  --ease-out:      cubic-bezier(0, 0, 0.2, 1);
+  --dur-instant:   80ms;
+  --dur-fast:      120ms;
+  --dur-base:      200ms;
+  --dur-slow:      320ms;
+  --dur-slowest:   480ms;
+}
+
+/* ============================================================
+   DARK THEME — flip on [data-theme="dark"] or .theme-dark
+   ============================================================ */
+[data-theme="dark"], .theme-dark {
+  --color-bg:               #171719;
+  --color-bg-subtle:        #1B1C1E;
+  --color-bg-muted:         #212225;
+  --color-bg-elevated:      #292A2D;
+  --color-bg-inverse:       #FFFFFF;
+  --color-bg-overlay:       rgba(0,0,0,0.72);
+
+  --color-fg:               #F4F4F5;
+  --color-fg-strong:        #FFFFFF;
+  --color-fg-secondary:     rgba(244,244,245,0.88);
+  --color-fg-tertiary:      #989BA2;
+  --color-fg-disabled:      #5A5C63;
+  --color-fg-on-accent:     #FFFFFF;
+  --color-fg-on-inverse:    #171719;
+  --color-fg-link:          #4F95FF;
+
+  --color-border-subtle:    rgba(174,176,182,0.18);
+  --color-border-default:   rgba(174,176,182,0.28);
+  --color-border-strong:    #FFFFFF;
+  --color-border-divider:   #FFFFFF;
+
+  --color-accent:               #3385FF;
+  --color-accent-hover:         #4F95FF;
+  --color-accent-pressed:       #69A5FF;
+  --color-accent-subtle:        rgba(51,133,255,0.12);
+  --color-accent-subtle-hover:  rgba(51,133,255,0.20);
+
+  --color-success-subtle:   rgba(0,191,64,0.12);
+  --color-warning-subtle:   rgba(255,146,0,0.12);
+  --color-danger-subtle:    rgba(255,66,66,0.12);
+  --color-info-subtle:      rgba(101,65,242,0.16);
+}
+
+/* ============================================================
+   SEMANTIC ELEMENT STYLES — drop-in defaults
+   ============================================================ */
+html, body {
+  font-family: var(--font-sans);
+  font-size:   var(--fs-body-lg);
+  line-height: var(--lh-body-lg);
+  letter-spacing: var(--ls-body-lg);
+  color:       var(--color-fg);
+  background:  var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+h1, .h1 {
+  font-family: var(--font-display);
+  font-size:   var(--fs-display-md);
+  line-height: var(--lh-display-md);
+  letter-spacing: var(--ls-display-md);
+  font-weight: var(--fw-bold);
+  color: var(--color-fg-strong);
+  margin: 0;
+}
+h2, .h2 {
+  font-size:   var(--fs-h1);
+  line-height: var(--lh-h1);
+  letter-spacing: var(--ls-h1);
+  font-weight: var(--fw-bold);
+  color: var(--color-fg-strong);
+  margin: 0;
+}
+h3, .h3 {
+  font-size:   var(--fs-h2);
+  line-height: var(--lh-h2);
+  letter-spacing: var(--ls-h2);
+  font-weight: var(--fw-bold);
+  color: var(--color-fg-strong);
+  margin: 0;
+}
+h4, .h4 {
+  font-size:   var(--fs-h3);
+  line-height: var(--lh-h3);
+  letter-spacing: var(--ls-h3);
+  font-weight: var(--fw-semibold);
+  color: var(--color-fg-strong);
+  margin: 0;
+}
+p, .body {
+  font-size:   var(--fs-body-lg);
+  line-height: var(--lh-body-lg);
+  letter-spacing: var(--ls-body-lg);
+  font-weight: var(--fw-medium);
+  color: var(--color-fg);
+  margin: 0;
+}
+small, .caption {
+  font-size:   var(--fs-caption);
+  line-height: var(--lh-caption);
+  letter-spacing: var(--ls-caption);
+  color: var(--color-fg-tertiary);
+}
+code, kbd, samp, pre, .mono {
+  font-family: var(--font-mono);
+  font-size:   var(--fs-body-sm);
+}
+a {
+  color: var(--color-fg-link);
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-standard);
+}
+a:hover { text-decoration: underline; }
+
+/* Section divider — Wanted's signature 4-px solid black rule */
+.divider-strong {
+  height: 4px;
+  background: var(--color-border-divider);
+  width: 100%;
+}
+.divider-hairline {
+  height: 1px;
+  background: var(--color-border-subtle);
+  width: 100%;
+}
