@@ -75,11 +75,11 @@
 ### 기본 UI 컴포넌트 커스터마이징
 
 - [x] **Button**: `preview/buttons.html` 기준 (pill, --radius-sm 등 Variant 정의)
-- [ ] **Card**: `preview/cards.html` 기준 (border-subtle, --radius-2xl, shadow-none)
-- [ ] **Input**: `preview/inputs.html` 기준 (--radius-sm)
-- [ ] **Badge**: `preview/badges.html` 기준 (태그 및 상태 표시)
-- [ ] **Dialog (Modal)**: `preview/elevation.html` 기준 (--radius-3xl)
-- [ ] **Drawer (Bottom Sheet)**: 모바일 전용 UI
+- [x] **Card**: `preview/cards.html` 기준 (border-subtle, --radius-2xl, shadow-none)
+- [x] **Input** + **Label**: `preview/inputs.html` 기준 (--radius-sm, focus ring)
+- [x] **Badge**: `preview/badges.html` 기준 (solid / subtle / outline, 예약 상태 및 태그)
+- [x] **Dialog (Modal)**: `preview/elevation.html` 기준 (--radius-3xl, Radix Dialog)
+- [x] **Drawer (Bottom Sheet)**: 모바일 전용 UI (vaul)
 
 ### 도메인 특화 컴포넌트
 
