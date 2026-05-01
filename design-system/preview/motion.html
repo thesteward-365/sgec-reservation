@@ -1,0 +1,16 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css">
+<style>body{margin:0;padding:20px;background:#fff;font:500 12px/1.4 var(--font-sans);color:var(--color-fg-tertiary)}
+.row{display:flex;align-items:center;gap:14px;padding:8px 0;border-bottom:1px solid var(--color-border-subtle)}
+.row:last-child{border-bottom:none}
+.k{font:600 11px/1.3 var(--font-mono);color:var(--color-fg);width:140px}
+.box{width:32px;height:32px;background:#0066FF;border-radius:8px;animation:m 1.6s var(--ease-standard) infinite alternate}
+.box.b{animation-duration:1.2s}
+.box.c{animation-duration:.8s}
+.v{margin-left:auto;font:500 10px/1.3 var(--font-mono)}
+@keyframes m{0%{transform:translateX(0)}100%{transform:translateX(180px)}}
+</style></head><body>
+<div class="row"><div class="k">--ease-standard</div><div class="box"></div><div class="v">cubic-bezier(.2,.8,.2,1) · 200ms</div></div>
+<div class="row"><div class="k">--ease-emphatic</div><div class="box b" style="animation-timing-function:cubic-bezier(.16,1,.3,1)"></div><div class="v">cubic-bezier(.16,1,.3,1) · 320ms</div></div>
+<div class="row"><div class="k">--dur-fast</div><div class="box c"></div><div class="v">120ms · micro-states</div></div>
+</body></html>

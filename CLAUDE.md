@@ -7,8 +7,7 @@
 샘깊은교회(SGEC) 장소 예약 서비스. 교회 내 장소를 날짜/시간대별로 예약하고 Google Calendar에 동기화하는 웹 서비스.
 
 - 전체 기능 명세: [features.md](features.md)
-- 디자인 시스템: [design-system.css](design-system.css)
-- 구 화면 디자인 목업 (참고용, 실제 구현 기준 아님): [old-page-designs/](old-page-designs/)
+- 디자인 시스템: [design-system/colors_and_type.css](design-system/colors_and_type.css)
 
 ## 기술 스택
 

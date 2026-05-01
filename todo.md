@@ -4,12 +4,26 @@
 
 ---
 
+## UI 구현 원칙
+
+> **디자인 기준**: `design-system/colors_and_type.css` 토큰 + `design-system/preview/` 컴포넌트 패턴
+>
+> - 버튼: pill(`--radius-pill`) 기본 CTA, `--radius-sm` 조밀한 행
+> - 카드: `border: 1px solid var(--color-border-subtle)`, `border-radius: var(--radius-2xl)`, shadow 없음
+> - 모달: `border-radius: var(--radius-3xl)` (32px)
+> - 인풋: `border-radius: var(--radius-sm)` (8px)
+> - 색상: `--color-accent` (#0066FF) 단일 포인트, 배경 white, 보더 `rgba(112,115,124,0.22)`
+> - 다크 테마: `[data-theme="dark"]` 또는 `.theme-dark`
+
+---
+
 ## Phase 1. 프로젝트 초기화
 
 - [ ] Next.js 15 프로젝트 생성 (`create-next-app`, App Router, TypeScript)
 - [ ] ESLint / Prettier 설정
-- [ ] Tailwind CSS 설치 및 `design-system.css` 토큰 연동
-- [ ] Pretendard 폰트 (`fonts/` woff2) 로드 설정
+- [ ] Tailwind CSS 설치 및 `design-system/colors_and_type.css` 토큰 연동
+  - `app/globals.css`에서 import, 폰트 경로 `/fonts/...` 절대경로로 수정
+- [ ] Pretendard 폰트 (`public/fonts/`에 woff2 복사) 로드 설정
 - [ ] `next.config.ts` — `output: 'standalone'` 설정
 - [ ] `next-pwa` 설치 및 `manifest.json` 작성 (앱 이름·아이콘·`display: standalone`)
 - [ ] 디렉토리 구조 세팅 (`app/`, `lib/`, `components/`)
@@ -46,19 +60,25 @@
 
 ## Phase 3. 공용 컴포넌트
 
+> 각 컴포넌트는 `design-system/preview/` 내 해당 HTML 파일을 시각 기준으로 사용
+
 - [ ] 레이아웃 컴포넌트 (모바일 최대 430px, 중앙 정렬)
 - [ ] 주간 캘린더 컴포넌트 (주 이동, 날짜 선택)
 - [ ] 바텀 네비게이션
-- [ ] 로딩 스피너 / 스켈레톤
-- [ ] 모달 / 바텀 시트
+- [ ] 로딩 스피너 / 스켈레톤 (`preview/motion.html` 참고)
+- [ ] 모달 / 바텀 시트 (`preview/elevation.html` 참고, `--radius-3xl`)
 - [ ] 토스트 알림
-- [ ] 폼 입력 필드 (디자인 시스템 토큰 적용)
+- [ ] 폼 입력 필드 (`preview/inputs.html` 참고, `--radius-sm`)
+- [ ] 버튼 (`preview/buttons.html` 참고)
+- [ ] 배지 (`preview/badges.html` 참고)
+- [ ] 카드 (`preview/cards.html` 참고)
+- [ ] 리스트 행 (`preview/list-rows.html` 참고)
 
 ---
 
 ## Phase 4. 인증 페이지
 
-- [ ] 로그인 페이지 (`app/(auth)/login`)
+- [ ] 로그인 페이지 (`app/(auth)/login`) — 이름 + 전화번호
 - [ ] 회원가입 페이지 (`app/(auth)/signup`)
 - [ ] 가입 완료 / 승인 대기 안내 페이지
 
@@ -69,8 +89,8 @@
 ### 예약하기 (`app/(user)/reserve`)
 
 - [ ] 주간 캘린더로 날짜 선택
-- [ ] 층 / 태그 필터 UI
-- [ ] 장소 목록 표시
+- [ ] 층 / 태그 필터 UI (`preview/badges.html` 필터칩 패턴)
+- [ ] 장소 목록 표시 (카드 리스트)
 - [ ] 선택 상태 유지 (뒤로 가기 시 복원)
 
 ### 예약 상세 (`app/(user)/reserve/[placeId]`)
@@ -102,8 +122,6 @@
 ### 사용자 설정 (`app/(user)/settings`)
 
 - [ ] 로그아웃
-- [ ] 자주 사용하는 목적 관리
-- [ ] 계정 정보 관리(이름, 전화번호 수정)
 
 ---
 

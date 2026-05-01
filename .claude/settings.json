@@ -1,6 +1,10 @@
 {
   "permissions": {
-    "allow": ["Skill(update-config)", "Skill(update-config:*)"]
+    "allow": [
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "Bash(unzip -o \"Wanted Design System-handoff.zip\" -d wanted-design-system-extracted/)"
+    ]
   },
   "hooks": {
     "PostToolUse": [
