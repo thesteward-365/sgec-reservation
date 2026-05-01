@@ -38,18 +38,18 @@
 
 ### DB
 
-- [ ] `better-sqlite3` + Drizzle ORM 설치
-- [ ] SQLite WAL 모드 활성화
-- [ ] 스키마 정의
-  - [ ] `users` (이름, 전화번호, 역할, 승인 상태)
-  - [ ] `floors` (층)
-  - [ ] `places` (장소, 층 FK, 태그 관계)
-  - [ ] `tags`
-  - [ ] `place_tags`
-  - [ ] `reservations` (사용자 FK, 장소 FK, 시작·종료 시간, 목적, 구글 event_id)
-  - [ ] `calendar_settings` (구글 OAuth 토큰, 캘린더 ID)
-  - [ ] `sync_log` (동기화 오류 기록)
-- [ ] `db:generate` / `db:migrate` 명령어 확인
+- [x] `better-sqlite3` + Drizzle ORM 설치
+- [x] SQLite WAL 모드 활성화
+- [x] 스키마 정의
+  - [x] `users` (이름, 전화번호, 역할, 승인 상태)
+  - [x] `floors` (층)
+  - [x] `places` (장소, 층 FK, 태그 관계)
+  - [x] `tags`
+  - [x] `place_tags`
+  - [x] `reservations` (사용자 FK, 장소 FK, 시작·종료 시간, 목적, 구글 event_id)
+  - [x] `calendar_settings` (구글 OAuth 토큰, 캘린더 ID)
+  - [x] `sync_log` (동기화 오류 기록)
+- [x] `db:generate` / `db:migrate` 명령어 확인
 
 ### 인증 (iron-session)
 
