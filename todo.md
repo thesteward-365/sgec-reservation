@@ -83,11 +83,11 @@
 
 ### 도메인 특화 컴포넌트
 
-- [ ] **Layout**: 모바일 최대 430px 중앙 정렬 컨테이너
-- [ ] **Weekly Calendar**: 주간 이동 및 날짜 선택 로직
-- [ ] **Bottom Nav**: 하단 고정 네비게이션
-- [ ] **Loading/Skeleton**: `preview/motion.html` 기반 로딩 상태 UI
-- [ ] **Toast**: 알림 UI
+- [x] **Layout** (`AppShell`): 모바일 최대 430px 중앙 정렬 컨테이너, BottomNav 포함
+- [x] **Weekly Calendar**: 주간 이동 및 날짜 선택 로직 (일/월/화/수/목/금/토)
+- [x] **Bottom Nav**: 하단 고정 네비게이션 (예약하기 / 나의 예약 / 설정)
+- [x] **Loading/Skeleton**: animate-pulse 기반, 카드·리스트·캘린더 스켈레톤
+- [x] **Toast**: Sonner 기반 `<Toaster>` 컴포넌트 (성공/오류/알림)
 
 ---
 

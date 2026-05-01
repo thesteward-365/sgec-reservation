@@ -3,7 +3,9 @@
     "allow": [
       "Skill(update-config)",
       "Skill(update-config:*)",
-      "Bash(unzip -o \"Wanted Design System-handoff.zip\" -d wanted-styles-extracted/)"
+      "Bash(unzip -o \"Wanted Design System-handoff.zip\" -d wanted-styles-extracted/)",
+      "Bash(npm install *)",
+      "Bash(npx tsc *)"
     ]
   },
   "hooks": {
