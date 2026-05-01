@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": ["Skill(update-config)", "Skill(update-config:*)"]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // \"\"' | { read -r f; [[ \"$f\" == *\"CLAUDE.md\" ]] && echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"CLAUDE.md가 수정되었습니다. context.md를 최신 상태로 덮어써 주세요. 현재 프로젝트 상태·확정된 결정사항·다음 단계만 남기고, 오래된 내용은 삭제하세요. 300줄 이하로 유지.\"}}' || true; }"
+          }
+        ]
+      }
+    ]
+  }
+}
