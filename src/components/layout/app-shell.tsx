@@ -13,8 +13,8 @@ function AppShell({ children, className, hideNav = false }: AppShellProps) {
     <div className="flex justify-center min-h-dvh bg-background">
       <div
         className={cn(
-          "relative w-full max-w-[430px] min-h-dvh bg-background",
-          !hideNav && "pb-[72px]",
+          "relative w-full max-w-107.5 min-h-dvh bg-background",
+          !hideNav && "pb-18",
           className
         )}
       >

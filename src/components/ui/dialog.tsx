@@ -18,7 +18,7 @@ function DialogOverlay({
     <RadixDialog.Overlay
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 z-50 bg-[var(--color-bg-overlay)]",
+        "fixed inset-0 z-50 bg-(--color-bg-overlay)",
         "data-[state=open]:animate-in data-[state=closed]:animate-out",
         "data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0",
         className
@@ -41,7 +41,7 @@ function DialogContent({
         className={cn(
           "fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
           "w-[calc(100%-48px)] max-w-md",
-          "bg-card rounded-3xl shadow-[var(--shadow-4)] p-6",
+          "bg-card rounded-3xl shadow-(--shadow-4) p-6",
           "outline-none",
           "data-[state=open]:animate-in data-[state=closed]:animate-out",
           "data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0",
@@ -55,7 +55,7 @@ function DialogContent({
           className={cn(
             "absolute right-4 top-4 rounded-sm p-1",
             "text-muted-foreground hover:text-foreground",
-            "transition-colors duration-[120ms] ease-[var(--ease-standard)]",
+            "transition-colors duration-120 ease-(--ease-standard)",
             "outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
             "disabled:pointer-events-none"
           )}

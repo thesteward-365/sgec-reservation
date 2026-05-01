@@ -46,7 +46,7 @@ export const Error: Story = {
         aria-invalid="true"
         defaultValue="010-123"
       />
-      <div className="text-overline leading-[1.4] text-[var(--color-danger)]">
+      <div className="text-overline leading-[1.4] text-(--color-danger)">
         올바른 전화번호를 입력해 주세요.
       </div>
     </div>

@@ -66,7 +66,7 @@ function WeeklyCalendar({
       <div className="flex items-center justify-between px-2 py-2">
         <button
           onClick={() => setWeekStart((d) => addDays(d, -7))}
-          className="p-1.5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-[120ms] ease-[var(--ease-standard)]"
+          className="p-1.5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-120 ease-(--ease-standard)"
           aria-label="이전 주"
         >
           <ChevronLeft size={18} />
@@ -76,7 +76,7 @@ function WeeklyCalendar({
         </span>
         <button
           onClick={() => setWeekStart((d) => addDays(d, 7))}
-          className="p-1.5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-[120ms] ease-[var(--ease-standard)]"
+          className="p-1.5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-120 ease-(--ease-standard)"
           aria-label="다음 주"
         >
           <ChevronRight size={18} />
@@ -100,7 +100,7 @@ function WeeklyCalendar({
                 className={cn(
                   "text-overline font-semibold leading-none",
                   isSunday
-                    ? "text-[var(--color-danger)]"
+                    ? "text-(--color-danger)"
                     : isSaturday
                       ? "text-primary"
                       : "text-muted-foreground"
@@ -110,13 +110,13 @@ function WeeklyCalendar({
               </span>
               <span
                 className={cn(
-                  "w-8 h-8 flex items-center justify-center rounded-pill text-body-sm transition-colors duration-[120ms] ease-[var(--ease-standard)]",
+                  "w-8 h-8 flex items-center justify-center rounded-pill text-body-sm transition-colors duration-120 ease-(--ease-standard)",
                   isSelected
                     ? "bg-primary text-white font-semibold"
                     : isToday
                       ? "bg-accent text-accent-foreground font-semibold"
                       : isSunday
-                        ? "text-[var(--color-danger)] hover:bg-muted"
+                        ? "text-(--color-danger) hover:bg-muted"
                         : isSaturday
                           ? "text-primary hover:bg-muted"
                           : "text-foreground hover:bg-muted"

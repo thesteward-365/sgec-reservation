@@ -16,16 +16,16 @@ function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 inset-x-0 z-40 bg-background border-t border-border-subtle">
-      <div className="mx-auto max-w-[430px] flex" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+      <div className="mx-auto max-w-107.5 flex" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
         {NAV_ITEMS.map(({ href, icon: Icon, label }) => {
-          const isActive = pathname.startsWith(href)
+          const isActive = pathname?.startsWith(href) ?? false
           return (
             <Link
               key={href}
               href={href}
               className={cn(
                 "flex-1 flex flex-col items-center gap-1 py-3",
-                "transition-colors duration-[120ms] ease-[var(--ease-standard)]",
+                "transition-colors duration-120 ease-(--ease-standard)",
                 isActive
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"
