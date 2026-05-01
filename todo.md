@@ -26,7 +26,10 @@
 - [ ] Pretendard 폰트 (`public/fonts/`에 woff2 복사) 로드 설정
 - [ ] `next.config.ts` — `output: 'standalone'` 설정
 - [ ] `next-pwa` 설치 및 `manifest.json` 작성 (앱 이름·아이콘·`display: standalone`)
-- [ ] 디렉토리 구조 세팅 (`app/`, `lib/`, `components/`)
+- [ ] Storybook 설치 및 초기 설정 (`npx storybook@latest init`)
+- [ ] Vitest 설치 및 `vitest.config.ts` 설정
+- [ ] Playwright 설치 및 초기 설정 (`npx playwright install`)
+- [ ] 디렉토리 구조 세팅 (`app/`, `lib/`, `components/`, `tests/`)
 - [ ] 환경 변수 파일 정의 (`.env.local`, `.env.example`)
 
 ---
@@ -60,7 +63,7 @@
 
 ## Phase 3. 공용 컴포넌트
 
-> 각 컴포넌트는 `design-system/preview/` 내 해당 HTML 파일을 시각 기준으로 사용
+> 각 컴포넌트는 `design-system/preview/` 내 해당 HTML 파일을 시각 기준으로 사용하며, **Storybook 스토리를 함께 작성**한다.
 
 - [ ] 레이아웃 컴포넌트 (모바일 최대 430px, 중앙 정렬)
 - [ ] 주간 캘린더 컴포넌트 (주 이동, 날짜 선택)
@@ -133,6 +136,10 @@
 - [ ] `GET /api/reservations` — 목록 조회 (날짜·장소·사용자 필터)
 - [ ] 30분 슬롯 단위 유효성 검증
 - [ ] 동일 장소/시간 중복 체크 (DB 레벨 트랜잭션)
+- [ ] **비즈니스 로직 유닛 테스트 (Vitest)**
+  - [ ] 시간 겹침 판단 로직 검증
+  - [ ] 30분 단위 슬롯 생성 로직 검증
+  - [ ] 예약 가능 구간 추출 로직 검증
 
 ---
 
@@ -215,8 +222,13 @@
 
 ---
 
-## Phase 11. QA
+## Phase 11. QA & 테스트
 
+- [ ] **E2E 테스트 시나리오 작성 및 실행 (Playwright)**
+  - [ ] 회원가입 및 승인 대기 흐름
+  - [ ] 장소 필터링 및 예약 상세 진입 흐름
+  - [ ] 예약 생성 -> 완료 -> 확인 흐름
+  - [ ] 본인 예약 수정 및 취소 흐름
 - [ ] 예약 중복 방지 동시성 테스트
 - [ ] Google Calendar 동기화 실패 → 재시도 시나리오 확인
 - [ ] 관리자 승인 전 접근 차단 확인
