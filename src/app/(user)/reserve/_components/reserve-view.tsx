@@ -34,7 +34,7 @@ function parseDateParam(str: string | null): Date | null {
 }
 
 const CHIP =
-  "inline-flex items-center font-semibold leading-none tracking-[0.012em] rounded-pill px-[10px] py-[6px] text-overline transition-colors duration-120 ease-(--ease-standard) cursor-pointer select-none"
+  "inline-flex items-center font-medium leading-none rounded-pill px-3 py-[6px] text-caption transition-colors duration-120 ease-(--ease-standard) cursor-pointer select-none whitespace-nowrap"
 
 export function ReserveView() {
   const router = useRouter()
@@ -105,65 +105,57 @@ export function ReserveView() {
   return (
     <div className="flex flex-col">
       {/* sticky: 헤더 + 캘린더 + 필터 */}
-      <div className="sticky top-0 z-10 bg-background border-b border-border-subtle">
+      <div className="sticky top-0 z-10 bg-(--color-neutral-150)">
         <div className="px-5 pt-6 pb-2">
           <h1 className="text-title-2 font-bold text-foreground">예약하기</h1>
         </div>
 
-        <WeeklyCalendar
-          selectedDate={selectedDate}
-          onDateSelect={handleDateSelect}
-          className="px-3"
-        />
+        {/* 캘린더 카드 */}
+        <div className="mx-5 mb-4 rounded-2xl bg-card shadow-(--shadow-1) px-2 py-3.5">
+          <WeeklyCalendar
+            selectedDate={selectedDate}
+            onDateSelect={handleDateSelect}
+          />
+        </div>
 
         {/* 필터 */}
         {(floors.length > 0 || tags.length > 0) && (
-          <div className="px-5 pt-3 pb-4 flex flex-col gap-3">
+          <div className="px-5 pb-4 flex flex-col gap-2.5">
             {floors.length > 0 && (
-              <div className="flex items-start gap-3">
-                <span className="text-overline font-semibold text-muted-foreground shrink-0 pt-1.5 w-7">
-                  층
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {floors.map((floor) => (
-                    <button
-                      key={floor.id}
-                      onClick={() => handleFloorToggle(floor.id)}
-                      className={cn(
-                        CHIP,
-                        selectedFloorId === floor.id
-                          ? "bg-primary text-white"
-                          : "bg-background text-foreground border border-border-subtle"
-                      )}
-                    >
-                      {floor.name}
-                    </button>
-                  ))}
-                </div>
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
+                {floors.map((floor) => (
+                  <button
+                    key={floor.id}
+                    onClick={() => handleFloorToggle(floor.id)}
+                    className={cn(
+                      CHIP,
+                      selectedFloorId === floor.id
+                        ? "bg-(--color-fg-strong) text-white"
+                        : "bg-neutral-300 text-foreground"
+                    )}
+                  >
+                    {floor.name}
+                  </button>
+                ))}
               </div>
             )}
 
             {tags.length > 0 && (
-              <div className="flex items-start gap-3">
-                <span className="text-overline font-semibold text-muted-foreground shrink-0 pt-1.5 w-7">
-                  유형
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {tags.map((tag) => (
-                    <button
-                      key={tag.id}
-                      onClick={() => handleTagToggle(tag.id)}
-                      className={cn(
-                        CHIP,
-                        selectedTagId === tag.id
-                          ? "bg-primary text-white"
-                          : "bg-background text-foreground border border-border-subtle"
-                      )}
-                    >
-                      {tag.name}
-                    </button>
-                  ))}
-                </div>
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
+                {tags.map((tag) => (
+                  <button
+                    key={tag.id}
+                    onClick={() => handleTagToggle(tag.id)}
+                    className={cn(
+                      CHIP,
+                      selectedTagId === tag.id
+                        ? "bg-(--color-fg-strong) text-white"
+                        : "bg-neutral-300 text-foreground"
+                    )}
+                  >
+                    {tag.name}
+                  </button>
+                ))}
               </div>
             )}
           </div>
@@ -171,7 +163,7 @@ export function ReserveView() {
       </div>
 
       {/* 장소 목록 */}
-      <div className="flex flex-col gap-3 px-5 py-4">
+      <div className="flex flex-col gap-2 px-5 py-3">
         {loadingPlaces ? (
           Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="h-20 rounded-2xl bg-muted animate-pulse" />
@@ -186,10 +178,10 @@ export function ReserveView() {
               key={place.id}
               href={`/reserve/${place.id}?date=${formatLocalDate(selectedDate)}`}
             >
-              <div className="flex items-center gap-3 p-4 rounded-2xl border border-border-subtle bg-card hover:shadow-(--shadow-3) transition-shadow duration-200 ease-(--ease-standard)">
-                <div className="flex-1 min-w-0 flex flex-col gap-2">
+              <div className="flex items-center gap-3 px-4.5 py-4 rounded-2xl bg-card shadow-(--shadow-1)">
+                <div className="flex-1 min-w-0 flex flex-col gap-1.5">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-body font-bold text-foreground">{place.name}</span>
+                    <span className="text-body-lg font-bold text-foreground">{place.name}</span>
                     {place.floorName && (
                       <span className="text-caption text-muted-foreground">{place.floorName}</span>
                     )}

@@ -31,6 +31,8 @@ interface WeeklyCalendarProps {
   defaultDate?: Date
   selectedDate?: Date
   onDateSelect?: (date: Date) => void
+  /** 날짜에 예약 점 표시 여부를 반환하는 함수 */
+  getIndicator?: (date: Date) => boolean
   className?: string
 }
 
@@ -38,6 +40,7 @@ function WeeklyCalendar({
   defaultDate,
   selectedDate,
   onDateSelect,
+  getIndicator,
   className,
 }: WeeklyCalendarProps) {
   const today = React.useMemo(() => {
@@ -71,7 +74,7 @@ function WeeklyCalendar({
         >
           <ChevronLeft size={18} />
         </button>
-        <span className="text-caption font-semibold text-foreground">
+        <span className="text-body-sm font-semibold text-foreground">
           {weekLabel}
         </span>
         <button
@@ -89,41 +92,56 @@ function WeeklyCalendar({
           const isSelected = selectedDate ? isSameDay(day, selectedDate) : false
           const isSunday = i === 0
           const isSaturday = i === 6
+          const hasIndicator = getIndicator ? getIndicator(day) : false
+
+          const dayTextColor = isSunday
+            ? "text-(--color-danger)"
+            : isSaturday
+              ? "text-primary"
+              : "text-muted-foreground"
+
+          const dateTextColor = isSunday
+            ? "text-(--color-danger)"
+            : isSaturday
+              ? "text-primary"
+              : "text-foreground"
 
           return (
             <button
               key={i}
               onClick={() => onDateSelect?.(day)}
-              className="flex flex-col items-center gap-1 py-2 outline-none"
+              className="flex items-center justify-center outline-none group"
             >
-              <span
+              <div
                 className={cn(
-                  "text-overline font-semibold leading-none",
-                  isSunday
-                    ? "text-(--color-danger)"
-                    : isSaturday
-                      ? "text-primary"
-                      : "text-muted-foreground"
-                )}
-              >
-                {DAY_LABELS[i]}
-              </span>
-              <span
-                className={cn(
-                  "w-8 h-8 flex items-center justify-center rounded-pill text-body-sm transition-colors duration-120 ease-(--ease-standard)",
+                  "relative flex flex-col items-center gap-1.5 py-2.5 w-10 rounded-[14px] transition-colors duration-120 ease-(--ease-standard)",
                   isSelected
-                    ? "bg-primary text-white font-semibold"
-                    : isToday
-                      ? "bg-accent text-accent-foreground font-semibold"
-                      : isSunday
-                        ? "text-(--color-danger) hover:bg-muted"
-                        : isSaturday
-                          ? "text-primary hover:bg-muted"
-                          : "text-foreground hover:bg-muted"
+                    ? "bg-(--color-fg-strong)"
+                    : "group-hover:bg-muted"
                 )}
               >
-                {day.getDate()}
-              </span>
+                <span
+                  className={cn(
+                    "text-overline font-medium leading-none",
+                    isSelected ? "text-white/80" : dayTextColor
+                  )}
+                >
+                  {DAY_LABELS[i]}
+                </span>
+                <span
+                  className={cn(
+                    "text-h5 leading-none",
+                    isSelected
+                      ? "text-white font-bold"
+                      : cn(dateTextColor, isToday ? "font-bold" : "font-medium")
+                  )}
+                >
+                  {day.getDate()}
+                </span>
+                {hasIndicator && !isSelected && (
+                  <span className="absolute bottom-1.5 w-1 h-1 rounded-full bg-primary" />
+                )}
+              </div>
             </button>
           )
         })}
@@ -133,3 +151,4 @@ function WeeklyCalendar({
 }
 
 export { WeeklyCalendar }
+export type { WeeklyCalendarProps }

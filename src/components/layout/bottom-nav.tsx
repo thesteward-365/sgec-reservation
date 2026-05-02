@@ -39,7 +39,7 @@ function BottomNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-40 bg-background border-t border-border-subtle">
+    <nav className="fixed bottom-0 inset-x-0 z-40 bg-background" style={{ boxShadow: '0 -1px 0 var(--color-border-subtle)' }}>
       <div
         className="mx-auto max-w-107.5 flex"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
