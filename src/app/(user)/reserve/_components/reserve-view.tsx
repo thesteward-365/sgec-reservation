@@ -226,7 +226,10 @@ export function ReserveView({ userName }: ReserveViewProps) {
       </div>
 
       {/* sticky: 캘린더 + 장소 필터 */}
-      <div className="sticky top-0 z-10 bg-(--color-neutral-150) pt-3" style={{ willChange: 'transform' }}>
+      <div
+        className="sticky top-0 z-10 bg-(--color-neutral-150) pt-3"
+        style={{ willChange: 'transform' }}
+      >
         {/* 캘린더 카드 */}
         <div className="bg-card mx-5 mb-4 rounded-2xl px-2 py-3.5 shadow-(--shadow-1)">
           <WeeklyCalendar
@@ -330,21 +333,19 @@ export function ReserveView({ userName }: ReserveViewProps) {
                         ))}
                     </div>
                   </div>
-                  {count > 0 ? (
-                    <div className="shrink-0 text-right">
-                      <p
-                        className="text-muted-foreground mb-0.5 leading-none font-medium"
-                        style={{ fontSize: 11 }}
-                      >
-                        예약
-                      </p>
-                      <p className="text-body text-primary font-bold tabular-nums">
-                        {count}건
-                      </p>
-                    </div>
-                  ) : (
-                    <ChevronRightIcon className="text-muted-foreground size-5 flex-none" />
-                  )}
+                  <div className="shrink-0 text-right">
+                    <p
+                      className="text-muted-foreground mb-0.5 leading-none font-medium"
+                      style={{ fontSize: 11 }}
+                    >
+                      예약
+                    </p>
+                    <p
+                      className={`text-body text-${count > 0 ? 'primary' : 'muted-foreground'} font-bold tabular-nums`}
+                    >
+                      {count}건
+                    </p>
+                  </div>
                 </div>
               </Link>
             );
