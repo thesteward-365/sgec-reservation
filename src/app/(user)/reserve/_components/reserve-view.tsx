@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Cog6ToothIcon,
@@ -27,7 +27,6 @@ type Place = {
   description: string | null;
   floorId: number;
   floorName: string | null;
-  reservationCount: number;
   tags: { id: number | null; name: string | null }[];
 };
 
@@ -45,6 +44,14 @@ function parseDateParam(str: string | null): Date | null {
   return isNaN(date.getTime()) ? null : date;
 }
 
+// mirrors startOfWeek in weekly-calendar.tsx (Sunday = 0)
+function getWeekStartStr(date: Date): string {
+  const d = new Date(date);
+  d.setDate(d.getDate() - d.getDay());
+  d.setHours(0, 0, 0, 0);
+  return formatLocalDate(d);
+}
+
 const CHIP =
   'inline-flex items-center font-medium leading-none rounded-pill px-3 py-[6px] text-caption transition-colors duration-120 ease-(--ease-standard) cursor-pointer select-none whitespace-nowrap';
 
@@ -53,7 +60,6 @@ type ReserveViewProps = {
 };
 
 export function ReserveView({ userName }: ReserveViewProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   const today = new Date();
@@ -68,16 +74,23 @@ export function ReserveView({ userName }: ReserveViewProps) {
   const [selectedTagId, setSelectedTagId] = useState<number | null>(() =>
     searchParams.get('tag') ? Number(searchParams.get('tag')) : null
   );
+  const [weekStartStr, setWeekStartStr] = useState(() =>
+    getWeekStartStr(selectedDate)
+  );
 
   const [floors, setFloors] = useState<Floor[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
-  const [places, setPlaces] = useState<Place[]>([]);
+  const [allPlaces, setAllPlaces] = useState<Place[]>([]);
   const [loadingPlaces, setLoadingPlaces] = useState(true);
+  const [countsMap, setCountsMap] = useState<
+    Record<number, Record<string, number>>
+  >({});
 
   const [showFilter, setShowFilter] = useState(false);
   const [draftFloorId, setDraftFloorId] = useState<number | null>(null);
   const [draftTagId, setDraftTagId] = useState<number | null>(null);
 
+  // 정적 데이터 — 마운트 시 1회
   useEffect(() => {
     fetch('/api/floors')
       .then((r) => r.json())
@@ -87,36 +100,40 @@ export function ReserveView({ userName }: ReserveViewProps) {
       .then((r) => r.json())
       .then(setTags)
       .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    setLoadingPlaces(true);
-    const params = new URLSearchParams();
-    params.set('date', formatLocalDate(selectedDate));
-    if (selectedFloorId) params.set('floorId', String(selectedFloorId));
-    if (selectedTagId) params.set('tagId', String(selectedTagId));
-    fetch(`/api/places?${params}`)
+    fetch('/api/places')
       .then((r) => r.json())
       .then((data) => {
-        setPlaces(data);
+        setAllPlaces(data);
         setLoadingPlaces(false);
       })
       .catch(() => setLoadingPlaces(false));
-  }, [selectedFloorId, selectedTagId, selectedDate]);
+  }, []);
 
-  const pushUrl = useCallback(
-    (date: Date, floorId: number | null, tagId: number | null) => {
-      const params = new URLSearchParams();
-      params.set('date', formatLocalDate(date));
-      if (floorId) params.set('floor', String(floorId));
-      if (tagId) params.set('tag', String(tagId));
-      router.replace(`/reserve?${params}`, { scroll: false });
-    },
-    [router]
-  );
+  // 예약 건수 — 주 변경 시에만
+  useEffect(() => {
+    const [sy, sm, sd] = weekStartStr.split('-').map(Number);
+    const weekEndDate = new Date(sy, sm - 1, sd + 6);
+    const params = new URLSearchParams();
+    params.set('startDate', weekStartStr);
+    params.set('endDate', formatLocalDate(weekEndDate));
+    fetch(`/api/reservations/counts?${params}`)
+      .then((r) => r.json())
+      .then(setCountsMap)
+      .catch(() => {});
+  }, [weekStartStr]);
+
+  function pushUrl(date: Date, floorId: number | null, tagId: number | null) {
+    const params = new URLSearchParams();
+    params.set('date', formatLocalDate(date));
+    if (floorId) params.set('floor', String(floorId));
+    if (tagId) params.set('tag', String(tagId));
+    window.history.replaceState(null, '', `/reserve?${params}`);
+  }
 
   function handleDateSelect(date: Date) {
     setSelectedDate(date);
+    const newWeekStart = getWeekStartStr(date);
+    if (newWeekStart !== weekStartStr) setWeekStartStr(newWeekStart);
     pushUrl(date, selectedFloorId, selectedTagId);
   }
 
@@ -144,69 +161,84 @@ export function ReserveView({ userName }: ReserveViewProps) {
     setDraftTagId(null);
   }
 
+  // 클라이언트 필터링 — 상태 없이 파생
+  const filteredPlaces = allPlaces.filter((p) => {
+    if (selectedFloorId !== null && p.floorId !== selectedFloorId) return false;
+    if (selectedTagId !== null && !p.tags.some((t) => t.id === selectedTagId))
+      return false;
+    return true;
+  });
+
+  const getIndicator = useCallback(
+    (date: Date): boolean => {
+      const key = formatLocalDate(date);
+      return Object.values(countsMap).some((dc) => (dc[key] ?? 0) > 0);
+    },
+    [countsMap]
+  );
+
   const hasActiveFilter = selectedFloorId !== null || selectedTagId !== null;
 
   return (
     <div className="flex flex-col">
-      {/* sticky: 교회 헤더 + 인사 문구 + 캘린더 + 장소 헤더 + 층 칩 */}
-      <div className="sticky top-0 z-10 bg-(--color-neutral-150)">
-        {/* 교회 헤더 */}
-        <div className="flex items-center justify-between px-5 pt-4 pb-4">
-          <div className="flex items-center gap-2.5">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/logos/logo-default.svg"
-              alt="샘깊은교회 로고"
-              className="h-14 w-auto shrink-0"
-            />
-            <div>
-              <p
-                className="text-muted-foreground mb-0.5 leading-none font-medium"
-                style={{ fontSize: 12 }}
-              >
-                샘깊은교회
-              </p>
-              <p
-                className="text-foreground leading-tight font-extrabold"
-                style={{ fontSize: 14, fontWeight: 700 }}
-              >
-                문화사역 장소방
-              </p>
-            </div>
+      {/* 교회 헤더 (스크롤 시 사라짐) */}
+      <div className="flex items-center justify-between px-5 pt-4 pb-4">
+        <div className="flex items-center gap-2.5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logos/logo-default.svg"
+            alt="샘깊은교회 로고"
+            className="h-14 w-auto shrink-0"
+          />
+          <div>
+            <p
+              className="text-muted-foreground mb-0.5 leading-none font-medium"
+              style={{ fontSize: 12 }}
+            >
+              샘깊은교회
+            </p>
+            <p
+              className="text-foreground leading-tight font-extrabold"
+              style={{ fontSize: 14, fontWeight: 700 }}
+            >
+              문화사역 장소방
+            </p>
           </div>
-          <Link
-            href="/settings"
-            className="flex h-10 w-10 items-center justify-center rounded-xl text-(--color-fg-strong) transition-colors duration-120 ease-(--ease-standard) hover:bg-neutral-200"
-          >
-            <Cog6ToothIcon className="size-5" />
-          </Link>
         </div>
+        <Link
+          href="/settings"
+          className="flex h-10 w-10 items-center justify-center rounded-xl text-(--color-fg-strong) transition-colors duration-120 ease-(--ease-standard) hover:bg-neutral-200"
+        >
+          <Cog6ToothIcon className="size-5" />
+        </Link>
+      </div>
 
-        {/* 인사 문구 */}
-        <div className="px-5 pt-4 pb-5">
-          <h2
-            className="text-h2 text-foreground font-bold"
-            style={{ lineHeight: 1.3 }}
-          >
-            {userName ? `${userName}님,` : '안녕하세요,'}
-            <br />
-            언제 예약하시겠어요?
-          </h2>
-        </div>
+      {/* 인사 문구 (스크롤 시 사라짐) */}
+      <div className="px-5 pt-4 pb-2">
+        <h2
+          className="text-h2 text-foreground font-bold"
+          style={{ lineHeight: 1.3 }}
+        >
+          {userName ? `${userName}님,` : '안녕하세요,'}
+          <br />
+          언제 예약하시겠어요?
+        </h2>
+      </div>
 
       {/* sticky: 캘린더 + 장소 필터 */}
-      <div className="sticky top-0 z-10 bg-(--color-neutral-150)">
+      <div className="sticky top-0 z-10 bg-(--color-neutral-150) pt-3" style={{ willChange: 'transform' }}>
         {/* 캘린더 카드 */}
         <div className="bg-card mx-5 mb-4 rounded-2xl px-2 py-3.5 shadow-(--shadow-1)">
           <WeeklyCalendar
             selectedDate={selectedDate}
             onDateSelect={handleDateSelect}
+            getIndicator={getIndicator}
           />
         </div>
 
         {/* 장소 섹션 헤더 */}
         <div className="mb-3 flex items-center justify-between px-5">
-          <h4 className="text-body text-foreground font-bold">장소</h4>
+          <h3 className="text-body text-foreground font-bold">장소</h3>
           <button
             onClick={handleOpenFilter}
             className={cn(
@@ -224,7 +256,7 @@ export function ReserveView({ userName }: ReserveViewProps) {
 
         {/* 층 칩 스트립 */}
         {floors.length > 0 && (
-          <div className="mb-3 flex gap-1.5 overflow-x-auto px-5 pb-5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="scrollbar-none mb-3 flex gap-1.5 overflow-x-auto px-5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <button
               onClick={() => handleFloorChipClick(null)}
               className={cn(
@@ -256,59 +288,67 @@ export function ReserveView({ userName }: ReserveViewProps) {
       {/* /sticky */}
 
       {/* 장소 목록 */}
-      <div className="flex flex-col gap-2 px-5 pb-8">
+      <div className="flex flex-col gap-2 px-5 pt-2 pb-8">
         {loadingPlaces ? (
           Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="bg-muted h-20 animate-pulse rounded-2xl" />
           ))
-        ) : places.length === 0 ? (
+        ) : filteredPlaces.length === 0 ? (
           <p className="text-body-sm text-muted-foreground py-16 text-center">
             등록된 장소가 없습니다.
           </p>
         ) : (
-          places.map((place) => (
-            <Link
-              key={place.id}
-              href={`/reserve/${place.id}?date=${formatLocalDate(selectedDate)}`}
-            >
-              <div className="bg-card flex items-center gap-3 rounded-2xl px-4.5 py-4 shadow-(--shadow-1)">
-                <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                  <span className="text-body-lg text-foreground font-bold">
-                    {place.name}
-                  </span>
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {place.floorName && (
-                      <span className="text-caption text-muted-foreground">
-                        {place.floorName}
-                      </span>
-                    )}
-                    {place.tags
-                      .filter((t) => t.name)
-                      .map((tag, idx) => (
-                        <span
-                          key={idx}
-                          className="text-muted-foreground rounded-full bg-neutral-200 px-2 py-0.5 text-[11px] font-medium"
-                        >
-                          #{tag.name}
+          filteredPlaces.map((place) => {
+            const count =
+              countsMap[place.id]?.[formatLocalDate(selectedDate)] ?? 0;
+            return (
+              <Link
+                key={place.id}
+                href={`/reserve/${place.id}?date=${formatLocalDate(selectedDate)}`}
+              >
+                <div className="bg-card flex items-center gap-3 rounded-2xl px-4.5 py-4 shadow-(--shadow-1)">
+                  <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                    <span className="text-body-lg text-foreground font-bold">
+                      {place.name}
+                    </span>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {place.floorName && (
+                        <span className="text-caption text-muted-foreground">
+                          {place.floorName}
                         </span>
-                      ))}
+                      )}
+                      {place.tags
+                        .filter((t) => t.name)
+                        .map((tag, idx) => (
+                          <span
+                            key={idx}
+                            className="text-muted-foreground rounded-full bg-neutral-200 px-2 py-0.5 font-medium"
+                            style={{ fontSize: 11 }}
+                          >
+                            #{tag.name}
+                          </span>
+                        ))}
+                    </div>
                   </div>
+                  {count > 0 ? (
+                    <div className="shrink-0 text-right">
+                      <p
+                        className="text-muted-foreground mb-0.5 leading-none font-medium"
+                        style={{ fontSize: 11 }}
+                      >
+                        예약
+                      </p>
+                      <p className="text-body text-primary font-bold tabular-nums">
+                        {count}건
+                      </p>
+                    </div>
+                  ) : (
+                    <ChevronRightIcon className="text-muted-foreground size-5 flex-none" />
+                  )}
                 </div>
-                {place.reservationCount > 0 ? (
-                  <div className="shrink-0 text-right">
-                    <p className="text-muted-foreground mb-0.5 text-[11px] leading-none font-medium">
-                      예약
-                    </p>
-                    <p className="text-body text-primary font-bold tabular-nums">
-                      {place.reservationCount}건
-                    </p>
-                  </div>
-                ) : (
-                  <ChevronRightIcon className="text-muted-foreground size-5 flex-none" />
-                )}
-              </div>
-            </Link>
-          ))
+              </Link>
+            );
+          })
         )}
       </div>
 
