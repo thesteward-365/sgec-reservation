@@ -194,6 +194,8 @@ export function ReserveView({ userName }: ReserveViewProps) {
           </h2>
         </div>
 
+      {/* sticky: 캘린더 + 장소 필터 */}
+      <div className="sticky top-0 z-10 bg-(--color-neutral-150)">
         {/* 캘린더 카드 */}
         <div className="bg-card mx-5 mb-4 rounded-2xl px-2 py-3.5 shadow-(--shadow-1)">
           <WeeklyCalendar
@@ -204,7 +206,7 @@ export function ReserveView({ userName }: ReserveViewProps) {
 
         {/* 장소 섹션 헤더 */}
         <div className="mb-3 flex items-center justify-between px-5">
-          <h3 className="text-body text-foreground font-bold">장소</h3>
+          <h4 className="text-body text-foreground font-bold">장소</h4>
           <button
             onClick={handleOpenFilter}
             className={cn(
@@ -222,7 +224,7 @@ export function ReserveView({ userName }: ReserveViewProps) {
 
         {/* 층 칩 스트립 */}
         {floors.length > 0 && (
-          <div className="scrollbar-none mb-3 flex gap-1.5 overflow-x-auto px-5">
+          <div className="mb-3 flex gap-1.5 overflow-x-auto px-5 pb-5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <button
               onClick={() => handleFloorChipClick(null)}
               className={cn(
