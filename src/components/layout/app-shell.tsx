@@ -1,5 +1,5 @@
 import * as React from "react"
-import { BottomNav } from "./bottom-nav"
+import { ConditionalNav } from "./conditional-nav"
 import { cn } from "@/lib/utils"
 
 interface AppShellProps {
@@ -16,10 +16,9 @@ function AppShell({ children, className, hideNav = false }: AppShellProps) {
           "relative flex flex-col w-full max-w-107.5 min-h-dvh bg-(--color-neutral-150)",
           className
         )}
-        style={!hideNav ? { paddingBottom: "calc(4.5rem + env(safe-area-inset-bottom))" } : undefined}
       >
         {children}
-        {!hideNav && <BottomNav />}
+        {!hideNav && <ConditionalNav />}
       </div>
     </div>
   )

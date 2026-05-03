@@ -1,49 +1,65 @@
 'use client'
 
+import { useEffect, useState, useTransition, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useEffect, useState, useTransition } from 'react'
-import { ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import { toast } from 'sonner'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { ReservationTimeline } from '@/components/ui/reservation-timeline'
+import { WeeklyCalendar } from '@/components/ui/weekly-calendar'
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer'
 import { cn } from '@/lib/utils'
 import {
   PURPOSE_PRESETS,
-  SLOT_MINUTES,
-  ReservationSchedule,
+  type ReservationSchedule,
   formatLocalDate,
   formatMinuteLabel,
-  formatMinuteRange,
   getDateTimeForMinute,
-  getEndOptions,
-  getFreeRanges,
-  getStartOptions,
   normalizeReservations,
   overlapsExistingRange,
   parseLocalDate,
 } from '@/lib/services/reservation-slots'
 
+type PickerPlace = {
+  id: number
+  name: string
+  floorId: number
+  floorName: string | null
+  tags: { id: number | null; name: string | null }[]
+}
+type PickerFloor = { id: number; name: string }
+type PickerTag = { id: number; name: string }
+
 type PlaceDetailViewProps = {
-  place: { id: number; name: string; description: string | null; floorName: string | null }
+  place: {
+    id: number
+    name: string
+    description: string | null
+    floorName: string | null
+    tags: string[]
+  }
   currentUser: { id: number; name: string }
   initialDate?: string
 }
 
-const SELECT_CLASSNAME =
-  'w-full rounded-sm border border-border-subtle bg-background px-[14px] py-[11px] text-body font-medium text-foreground outline-none transition-[border-color,box-shadow] duration-120 ease-(--ease-standard) focus:border-primary focus:shadow-(--shadow-focus)'
+const CHIP =
+  'inline-flex items-center font-medium leading-none rounded-pill px-3 py-[6px] text-caption transition-colors duration-120 ease-(--ease-standard) cursor-pointer select-none whitespace-nowrap'
 
-function getInitialDate(value?: string) {
+function getInitialDate(value?: string): string {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   return formatLocalDate(parseLocalDate(value) ?? today)
 }
 
-function formatDisplayDate(dateText: string) {
-  const date = parseLocalDate(dateText)
-  if (!date) return dateText
-
+function formatKoreanDate(dateStr: string): string {
+  const date = parseLocalDate(dateStr)
+  if (!date) return dateStr
   return new Intl.DateTimeFormat('ko-KR', {
     month: 'long',
     day: 'numeric',
@@ -52,359 +68,419 @@ function formatDisplayDate(dateText: string) {
 }
 
 export function PlaceDetailView({ place, currentUser, initialDate }: PlaceDetailViewProps) {
+  const router = useRouter()
   const [selectedDate, setSelectedDate] = useState(getInitialDate(initialDate))
   const [reservations, setReservations] = useState<ReservationSchedule[]>([])
   const [loading, setLoading] = useState(true)
-  const [editingReservationId, setEditingReservationId] = useState<number | null>(null)
-  const [startMinute, setStartMinute] = useState<number | null>(null)
-  const [endMinute, setEndMinute] = useState<number | null>(null)
+  const [selection, setSelection] = useState({ startMin: 10 * 60, endMin: 11 * 60 })
   const [purpose, setPurpose] = useState('')
   const [isPending, startTransition] = useTransition()
+  const purposeRef = useRef<HTMLDivElement>(null)
+  const timelineRef = useRef<HTMLDivElement>(null)
 
+  // Place picker state
+  const [placePickerOpen, setPlacePickerOpen] = useState(false)
+  const [pickerPlaces, setPickerPlaces] = useState<PickerPlace[]>([])
+  const [pickerFloors, setPickerFloors] = useState<PickerFloor[]>([])
+  const [pickerTags, setPickerTags] = useState<PickerTag[]>([])
+  const [pickerFloorId, setPickerFloorId] = useState<number | null>(null)
+  const [pickerTagId, setPickerTagId] = useState<number | null>(null)
+  const [pickerLoaded, setPickerLoaded] = useState(false)
+
+  // Date picker state
+  const [datePickerOpen, setDatePickerOpen] = useState(false)
+
+  // Fetch reservations when place or date changes
   useEffect(() => {
     let cancelled = false
-
-    async function loadReservations() {
-      setLoading(true)
-
-      try {
-        const response = await fetch(
-          `/api/reservations?placeId=${place.id}&date=${selectedDate}`,
-          { cache: 'no-store' }
-        )
-
-        if (!response.ok) {
-          throw new Error('예약 현황을 불러오지 못했습니다.')
-        }
-
-        const data = (await response.json()) as ReservationSchedule[]
+    setLoading(true)
+    fetch(`/api/reservations?placeId=${place.id}&date=${selectedDate}`, { cache: 'no-store' })
+      .then(r => r.json())
+      .then((data: ReservationSchedule[]) => {
         if (!cancelled) {
           setReservations(data)
-          setEditingReservationId(null)
-          setStartMinute(null)
-          setEndMinute(null)
-          setPurpose('')
-        }
-      } catch (error) {
-        if (!cancelled) {
-          toast.error(error instanceof Error ? error.message : '예약 현황을 불러오지 못했습니다.')
-        }
-      } finally {
-        if (!cancelled) {
           setLoading(false)
         }
-      }
-    }
-
-    loadReservations()
-
-    return () => {
-      cancelled = true
-    }
+      })
+      .catch(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => { cancelled = true }
   }, [place.id, selectedDate])
 
+  // Lazy-load place picker data on first open
+  useEffect(() => {
+    if (!placePickerOpen || pickerLoaded) return
+    Promise.all([
+      fetch('/api/floors').then(r => r.json()),
+      fetch('/api/tags').then(r => r.json()),
+      fetch('/api/places').then(r => r.json()),
+    ])
+      .then(([floorsData, tagsData, placesData]: [PickerFloor[], PickerTag[], PickerPlace[]]) => {
+        setPickerFloors(floorsData)
+        setPickerTags(tagsData)
+        setPickerPlaces(placesData)
+        setPickerLoaded(true)
+      })
+      .catch(() => {})
+  }, [placePickerOpen, pickerLoaded])
+
   const normalizedReservations = normalizeReservations(reservations)
-  const ownReservations = normalizedReservations.filter(
-    (reservation) => reservation.userId === currentUser.id
+  const collision = overlapsExistingRange(
+    selection.startMin,
+    selection.endMin,
+    normalizedReservations,
+    null
   )
-  const freeRanges = getFreeRanges(normalizedReservations, editingReservationId)
-  const startOptions = getStartOptions(normalizedReservations, editingReservationId)
-  const endOptions =
-    startMinute === null ? [] : getEndOptions(startMinute, normalizedReservations, editingReservationId)
-  const hasInvalidRange =
-    startMinute !== null &&
-    endMinute !== null &&
-    overlapsExistingRange(startMinute, endMinute, normalizedReservations, editingReservationId)
+  const canSubmit = !collision && purpose.trim().length > 0
 
-  function handleQuickRangeSelect(rangeStartMinute: number, rangeEndMinute: number) {
-    setEditingReservationId(null)
-    setStartMinute(rangeStartMinute)
-    setEndMinute(rangeEndMinute)
-  }
+  const startLabel = formatMinuteLabel(selection.startMin)
+  const endLabel = formatMinuteLabel(selection.endMin)
+  const ctaLabel = isPending
+    ? '처리 중...'
+    : collision
+      ? '시간을 변경해주세요'
+      : !purpose.trim()
+        ? '사용 목적을 입력하세요'
+        : '예약하기'
 
-  function handleStartMinuteChange(nextStartMinute: number) {
-    const nextEndOptions = getEndOptions(nextStartMinute, normalizedReservations, editingReservationId)
-    setStartMinute(nextStartMinute)
-    setEndMinute((currentEndMinute) => {
-      if (currentEndMinute && nextEndOptions.includes(currentEndMinute)) {
-        return currentEndMinute
-      }
-
-      return nextEndOptions[0] ?? null
-    })
-  }
-
-  function handleEditReservation(reservationId: number) {
-    const reservation = ownReservations.find((item) => item.id === reservationId)
-    if (!reservation) return
-
-    setEditingReservationId(reservation.id)
-    setStartMinute(reservation.startMinute)
-    setEndMinute(reservation.endMinute)
-    setPurpose(reservation.purpose)
-  }
-
-  function handleResetEditor() {
-    setEditingReservationId(null)
-    setStartMinute(null)
-    setEndMinute(null)
-    setPurpose('')
-  }
-
-  function handleSubmit() {
-    if (startMinute === null || endMinute === null || !purpose.trim()) {
-      toast.error('시간과 사용 목적을 모두 입력해 주세요.')
+  function handleCtaClick() {
+    if (isPending) return
+    if (collision) {
+      timelineRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       return
     }
-
+    if (!purpose.trim()) {
+      purposeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      return
+    }
     startTransition(async () => {
-      const response = await fetch(
-        editingReservationId ? `/api/reservations/${editingReservationId}` : '/api/reservations',
-        {
-          method: editingReservationId ? 'PATCH' : 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            placeId: place.id,
-            startTime: getDateTimeForMinute(selectedDate, startMinute).toISOString(),
-            endTime: getDateTimeForMinute(selectedDate, endMinute).toISOString(),
-            purpose: purpose.trim(),
-          }),
-        }
-      )
-
+      const response = await fetch('/api/reservations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          placeId: place.id,
+          startTime: getDateTimeForMinute(selectedDate, selection.startMin).toISOString(),
+          endTime: getDateTimeForMinute(selectedDate, selection.endMin).toISOString(),
+          purpose: purpose.trim(),
+        }),
+      })
       const data = (await response.json()) as { error?: string }
       if (!response.ok) {
         toast.error(data.error ?? '예약 저장에 실패했습니다.')
         return
       }
-
-      toast.success(editingReservationId ? '예약을 수정했습니다.' : '예약을 등록했습니다.')
-      handleResetEditor()
-      setLoading(true)
-      const refreshed = await fetch(`/api/reservations?placeId=${place.id}&date=${selectedDate}`, {
-        cache: 'no-store',
+      const params = new URLSearchParams({
+        date: selectedDate,
+        start: String(selection.startMin),
+        end: String(selection.endMin),
+        purpose: purpose.trim(),
       })
-      const refreshedData = (await refreshed.json()) as ReservationSchedule[]
-      setReservations(refreshedData)
-      setLoading(false)
+      router.push(`/reserve/${place.id}/complete?${params}`)
     })
   }
 
-  function handleDeleteReservation(reservationId: number) {
-    if (!window.confirm('이 예약을 취소할까요?')) return
-
-    startTransition(async () => {
-      const response = await fetch(`/api/reservations/${reservationId}`, { method: 'DELETE' })
-      const data = (await response.json()) as { error?: string }
-
-      if (!response.ok) {
-        toast.error(data.error ?? '예약 취소에 실패했습니다.')
-        return
-      }
-
-      toast.success('예약을 취소했습니다.')
-      if (editingReservationId === reservationId) {
-        handleResetEditor()
-      }
-      setReservations((currentReservations) =>
-        currentReservations.filter((reservation) => reservation.id !== reservationId)
-      )
-    })
-  }
+  const filteredPickerPlaces = pickerPlaces.filter(p => {
+    if (pickerFloorId !== null && p.floorId !== pickerFloorId) return false
+    if (pickerTagId !== null && !p.tags.some(t => t.id === pickerTagId)) return false
+    return true
+  })
 
   return (
-    <div className="flex flex-col gap-4 px-5 py-6">
-      <div className="flex items-start gap-3">
-        <Link
-          href={`/reserve?date=${selectedDate}`}
-          className="flex size-10 shrink-0 items-center justify-center rounded-pill border border-border-subtle bg-background"
-        >
-          <ArrowLeftIcon className="size-5 text-foreground" />
-        </Link>
-        <div className="min-w-0">
-          <p className="text-caption text-muted-foreground">{place.floorName ?? '장소'}</p>
-          <h1 className="text-title-2 font-bold text-foreground">{place.name}</h1>
-          {place.description ? (
-            <p className="mt-1 text-body-sm text-muted-foreground">{place.description}</p>
-          ) : null}
+    <>
+      {/* 고정 AppBar */}
+      <div className="fixed inset-x-0 top-0 z-30 bg-(--color-neutral-150)">
+        <div className="mx-auto flex h-14 max-w-107.5 items-center px-4">
+          <Link
+            href={`/reserve?date=${selectedDate}`}
+            className="flex size-10 items-center justify-center rounded-xl text-foreground transition-colors duration-120 ease-(--ease-standard) hover:bg-neutral-200"
+          >
+            <ChevronLeftIcon className="size-5" />
+          </Link>
+          <p className="flex-1 text-center text-body font-bold text-foreground">예약하기</p>
+          <div className="size-10" />
         </div>
       </div>
 
-      <Card className="gap-4 p-5">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-caption text-muted-foreground">예약 날짜</p>
-            <p className="text-body font-semibold text-foreground">{formatDisplayDate(selectedDate)}</p>
-          </div>
-          <Input
-            type="date"
-            value={selectedDate}
-            onChange={(event) => setSelectedDate(event.target.value)}
-            className="w-auto min-w-[9.5rem]"
-          />
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {freeRanges.map((range) => (
+      {/* 스크롤 콘텐츠 */}
+      <div className="pb-36 pt-14">
+        {/* 장소 섹션 */}
+        <div className="px-5 pb-1 pt-4">
+          <p className="mb-3 pl-1 text-body font-bold text-foreground">장소</p>
+          <div className="rounded-2xl bg-card shadow-(--shadow-1)">
             <button
-              key={`${range.startMinute}-${range.endMinute}`}
-              type="button"
-              onClick={() => handleQuickRangeSelect(range.startMinute, range.endMinute)}
-              className="rounded-pill border border-border-subtle px-3 py-2 text-overline font-semibold text-foreground transition-colors duration-120 ease-(--ease-standard) hover:bg-muted"
+              className="flex w-full items-center px-4 py-4"
+              onClick={() => setPlacePickerOpen(true)}
             >
-              {formatMinuteRange(range.startMinute, range.endMinute)}
+              <div className="flex min-w-0 flex-1 flex-col items-start gap-2">
+                <p className="text-[18px] font-bold text-foreground">{place.name}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {place.floorName && (
+                    <span className="rounded-full bg-neutral-200 px-2.5 py-1 text-caption font-medium text-muted-foreground">
+                      {place.floorName}
+                    </span>
+                  )}
+                  {place.tags.map(t => (
+                    <span
+                      key={t}
+                      className="rounded-full bg-neutral-200 px-2.5 py-1 text-caption font-medium text-muted-foreground"
+                    >
+                      #{t}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <ChevronRightIcon className="ml-3 size-4 shrink-0 text-muted-foreground" />
             </button>
-          ))}
-          {freeRanges.length === 0 ? (
-            <p className="text-body-sm text-muted-foreground">선택 가능한 빈 시간이 없습니다.</p>
-          ) : null}
-        </div>
-      </Card>
-
-      <Card className="p-5">
-        <CardHeader className="mb-0 px-0">
-          <CardTitle>{editingReservationId ? '예약 수정' : '새 예약'}</CardTitle>
-          <CardDescription>30분 단위로 선택할 수 있고, 중간에 다른 예약이 끼면 확장할 수 없습니다.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 px-0">
-          <div className="grid grid-cols-2 gap-3">
-            <label className="space-y-2">
-              <span className="text-overline font-semibold text-muted-foreground">시작</span>
-              <select
-                value={startMinute ?? ''}
-                onChange={(event) => handleStartMinuteChange(Number(event.target.value))}
-                className={SELECT_CLASSNAME}
-              >
-                <option value="" disabled>
-                  시작 시간 선택
-                </option>
-                {startOptions.map((minute) => (
-                  <option key={minute} value={minute}>
-                    {formatMinuteLabel(minute)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="space-y-2">
-              <span className="text-overline font-semibold text-muted-foreground">종료</span>
-              <select
-                value={endMinute ?? ''}
-                onChange={(event) => setEndMinute(Number(event.target.value))}
-                className={SELECT_CLASSNAME}
-                disabled={startMinute === null}
-              >
-                <option value="" disabled>
-                  종료 시간 선택
-                </option>
-                {endOptions.map((minute) => (
-                  <option key={minute} value={minute}>
-                    {formatMinuteLabel(minute)}
-                  </option>
-                ))}
-              </select>
-            </label>
           </div>
+        </div>
 
-          <div className="space-y-2">
-            <span className="text-overline font-semibold text-muted-foreground">사용 목적</span>
-            <Input
-              value={purpose}
-              onChange={(event) => setPurpose(event.target.value)}
-              placeholder="예: 수요예배 리허설"
-              maxLength={100}
-            />
-            <div className="flex flex-wrap gap-1.5">
-              {PURPOSE_PRESETS.map((preset) => (
+        {/* 시간 섹션 */}
+        <div className="px-5 pb-1 pt-5">
+          <p className="mb-3 pl-1 text-body font-bold text-foreground">시간</p>
+          <div ref={timelineRef} className="rounded-2xl bg-card px-3 py-4 shadow-(--shadow-1)">
+            <div className="flex items-baseline justify-between px-1 pb-3">
+              <button
+                className="flex items-center gap-1 rounded-lg px-1 py-0.5 transition-colors hover:bg-muted"
+                onClick={() => setDatePickerOpen(true)}
+              >
+                <span className="text-[15px] font-bold text-foreground">
+                  {formatKoreanDate(selectedDate)}
+                </span>
+                <ChevronRightIcon className="size-3.5 text-muted-foreground" />
+              </button>
+              <span className="text-caption text-muted-foreground">30분 단위</span>
+            </div>
+            {loading ? (
+              <div className="h-40 animate-pulse rounded-xl bg-muted" />
+            ) : (
+              <ReservationTimeline
+                key={`${place.id}-${selectedDate}`}
+                reservations={normalizedReservations}
+                selection={selection}
+                onSelectionChange={setSelection}
+                collision={collision}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* 사용 목적 섹션 */}
+        <div ref={purposeRef} className="px-5 pb-4 pt-5">
+          <p className="mb-3 pl-1 text-body font-bold text-foreground">사용 목적</p>
+          <div className="flex flex-col gap-3 rounded-2xl bg-card px-4 py-4 shadow-(--shadow-1)">
+            <div className="flex flex-wrap gap-2">
+              {PURPOSE_PRESETS.map(p => (
                 <button
-                  key={preset}
-                  type="button"
-                  onClick={() => setPurpose(preset)}
+                  key={p}
+                  onClick={() => setPurpose(p)}
                   className={cn(
-                    'rounded-pill border px-3 py-1.5 text-overline font-semibold transition-colors duration-120 ease-(--ease-standard)',
-                    purpose === preset
-                      ? 'border-primary bg-primary text-primary-foreground'
-                      : 'border-border-subtle bg-background text-foreground'
+                    CHIP,
+                    purpose === p
+                      ? 'bg-(--color-fg-strong) text-white'
+                      : 'bg-neutral-300 text-foreground'
                   )}
                 >
-                  {preset}
+                  {p}
                 </button>
               ))}
             </div>
+            <Input
+              value={purpose}
+              onChange={e => setPurpose(e.target.value)}
+              placeholder="직접 입력 (예: 청년부 모임)"
+              maxLength={100}
+            />
           </div>
+        </div>
+      </div>
 
-          <div className="rounded-2xl bg-muted/60 px-4 py-3 text-body-sm text-muted-foreground">
-            {startMinute !== null && endMinute !== null
-              ? `${formatMinuteRange(startMinute, endMinute)}에 ${purpose.trim() || '사용 목적'}으로 예약합니다.`
-              : '빈 시간 버튼을 누르거나 시작/종료 시간을 직접 선택해 주세요.'}
+      {/* 고정 하단 CTA */}
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-(--color-border-subtle) bg-background">
+        <div
+          className="mx-auto max-w-107.5 px-5 pt-3"
+          style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
+        >
+          {/* 장소·날짜 요약 */}
+          <div className="mb-1.5 flex justify-between">
+            <span className="max-w-[55%] truncate text-[11px] text-muted-foreground">
+              {place.name}
+            </span>
+            <span className="text-[11px] text-muted-foreground">
+              {formatKoreanDate(selectedDate)}
+            </span>
           </div>
-          {hasInvalidRange ? (
-            <p className="text-body-sm font-medium text-destructive">선택한 시간은 기존 예약과 겹칩니다.</p>
-          ) : null}
+          {/* 시간·소요시간 */}
+          <div className="mb-3 flex justify-between">
+            <div>
+              <p
+                className="text-[11px] font-medium text-muted-foreground"
+                style={{ letterSpacing: '0.012em' }}
+              >
+                선택 시간
+              </p>
+              <p
+                className={cn(
+                  'text-[17px] font-bold tabular-nums',
+                  collision ? 'text-(--color-danger)' : 'text-foreground'
+                )}
+              >
+                {startLabel} – {endLabel}
+              </p>
+            </div>
+            <div className="text-right">
+              <p
+                className="text-[11px] font-medium text-muted-foreground"
+                style={{ letterSpacing: '0.012em' }}
+              >
+                {collision ? '겹치는 예약' : '소요 시간'}
+              </p>
+              <p
+                className={cn(
+                  'text-[17px] font-bold',
+                  collision ? 'text-(--color-danger)' : 'text-foreground'
+                )}
+              >
+                {collision ? '⚠ 변경 필요' : `${selection.endMin - selection.startMin}분`}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={handleCtaClick}
+            className={cn(
+              'w-full rounded-pill px-6 py-3.5 text-body-sm font-semibold tracking-wide transition-all duration-120 ease-(--ease-standard)',
+              canSubmit && !isPending
+                ? 'bg-primary text-primary-foreground hover:bg-accent-hover'
+                : 'bg-muted text-muted-foreground'
+            )}
+          >
+            {ctaLabel}
+          </button>
+        </div>
+      </div>
 
-          <div className="flex gap-2">
-            <Button onClick={handleSubmit} disabled={isPending || hasInvalidRange || startMinute === null || endMinute === null}>
-              {editingReservationId ? '예약 수정하기' : '예약 등록하기'}
-            </Button>
-            {(editingReservationId || startMinute !== null || purpose) && (
-              <Button variant="secondary" onClick={handleResetEditor} disabled={isPending}>
-                초기화
-              </Button>
+      {/* 장소 선택 Drawer */}
+      <Drawer open={placePickerOpen} onOpenChange={setPlacePickerOpen}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>장소 선택</DrawerTitle>
+          </DrawerHeader>
+          {/* 필터 칩 */}
+          <div className="flex flex-col gap-2 px-5 pb-3">
+            {pickerFloors.length > 0 && (
+              <div className="scrollbar-none flex gap-1.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <button
+                  onClick={() => setPickerFloorId(null)}
+                  className={cn(CHIP, pickerFloorId === null ? 'bg-(--color-fg-strong) text-white' : 'bg-neutral-300 text-foreground')}
+                >
+                  전체
+                </button>
+                {pickerFloors.map(f => (
+                  <button
+                    key={f.id}
+                    onClick={() => setPickerFloorId(pickerFloorId === f.id ? null : f.id)}
+                    className={cn(CHIP, pickerFloorId === f.id ? 'bg-(--color-fg-strong) text-white' : 'bg-neutral-300 text-foreground')}
+                  >
+                    {f.name}
+                  </button>
+                ))}
+              </div>
+            )}
+            {pickerTags.length > 0 && (
+              <div className="scrollbar-none flex gap-1.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <button
+                  onClick={() => setPickerTagId(null)}
+                  className={cn(CHIP, pickerTagId === null ? 'bg-(--color-fg-strong) text-white' : 'bg-neutral-300 text-foreground')}
+                >
+                  전체
+                </button>
+                {pickerTags.map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => setPickerTagId(pickerTagId === t.id ? null : t.id)}
+                    className={cn(CHIP, pickerTagId === t.id ? 'bg-(--color-fg-strong) text-white' : 'bg-neutral-300 text-foreground')}
+                  >
+                    {t.name}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
-        </CardContent>
-      </Card>
-
-      <Card className="p-5">
-        <CardHeader className="mb-0 px-0">
-          <CardTitle>예약 현황</CardTitle>
-          <CardDescription>
-            현재 날짜의 예약 {loading ? '불러오는 중' : `${normalizedReservations.length}건`}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3 px-0">
-          {loading ? (
-            Array.from({ length: 3 }).map((_, index) => (
-              <div key={index} className="h-20 animate-pulse rounded-2xl bg-muted" />
-            ))
-          ) : normalizedReservations.length === 0 ? (
-            <p className="text-body-sm text-muted-foreground">아직 등록된 예약이 없습니다.</p>
-          ) : (
-            normalizedReservations.map((reservation) => {
-              const isOwnReservation = reservation.userId === currentUser.id
-
-              return (
-                <div
-                  key={reservation.id}
-                  className="rounded-2xl border border-border-subtle bg-background px-4 py-3"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-body font-semibold text-foreground">
-                          {formatMinuteRange(reservation.startMinute, reservation.endMinute)}
-                        </span>
-                        {isOwnReservation ? <Badge>내 예약</Badge> : null}
+          {/* 장소 목록 */}
+          <div className="flex-1 overflow-y-auto px-5 pb-6">
+            <div className="flex flex-col gap-2">
+              {!pickerLoaded ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="h-16 animate-pulse rounded-2xl bg-muted" />
+                ))
+              ) : filteredPickerPlaces.length === 0 ? (
+                <p className="py-8 text-center text-body-sm text-muted-foreground">
+                  등록된 장소가 없습니다.
+                </p>
+              ) : (
+                filteredPickerPlaces.map(p => (
+                  <button
+                    key={p.id}
+                    onClick={() => {
+                      setPlacePickerOpen(false)
+                      router.replace(`/reserve/${p.id}?date=${selectedDate}`)
+                    }}
+                    className={cn(
+                      'flex items-center gap-3 rounded-2xl px-4 py-3.5 text-left shadow-(--shadow-1) transition-colors',
+                      p.id === place.id ? 'bg-primary/10' : 'bg-card hover:bg-muted'
+                    )}
+                  >
+                    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                      <span className="text-[15px] font-bold text-foreground">{p.name}</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {p.floorName && (
+                          <span className="rounded-full bg-neutral-200 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                            {p.floorName}
+                          </span>
+                        )}
+                        {p.tags
+                          .filter(t => t.name)
+                          .map((t, i) => (
+                            <span
+                              key={i}
+                              className="rounded-full bg-neutral-200 px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
+                            >
+                              #{t.name}
+                            </span>
+                          ))}
                       </div>
-                      <p className="text-body-sm text-foreground">
-                        {reservation.userName ?? '이름 미상'} · {reservation.purpose}
-                      </p>
                     </div>
-                    {isOwnReservation ? (
-                      <div className="flex shrink-0 gap-2">
-                        <Button size="sm" variant="secondary" onClick={() => handleEditReservation(reservation.id)}>
-                          수정
-                        </Button>
-                        <Button size="sm" variant="destructive" onClick={() => handleDeleteReservation(reservation.id)}>
-                          취소
-                        </Button>
-                      </div>
-                    ) : null}
-                  </div>
-                </div>
-              )
-            })
-          )}
-        </CardContent>
-      </Card>
-    </div>
+                    {p.id === place.id && (
+                      <span className="shrink-0 text-[11px] font-semibold text-primary">현재</span>
+                    )}
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      {/* 날짜 선택 Drawer */}
+      <Drawer open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>날짜 선택</DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 pb-6">
+            <WeeklyCalendar
+              key={selectedDate}
+              defaultDate={parseLocalDate(selectedDate) ?? new Date()}
+              selectedDate={parseLocalDate(selectedDate) ?? undefined}
+              onDateSelect={date => {
+                setSelectedDate(formatLocalDate(date))
+                setSelection({ startMin: 10 * 60, endMin: 11 * 60 })
+                setDatePickerOpen(false)
+              }}
+            />
+          </div>
+        </DrawerContent>
+      </Drawer>
+    </>
   )
 }

@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import { getIronSession } from 'iron-session';
 import { sessionOptions, SessionData } from '@/lib/session';
 import { db } from '@/lib/db';
-import { places, floors } from '@/lib/db/schema';
+import { places, floors, placeTags, tags } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { notFound, redirect } from 'next/navigation';
 import { PlaceDetailView } from './_components/place-detail-view';
@@ -35,9 +35,17 @@ export default async function PlaceDetailPage({ params, searchParams }: PageProp
 
   if (!place) notFound();
 
+  const tagRows = await db
+    .select({ name: tags.name })
+    .from(placeTags)
+    .leftJoin(tags, eq(placeTags.tagId, tags.id))
+    .where(eq(placeTags.placeId, id));
+
+  const tagNames = tagRows.map(t => t.name).filter((n): n is string => n !== null);
+
   return (
     <PlaceDetailView
-      place={place}
+      place={{ ...place, tags: tagNames }}
       currentUser={{ id: session.user.id, name: session.user.name }}
       initialDate={date}
     />
