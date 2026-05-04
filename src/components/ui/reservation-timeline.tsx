@@ -1,38 +1,38 @@
-'use client'
+'use client';
 
-import { useRef, useCallback, useEffect } from 'react'
-import { cn } from '@/lib/utils'
-import type { ReservationRange } from '@/lib/services/reservation-slots'
+import { useRef, useCallback, useEffect } from 'react';
+import { cn } from '@/lib/utils';
+import type { ReservationRange } from '@/lib/services/reservation-slots';
 
-const START_HOUR = 0
-const END_HOUR = 24
-const SLOT_MIN = 30
-const SLOT_H = 28
-const HOUR_H = SLOT_H * 2
-const LABEL_W = 52
-const SCROLL_H = 240
+const START_HOUR = 0;
+const END_HOUR = 24;
+const SLOT_MIN = 30;
+const SLOT_H = 28;
+const HOUR_H = SLOT_H * 2;
+const LABEL_W = 52;
+const SCROLL_H = 240;
 
-const TIMELINE_H = (END_HOUR - START_HOUR) * HOUR_H
+const TIMELINE_H = (END_HOUR - START_HOUR) * HOUR_H;
 
 function minToY(min: number): number {
-  return ((min - START_HOUR * 60) / SLOT_MIN) * SLOT_H
+  return ((min - START_HOUR * 60) / SLOT_MIN) * SLOT_H;
 }
 
 function fmtMin(min: number): string {
-  const h = Math.floor(min / 60)
-  const m = min % 60
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
-type Selection = { startMin: number; endMin: number }
+type Selection = { startMin: number; endMin: number };
 
 type Props = {
-  reservations: ReservationRange[]
-  selection: Selection
-  onSelectionChange: (s: Selection) => void
-  editingReservationId?: number | null
-  collision?: boolean
-}
+  reservations: ReservationRange[];
+  selection: Selection;
+  onSelectionChange: (s: Selection) => void;
+  editingReservationId?: number | null;
+  collision?: boolean;
+};
 
 export function ReservationTimeline({
   reservations,
@@ -41,36 +41,44 @@ export function ReservationTimeline({
   editingReservationId,
   collision = false,
 }: Props) {
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const visibleReservations = reservations.filter(r => r.id !== editingReservationId)
+  const visibleReservations = reservations.filter(
+    (r) => r.id !== editingReservationId
+  );
 
   useEffect(() => {
-    const el = scrollRef.current
-    if (!el) return
-    el.scrollTop = Math.max(0, minToY(selection.startMin) - SCROLL_H / 3)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTop = Math.max(0, minToY(selection.startMin) - SCROLL_H / 3);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleTimelinePointerDown = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
-      const rect = containerRef.current!.getBoundingClientRect()
-      const y = e.clientY - rect.top
-      const rawMin = (y / SLOT_H) * SLOT_MIN + START_HOUR * 60
-      const snapped = Math.round(rawMin / SLOT_MIN) * SLOT_MIN
-      const dur = selection.endMin - selection.startMin
-      const newStart = Math.max(START_HOUR * 60, Math.min(END_HOUR * 60 - dur, snapped))
-      onSelectionChange({ startMin: newStart, endMin: newStart + dur })
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const rect = containerRef.current!.getBoundingClientRect();
+      const y = e.clientY - rect.top;
+      const rawMin = (y / SLOT_H) * SLOT_MIN + START_HOUR * 60;
+      const snapped = Math.round(rawMin / SLOT_MIN) * SLOT_MIN;
+      const dur = selection.endMin - selection.startMin;
+      const newStart = Math.max(
+        START_HOUR * 60,
+        Math.min(END_HOUR * 60 - dur, snapped)
+      );
+      onSelectionChange({ startMin: newStart, endMin: newStart + dur });
     },
     [selection, onSelectionChange]
-  )
+  );
 
-  const hourLabels = Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => START_HOUR + i)
-  const selTop = minToY(selection.startMin)
-  const selHeight = minToY(selection.endMin) - selTop
+  const hourLabels = Array.from(
+    { length: END_HOUR - START_HOUR + 1 },
+    (_, i) => START_HOUR + i
+  );
+  const selTop = minToY(selection.startMin);
+  const selHeight = minToY(selection.endMin) - selTop;
 
-  const accentColor = collision ? 'var(--color-danger)' : 'var(--color-accent)'
+  const accentColor = collision ? 'var(--color-danger)' : 'var(--color-accent)';
 
   return (
     <div
@@ -83,78 +91,119 @@ export function ReservationTimeline({
         ref={containerRef}
         className="relative select-none"
         style={{ height: TIMELINE_H, marginLeft: LABEL_W }}
-        onPointerDown={handleTimelinePointerDown}
+        onClick={handleTimelinePointerDown}
       >
         {/* Invisible overlay extending into the label column so tapping labels also works */}
-        <div className="absolute inset-y-0 touch-none" style={{ left: -LABEL_W, width: LABEL_W }} />
+        <div
+          className="absolute inset-y-0 touch-none"
+          style={{ left: -LABEL_W, width: LABEL_W }}
+        />
 
         {/* Hour labels + full-width grid lines */}
-        {hourLabels.map(hour => {
-          const y = minToY(hour * 60)
+        {hourLabels.map((hour) => {
+          const y = minToY(hour * 60);
           return (
-            <div key={hour} className="pointer-events-none absolute inset-x-0" style={{ top: y }}>
+            <div
+              key={hour}
+              className="pointer-events-none absolute inset-x-0"
+              style={{ top: y }}
+            >
               <span
-                className="absolute tabular-nums text-[11px] font-medium leading-none text-muted-foreground"
-                style={{ left: -LABEL_W, width: LABEL_W - 8, textAlign: 'right', top: -6 }}
+                className="text-muted-foreground absolute text-[11px] leading-none font-medium tabular-nums"
+                style={{
+                  left: -LABEL_W,
+                  width: LABEL_W - 8,
+                  textAlign: 'right',
+                  top: -6,
+                }}
               >
                 {String(hour).padStart(2, '0')}:00
               </span>
               <div
                 className="absolute inset-x-0 h-px"
-                style={{ background: 'var(--color-border-subtle)', opacity: 0.6 }}
+                style={{
+                  background: 'var(--color-border-subtle)',
+                  opacity: 0.6,
+                }}
               />
             </div>
-          )
+          );
         })}
 
         {/* Half-hour lines */}
-        {Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i).map(hour => (
+        {Array.from(
+          { length: END_HOUR - START_HOUR },
+          (_, i) => START_HOUR + i
+        ).map((hour) => (
           <div
             key={`${hour}.5`}
             className="pointer-events-none absolute inset-x-0 h-px"
-            style={{ top: minToY(hour * 60 + 30), background: 'var(--color-border-subtle)', opacity: 0.25 }}
+            style={{
+              top: minToY(hour * 60 + 30),
+              background: 'var(--color-border-subtle)',
+              opacity: 0.25,
+            }}
           />
         ))}
 
         {/* Existing reservation blocks */}
-        {visibleReservations.map(r => {
-          const top = minToY(r.startMinute)
-          const height = minToY(r.endMinute) - top
+        {visibleReservations.map((r) => {
+          const top = minToY(r.startMinute);
+          const height = minToY(r.endMinute) - top;
           return (
             <div
               key={r.id}
-              className="pointer-events-none absolute rounded-md bg-neutral-200 px-3 py-2"
-              style={{ top: top + 1, height: height - 2, left: 2, right: 2 }}
+              className="pointer-events-none absolute bg-neutral-200 px-3 py-2"
+              style={{ top: top + 1, height: height, left: 0, right: 0 }}
             >
-              <p className="truncate text-[12px] font-semibold leading-tight text-muted-foreground">
+              <p
+                className="text-muted-foreground truncate text-[12px] leading-tight font-semibold"
+                style={{ fontSize: 12 }}
+              >
                 {r.userName ? `${r.userName} · ${r.purpose}` : r.purpose}
               </p>
-              <p className="mt-0.5 tabular-nums text-[11px] text-muted-foreground/80">
+              <p
+                className="text-muted-foreground/80 mt-0.5 text-[11px] tabular-nums"
+                style={{ fontSize: 12 }}
+              >
                 {fmtMin(r.startMinute)} – {fmtMin(r.endMinute)}
               </p>
             </div>
-          )
+          );
         })}
 
         {/* Selection block — transparent so underlying reservations are visible */}
         {selHeight > 0 && (
           <div
             className={cn(
-              'pointer-events-none absolute overflow-hidden rounded-md',
-              collision ? 'border border-(--color-danger)' : 'border-2 border-(--color-accent)'
+              'pointer-events-none absolute overflow-hidden',
+              collision
+                ? 'border border-(--color-danger) bg-(--color-danger)/20'
+                : 'bg-accent/50 border-2 border-(--color-accent)'
             )}
-            style={{ top: selTop + 1, height: selHeight - 2, left: 2, right: 2, zIndex: 10 }}
+            style={{
+              top: selTop,
+              height: selHeight,
+              left: 0,
+              right: 0,
+              zIndex: 10,
+            }}
           >
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5 px-2">
               <p
-                className="text-[13px] font-bold tabular-nums leading-none"
+                className="text-[13px] leading-none font-bold tabular-nums"
                 style={{ color: accentColor }}
               >
                 {fmtMin(selection.startMin)} – {fmtMin(selection.endMin)}
               </p>
               {selHeight > 52 && (
-                <p className="text-[11px] font-medium leading-none" style={{ color: accentColor }}>
-                  {collision ? '겹치는 예약이 있어요' : `${selection.endMin - selection.startMin}분`}
+                <p
+                  className="text-[11px] leading-none font-medium"
+                  style={{ color: accentColor }}
+                >
+                  {collision
+                    ? '겹치는 예약이 있어요'
+                    : `${selection.endMin - selection.startMin}분`}
                 </p>
               )}
             </div>
@@ -162,5 +211,5 @@ export function ReservationTimeline({
         )}
       </div>
     </div>
-  )
+  );
 }

@@ -25,6 +25,7 @@ import {
   overlapsExistingRange,
   parseLocalDate,
 } from '@/lib/services/reservation-slots';
+import { LucideXCircle, XCircleIcon } from 'lucide-react';
 
 type PickerPlace = {
   id: number;
@@ -252,7 +253,7 @@ export function PlaceDetailView({
               onClick={() => setPlacePickerOpen(true)}
             >
               <div className="flex min-w-0 flex-1 flex-col items-start gap-2">
-                <p className="text-foreground text-[18px] font-bold">
+                <p className="text-foreground text-[16px] font-bold!">
                   {place.name}
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -288,14 +289,11 @@ export function PlaceDetailView({
                 className="hover:bg-muted flex items-center gap-1 rounded-lg px-1 py-0.5 transition-colors"
                 onClick={() => setDatePickerOpen(true)}
               >
-                <span className="text-foreground text-[15px] font-bold">
+                <span className="text-foreground text-[16px] font-bold">
                   {formatKoreanDate(selectedDate)}
                 </span>
                 <ChevronRightIcon className="text-muted-foreground size-3.5" />
               </button>
-              <span className="text-caption text-muted-foreground">
-                30분 단위
-              </span>
             </div>
             {loading ? (
               <div className="bg-muted h-40 animate-pulse rounded-xl" />
@@ -362,12 +360,24 @@ export function PlaceDetailView({
                 </button>
               ))}
             </div>
-            <Input
-              value={purpose}
-              onChange={(e) => setPurpose(e.target.value)}
-              placeholder="직접 입력 (예: 청년부 모임)"
-              maxLength={100}
-            />
+            <div className="relative flex items-center">
+              <Input
+                value={purpose}
+                onChange={(e) => setPurpose(e.target.value)}
+                placeholder="직접 입력 (예: 청년부 모임)"
+                maxLength={100}
+                className="pr-10" // 오른쪽에 X 버튼이 들어갈 공간 확보
+              />
+              {purpose && (
+                <button
+                  onClick={() => setPurpose('')}
+                  className="text-muted-foreground hover:text-foreground absolute right-3 flex h-full items-center justify-center transition-colors"
+                  type="button" // 폼 제출 방지
+                >
+                  <LucideXCircle className="size-4" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -582,7 +592,7 @@ export function PlaceDetailView({
           <DrawerHeader>
             <DrawerTitle>날짜 선택</DrawerTitle>
           </DrawerHeader>
-          <div className="px-4 pb-6">
+          <div className="bg-card mx-5 mb-4 rounded-2xl px-4 pb-6 shadow-(--shadow-1)">
             <WeeklyCalendar
               key={selectedDate}
               defaultDate={parseLocalDate(selectedDate) ?? new Date()}
