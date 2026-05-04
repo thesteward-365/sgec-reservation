@@ -91,7 +91,7 @@ export default async function ReservationCompletePage({ params, searchParams }: 
         {/* 성공 아이콘 */}
         <div className="flex flex-col items-center gap-3 pb-6 pt-8">
           <div
-            className="flex size-[72px] items-center justify-center rounded-full"
+            className="flex size-18 items-center justify-center rounded-full"
             style={{ background: 'var(--color-success-subtle)' }}
           >
             <CheckIcon
@@ -108,7 +108,7 @@ export default async function ReservationCompletePage({ params, searchParams }: 
         </div>
 
         {/* 상세 정보 카드 */}
-        <div className="flex flex-col gap-[10px] rounded-2xl bg-card px-[18px] py-[18px] shadow-(--shadow-1)">
+        <div className="flex flex-col gap-2.5 rounded-2xl bg-card px-4.5 py-4.5 shadow-(--shadow-1)">
           {rows.map(({ label, value }) => (
             <div key={label} className="flex items-start justify-between gap-3">
               <span className="shrink-0 text-[13px] font-medium text-muted-foreground">
@@ -132,10 +132,10 @@ export default async function ReservationCompletePage({ params, searchParams }: 
           style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
         >
           <Button className="w-full" asChild>
-            <Link href="/reserve">공유하기</Link>
+            <Link href="/reserve" className="text-inherit">공유하기</Link>
           </Button>
           <Button variant="secondary" className="w-full" asChild>
-            <Link href={`/reserve/${placeId}`}>동일 장소 재예약하기</Link>
+            <Link href={`/reserve/${placeId}`} className="text-inherit">동일 장소 재예약하기</Link>
           </Button>
           <Link
             href="/my-reservations"
