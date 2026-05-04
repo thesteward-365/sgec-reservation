@@ -149,7 +149,7 @@ export default function DashboardPage() {
                 </p>
               </div>
               <Link href="/admin/users">
-                <Button variant="outline" size="sm">
+                <Button variant="secondary" size="sm">
                   확인하기
                   <ChevronRightIcon className="ml-1 h-4 w-4" />
                 </Button>
@@ -172,7 +172,7 @@ export default function DashboardPage() {
                     <div className="mb-2 flex items-start justify-between">
                       <Icon className="text-muted-foreground h-6 w-6" />
                       {badgeValue && badgeValue > 0 && (
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant="solid" color="orange" className="text-xs">
                           {badgeValue}
                         </Badge>
                       )}

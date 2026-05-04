@@ -20,10 +20,31 @@ export default function CalendarPage() {
   const [lastSync, setLastSync] = useState(
     new Date(Date.now() - 1000 * 60 * 30)
   ); // 30분 전
+  const [isSyncing, setIsSyncing] = useState(false);
 
-  const handleSync = () => {
-    // 실제 동기화 API 호출
-    setLastSync(new Date());
+  const handleSync = async () => {
+    setIsSyncing(true);
+    try {
+      const response = await fetch('/api/admin/calendar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'sync' }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setLastSync(new Date(data.lastSync));
+        // 성공 메시지 표시 (실제로는 토스트 등으로)
+        alert(data.message);
+      } else {
+        alert('동기화에 실패했습니다');
+      }
+    } catch (error) {
+      console.error('Sync error:', error);
+      alert('동기화 중 오류가 발생했습니다');
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const formatLastSync = (date: Date) => {
@@ -36,6 +57,29 @@ export default function CalendarPage() {
       return `${diffInMinutes}분 전`;
     } else {
       return `${Math.floor(diffInMinutes / 60)}시간 전`;
+    }
+  };
+
+  const handleDisconnect = async () => {
+    if (!confirm('Google Calendar 연결을 해제하시겠습니까?')) return;
+
+    try {
+      const response = await fetch('/api/admin/calendar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'disconnect' }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setIsConnected(false);
+        alert(data.message);
+      } else {
+        alert('연결 해제에 실패했습니다');
+      }
+    } catch (error) {
+      console.error('Disconnect error:', error);
+      alert('연결 해제 중 오류가 발생했습니다');
     }
   };
 
@@ -78,9 +122,10 @@ export default function CalendarPage() {
                 </div>
               </div>
               <Button
-                variant="outline"
+                variant="secondary"
                 size="sm"
                 className="border-red-200 text-red-600"
+                onClick={handleDisconnect}
               >
                 해제
               </Button>
@@ -98,7 +143,7 @@ export default function CalendarPage() {
                   <h3 className="text-body-medium font-semibold">
                     예약 캘린더
                   </h3>
-                  <Badge variant="secondary" className="text-xs">
+                  <Badge variant="solid" color="blue" className="text-xs">
                     양방향 동기화
                   </Badge>
                 </div>
@@ -155,9 +200,11 @@ export default function CalendarPage() {
                   </span>
                 </div>
               </div>
-              <Button onClick={handleSync} size="sm">
-                <ArrowPathIcon className="mr-1 h-4 w-4" />
-                지금 동기화
+              <Button onClick={handleSync} disabled={isSyncing} size="sm">
+                <ArrowPathIcon
+                  className={`mr-1 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`}
+                />
+                {isSyncing ? '동기화 중...' : '지금 동기화'}
               </Button>
             </div>
           </Card>
