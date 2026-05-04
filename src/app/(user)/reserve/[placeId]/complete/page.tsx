@@ -5,9 +5,8 @@ import { db } from '@/lib/db';
 import { places, floors } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { notFound, redirect } from 'next/navigation';
-import Link from 'next/link';
 import { CheckIcon } from '@heroicons/react/24/outline';
-import { Button } from '@/components/ui/button';
+import { CompleteActions } from './complete-actions';
 
 type PageProps = {
   params: Promise<{ placeId: string }>;
@@ -36,8 +35,14 @@ function formatKoreanDate(dateStr: string): string {
   }).format(date);
 }
 
-export default async function ReservationCompletePage({ params, searchParams }: PageProps) {
-  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+export default async function ReservationCompletePage({
+  params,
+  searchParams,
+}: PageProps) {
+  const session = await getIronSession<SessionData>(
+    await cookies(),
+    sessionOptions
+  );
   if (!session.user) redirect('/login');
 
   const { placeId } = await params;
@@ -82,14 +87,14 @@ export default async function ReservationCompletePage({ params, searchParams }: 
       {/* AppBar */}
       <div className="fixed inset-x-0 top-0 z-30 bg-(--color-neutral-150)">
         <div className="mx-auto flex h-14 max-w-107.5 items-center justify-center">
-          <p className="text-body font-bold text-foreground">예약 완료</p>
+          <p className="text-body text-foreground font-bold">예약 완료</p>
         </div>
       </div>
 
       {/* 콘텐츠 */}
-      <div className="px-5 pb-48 pt-14">
+      <div className="px-5 pt-14 pb-48">
         {/* 성공 아이콘 */}
-        <div className="flex flex-col items-center gap-3 pb-6 pt-8">
+        <div className="flex flex-col items-center gap-3 pt-8 pb-6">
           <div
             className="flex size-18 items-center justify-center rounded-full"
             style={{ background: 'var(--color-success-subtle)' }}
@@ -99,23 +104,23 @@ export default async function ReservationCompletePage({ params, searchParams }: 
               style={{ color: 'var(--color-success)', strokeWidth: 2.5 }}
             />
           </div>
-          <h2 className="text-center text-h2 font-bold text-foreground">
+          <h2 className="text-h2 text-foreground text-center font-bold">
             예약이 완료되었어요
           </h2>
-          <p className="text-center text-caption text-muted-foreground">
-            Google Calendar에도 자동 등록됩니다
+          <p className="text-caption text-muted-foreground text-center">
+            기쁨과 감사함으로 섬깁시다!
           </p>
         </div>
 
         {/* 상세 정보 카드 */}
-        <div className="flex flex-col gap-2.5 rounded-2xl bg-card px-4.5 py-4.5 shadow-(--shadow-1)">
+        <div className="bg-card flex flex-col gap-2.5 rounded-2xl px-4.5 py-4.5 shadow-(--shadow-1)">
           {rows.map(({ label, value }) => (
             <div key={label} className="flex items-start justify-between gap-3">
-              <span className="shrink-0 text-[13px] font-medium text-muted-foreground">
+              <span className="text-muted-foreground shrink-0 text-[13px] font-medium">
                 {label}
               </span>
               <span
-                className="text-right text-[14px] font-semibold text-foreground"
+                className="text-foreground text-right text-[14px] font-semibold"
                 style={{ letterSpacing: '-0.003em' }}
               >
                 {value}
@@ -127,23 +132,11 @@ export default async function ReservationCompletePage({ params, searchParams }: 
 
       {/* 고정 하단 CTA */}
       <div className="fixed inset-x-0 bottom-0 z-50 bg-(--color-neutral-150)">
-        <div
-          className="mx-auto flex max-w-107.5 flex-col gap-2 px-5 pt-4"
-          style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
-        >
-          <Button className="w-full" asChild>
-            <Link href="/reserve" className="text-inherit">공유하기</Link>
-          </Button>
-          <Button variant="secondary" className="w-full" asChild>
-            <Link href={`/reserve/${placeId}`} className="text-inherit">동일 장소 재예약하기</Link>
-          </Button>
-          <Link
-            href="/my-reservations"
-            className="flex justify-center py-2 text-body-sm font-semibold text-muted-foreground"
-          >
-            나의 예약 보기
-          </Link>
-        </div>
+        <CompleteActions
+          placeId={placeId}
+          shareText={`[예약 완료]\n장소: ${placeLabel}\n날짜: ${dateLabel}\n시간: ${timeLabel}\n목적: ${purpose || '–'}\n예약자: ${userName}`}
+          backUrl={`/reserve/${placeId}${date ? `?date=${date}` : ''}`}
+        />
       </div>
     </>
   );
