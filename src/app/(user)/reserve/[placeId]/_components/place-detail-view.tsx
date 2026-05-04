@@ -317,11 +317,11 @@ export function PlaceDetailView({
                   }))
                 }
                 disabled={selection.endMin - selection.startMin <= 30}
-                className="text-caption text-foreground flex-1 cursor-pointer select-none rounded-xl border border-neutral-300 bg-card py-2 font-semibold shadow-sm transition-colors duration-120 ease-(--ease-standard) hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-40"
+                className="text-caption text-foreground bg-card flex-1 cursor-pointer rounded-xl border border-neutral-300 py-2 font-semibold shadow-sm transition-colors duration-120 ease-(--ease-standard) select-none hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 −30분
               </button>
-              <span className="text-foreground min-w-16 text-center text-[14px] font-bold tabular-nums">
+              <span className="text-foreground w-[80px] min-w-16 text-center text-[14px] font-bold tabular-nums">
                 {formatDuration(selection.endMin - selection.startMin)}
               </span>
               <button
@@ -332,7 +332,7 @@ export function PlaceDetailView({
                   }))
                 }
                 disabled={selection.endMin >= 24 * 60}
-                className="text-caption text-foreground flex-1 cursor-pointer select-none rounded-xl border border-neutral-300 bg-card py-2 font-semibold shadow-sm transition-colors duration-120 ease-(--ease-standard) hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-40"
+                className="text-caption text-foreground bg-card flex-1 cursor-pointer rounded-xl border border-neutral-300 py-2 font-semibold shadow-sm transition-colors duration-120 ease-(--ease-standard) select-none hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 +30분
               </button>
