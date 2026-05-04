@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowRightStartOnRectangleIcon,
@@ -20,9 +20,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { formatPhoneNumber, normalizePhoneNumber } from '@/lib/utils';
 import { SettingsActionRow } from './settings-action-row';
 import { AccountDialog, GuideDialog, PurposeDialog } from './settings-dialogs';
-import { SettingsProfileCard } from './settings-profile-card';
 
 type Props = {
   name: string;
@@ -36,6 +36,19 @@ type AccountForm = { name: string; phoneNumber: string };
 const STORAGE_PURPOSES = 'frequent-purposes';
 const MAX_PURPOSE_COUNT = 3;
 
+function getStoredPurposes() {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+
+  try {
+    const saved = localStorage.getItem(STORAGE_PURPOSES);
+    return saved ? (JSON.parse(saved) as string[]) : [];
+  } catch {
+    return [];
+  }
+}
+
 export function SettingsView({
   name: initialName,
   phoneNumber: initialPhoneNumber,
@@ -43,28 +56,20 @@ export function SettingsView({
   version,
 }: Props) {
   const router = useRouter();
+  const formattedInitialPhoneNumber = formatPhoneNumber(initialPhoneNumber);
   const [name, setName] = useState(initialName);
-  const [phoneNumber, setPhoneNumber] = useState(initialPhoneNumber);
-  const [purposes, setPurposes] = useState<string[]>([]);
+  const [phoneNumber, setPhoneNumber] = useState(formattedInitialPhoneNumber);
+  const [purposes, setPurposes] = useState<string[]>(getStoredPurposes);
   const [showGuide, setShowGuide] = useState(false);
   const [showPurposeDialog, setShowPurposeDialog] = useState(false);
   const [showAccountDialog, setShowAccountDialog] = useState(false);
   const [newPurpose, setNewPurpose] = useState('');
   const [accountForm, setAccountForm] = useState<AccountForm>({
     name: initialName,
-    phoneNumber: initialPhoneNumber,
+    phoneNumber: formattedInitialPhoneNumber,
   });
   const [isSavingPurpose, setIsSavingPurpose] = useState(false);
   const [isSavingAccount, setIsSavingAccount] = useState(false);
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_PURPOSES);
-      if (saved) setPurposes(JSON.parse(saved) as string[]);
-    } catch {
-      /* ignore */
-    }
-  }, []);
 
   function savePurposes(nextPurposes: string[]) {
     setPurposes(nextPurposes);
@@ -108,10 +113,15 @@ export function SettingsView({
 
   async function handleSaveAccount() {
     const trimmedName = accountForm.name.trim();
-    const trimmedPhoneNumber = accountForm.phoneNumber.trim();
+    const trimmedPhoneNumber = normalizePhoneNumber(accountForm.phoneNumber);
 
     if (!trimmedName || !trimmedPhoneNumber) {
       toast.error('이름과 휴대전화번호를 입력해주세요.');
+      return;
+    }
+
+    if (trimmedPhoneNumber.length !== 11) {
+      toast.error('전화번호 11자리를 입력해주세요.');
       return;
     }
 
@@ -138,7 +148,7 @@ export function SettingsView({
       }
 
       setName(data.user?.name ?? trimmedName);
-      setPhoneNumber(data.user?.phoneNumber ?? trimmedPhoneNumber);
+      setPhoneNumber(formatPhoneNumber(data.user?.phoneNumber ?? trimmedPhoneNumber));
       setShowAccountDialog(false);
       toast.success('계정 정보를 저장했어요.');
       router.refresh();

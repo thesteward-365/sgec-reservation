@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { formatPhoneNumber } from '@/lib/utils';
 
 type AccountForm = {
   name: string;
@@ -110,11 +111,13 @@ export function AccountDialog({
             onChange={(event) =>
               onFormChange({
                 ...form,
-                phoneNumber: event.target.value,
+                phoneNumber: formatPhoneNumber(event.target.value),
               })
             }
-            placeholder="휴대전화번호"
-            inputMode="tel"
+            placeholder="010-0000-0000"
+            type="tel"
+            inputMode="numeric"
+            maxLength={13}
           />
         </div>
         <DialogFooter>

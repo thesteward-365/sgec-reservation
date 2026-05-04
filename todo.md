@@ -188,16 +188,16 @@
 
 ## Phase 6. 예약 엔진 (Route Handlers)
 
-- [ ] `POST /api/reservations` — 예약 생성 (트랜잭션, 중복 방지)
-- [ ] `PATCH /api/reservations/[id]` — 예약 수정
-- [ ] `DELETE /api/reservations/[id]` — 예약 취소
-- [ ] `GET /api/reservations` — 목록 조회 (날짜·장소·사용자 필터)
-- [ ] 30분 슬롯 단위 유효성 검증
-- [ ] 동일 장소/시간 중복 체크 (DB 레벨 트랜잭션)
-- [ ] **비즈니스 로직 유닛 테스트 (Vitest)**
-  - [ ] 시간 겹침 판단 로직 검증
-  - [ ] 30분 단위 슬롯 생성 로직 검증
-  - [ ] 예약 가능 구간 추출 로직 검증
+- [x] `POST /api/reservations` — 예약 생성 (트랜잭션, 중복 방지)
+- [x] `PATCH /api/reservations/[id]` — 예약 수정
+- [x] `DELETE /api/reservations/[id]` — 예약 취소
+- [x] `GET /api/reservations` — 목록 조회 (날짜·장소·사용자 필터)
+- [x] 30분 슬롯 단위 유효성 검증
+- [x] 동일 장소/시간 중복 체크 (DB 레벨 트랜잭션)
+- [x] **비즈니스 로직 유닛 테스트 (Vitest)**
+  - [x] 시간 겹침 판단 로직 검증
+  - [x] 30분 단위 슬롯 생성 로직 검증
+  - [x] 예약 가능 구간 추출 로직 검증
 
 ---
 

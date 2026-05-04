@@ -9,7 +9,7 @@ import { XMarkIcon } from "@heroicons/react/24/solid"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { cn } from "@/lib/utils"
+import { cn, formatPhoneNumber, normalizePhoneNumber } from "@/lib/utils"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -20,13 +20,20 @@ export default function LoginPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    const normalizedPhoneNumber = normalizePhoneNumber(phoneNumber)
+
+    if (normalizedPhoneNumber.length !== 11) {
+      toast.error("전화번호 11자리를 입력해주세요.")
+      return
+    }
+
     setLoading(true)
 
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, phoneNumber, rememberMe }),
+        body: JSON.stringify({ name, phoneNumber: normalizedPhoneNumber, rememberMe }),
       })
 
       const data = await res.json()
@@ -115,9 +122,11 @@ export default function LoginPage() {
               type="tel"
               placeholder="010-0000-0000"
               value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
+              onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
               required
               autoComplete="tel"
+              inputMode="numeric"
+              maxLength={13}
               className={cn(phoneNumber && "pr-10")}
             />
             {phoneNumber && (
