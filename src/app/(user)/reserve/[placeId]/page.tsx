@@ -2,19 +2,19 @@ import { cookies } from 'next/headers';
 import { getIronSession } from 'iron-session';
 import { sessionOptions, SessionData } from '@/lib/session';
 import { db } from '@/lib/db';
-import { places, floors, placeTags, tags } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { places, floors, placeTags, tags, reservations } from '@/lib/db/schema';
+import { and, eq } from 'drizzle-orm';
 import { notFound, redirect } from 'next/navigation';
 import { PlaceDetailView } from './_components/place-detail-view';
 
 type PageProps = {
   params: Promise<{ placeId: string }>;
-  searchParams: Promise<{ date?: string }>;
+  searchParams: Promise<{ date?: string; reservationId?: string }>;
 };
 
 export default async function PlaceDetailPage({ params, searchParams }: PageProps) {
   const { placeId } = await params;
-  const { date } = await searchParams;
+  const { date, reservationId } = await searchParams;
 
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   if (!session.user) redirect('/login');
@@ -43,11 +43,47 @@ export default async function PlaceDetailPage({ params, searchParams }: PageProp
 
   const tagNames = tagRows.map(t => t.name).filter((n): n is string => n !== null);
 
+  let initialReservation:
+    | {
+        id: number;
+        placeId: number;
+        startTime: Date;
+        endTime: Date;
+        purpose: string;
+      }
+    | undefined;
+
+  if (reservationId) {
+    const parsedReservationId = parseInt(reservationId);
+    if (isNaN(parsedReservationId)) notFound();
+
+    const [reservation] = await db
+      .select({
+        id: reservations.id,
+        placeId: reservations.placeId,
+        startTime: reservations.startTime,
+        endTime: reservations.endTime,
+        purpose: reservations.purpose,
+      })
+      .from(reservations)
+      .where(
+        and(
+          eq(reservations.id, parsedReservationId),
+          eq(reservations.userId, session.user.id)
+        )
+      );
+
+    if (!reservation) notFound();
+    if (reservation.endTime < new Date()) redirect('/my-reservations');
+
+    initialReservation = reservation;
+  }
+
   return (
     <PlaceDetailView
       place={{ ...place, tags: tagNames }}
-      currentUser={{ id: session.user.id, name: session.user.name }}
       initialDate={date}
+      initialReservation={initialReservation}
     />
   );
 }

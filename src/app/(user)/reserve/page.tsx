@@ -3,20 +3,14 @@ import { cookies } from "next/headers"
 import { getIronSession } from "iron-session"
 import { sessionOptions, SessionData } from "@/lib/session"
 import { ReserveView } from "./_components/reserve-view"
+import { BrandHeader } from "@/components/layout/brand-header"
 
 function ReserveSkeleton() {
   return (
     <div className="flex flex-col">
-      <div className="px-5 pt-4 pb-2 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-muted animate-pulse" />
-          <div className="flex flex-col gap-1">
-            <div className="h-3 w-16 rounded bg-muted animate-pulse" />
-            <div className="h-4 w-24 rounded bg-muted animate-pulse" />
-          </div>
-        </div>
-        <div className="w-10 h-10 rounded-xl bg-muted animate-pulse" />
-      </div>
+      <BrandHeader
+        action={<div className="h-10 w-10 rounded-xl bg-muted animate-pulse" />}
+      />
       <div className="px-5 pt-2 pb-4">
         <div className="h-14 w-48 rounded-lg bg-muted animate-pulse" />
       </div>

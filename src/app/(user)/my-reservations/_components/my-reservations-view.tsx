@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { MonthCalendar } from './month-calendar';
+import { BrandHeader } from '@/components/layout/brand-header';
+import { MonthlyCalendar } from './monthly-calendar';
 import { ReservationItem, type MyReservation } from './reservation-item';
 import { ReservationSheet } from './reservation-sheet';
 import { FilterSheet, type FilterState } from './filter-sheet';
@@ -56,7 +57,7 @@ export function MyReservationsView() {
   });
   const [showFilter, setShowFilter] = useState(false);
   const [activeRes, setActiveRes] = useState<MyReservation | null>(null);
-  const nowRef = useRef(new Date());
+  const [now] = useState(() => new Date());
 
   // 마운트 시 전체 예약 + 장소 태그 맵 로드
   useEffect(() => {
@@ -95,8 +96,6 @@ export function MyReservationsView() {
         );
       });
   }
-
-  const now = nowRef.current;
 
   const filtered = useMemo(() => {
     let list = allReservations;
@@ -145,8 +144,8 @@ export function MyReservationsView() {
 
   return (
     <>
-      {/* 헤더 */}
-      <div className="flex items-end justify-between px-5 pt-4 pb-4">
+      <BrandHeader />
+      <div className="flex items-end justify-between px-5 pt-1 pb-4">
         <h2 className="text-h2 text-foreground font-bold">나의 예약</h2>
         <button
           onClick={() => setShowFilter(true)}
@@ -155,7 +154,7 @@ export function MyReservationsView() {
         >
           <AdjustmentsHorizontalIcon className="text-foreground size-5" />
           {isFilterActive && (
-            <span className="bg-accent absolute top-1.5 right-1.5 size-2 rounded-full" />
+            <span className="bg-primary absolute top-1 right-1 size-2 rounded-full" />
           )}
         </button>
       </div>
@@ -193,7 +192,7 @@ export function MyReservationsView() {
           <>
             {/* 월 달력 카드 */}
             <div className="bg-card rounded-2xl px-4 py-4 shadow-(--shadow-1)">
-              <MonthCalendar
+              <MonthlyCalendar
                 selectedDate={selectedDate}
                 viewMonth={viewMonth}
                 onSelectDate={(d) => {

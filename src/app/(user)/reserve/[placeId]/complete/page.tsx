@@ -6,6 +6,7 @@ import { places, floors } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { notFound, redirect } from 'next/navigation';
 import { CheckIcon } from '@heroicons/react/24/outline';
+import { ReservationDetailsCard } from '@/components/reservations/reservation-details-card';
 import { CompleteActions } from './complete-actions';
 
 type PageProps = {
@@ -15,6 +16,7 @@ type PageProps = {
     start?: string;
     end?: string;
     purpose?: string;
+    mode?: string;
   }>;
 };
 
@@ -63,6 +65,7 @@ export default async function ReservationCompletePage({
   const endMin = parseInt(sp.end ?? '');
   const date = sp.date ?? '';
   const purpose = sp.purpose ?? '';
+  const mode = sp.mode === 'edit' ? 'edit' : 'create';
   const userName = session.user.name;
 
   const placeLabel = place.floorName
@@ -105,7 +108,7 @@ export default async function ReservationCompletePage({
             />
           </div>
           <h2 className="text-h2 text-foreground text-center font-bold">
-            예약이 완료되었어요
+            {mode === 'edit' ? '예약이 수정되었어요' : '예약이 완료되었어요'}
           </h2>
           <p className="text-caption text-muted-foreground text-center">
             기쁨과 감사함으로 섬깁시다!
@@ -113,28 +116,14 @@ export default async function ReservationCompletePage({
         </div>
 
         {/* 상세 정보 카드 */}
-        <div className="bg-card flex flex-col gap-2.5 rounded-2xl px-4.5 py-4.5 shadow-(--shadow-1)">
-          {rows.map(({ label, value }) => (
-            <div key={label} className="flex items-start justify-between gap-3">
-              <span className="text-muted-foreground shrink-0 text-[13px] font-medium">
-                {label}
-              </span>
-              <span
-                className="text-foreground text-right text-[14px] font-semibold"
-                style={{ letterSpacing: '-0.003em' }}
-              >
-                {value}
-              </span>
-            </div>
-          ))}
-        </div>
+        <ReservationDetailsCard rows={rows} tone="surface" />
       </div>
 
       {/* 고정 하단 CTA */}
       <div className="fixed inset-x-0 bottom-0 z-50 bg-(--color-neutral-150)">
         <CompleteActions
           placeId={placeId}
-          shareText={`[예약 완료]\n장소: ${placeLabel}\n날짜: ${dateLabel}\n시간: ${timeLabel}\n목적: ${purpose || '–'}\n예약자: ${userName}`}
+          shareText={`장소: ${placeLabel}\n날짜: ${dateLabel}\n시간: ${timeLabel}\n목적: ${purpose || '–'}`}
           backUrl={`/reserve/${placeId}${date ? `?date=${date}` : ''}`}
         />
       </div>

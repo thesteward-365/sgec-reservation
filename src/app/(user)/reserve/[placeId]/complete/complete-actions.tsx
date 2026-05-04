@@ -15,7 +15,7 @@ export function CompleteActions({ placeId, shareText, backUrl }: Props) {
   async function handleShare() {
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
-        await navigator.share({ title: '예약 완료', text: shareText });
+        await navigator.share({ text: shareText });
       } catch {
         // 취소 시 무시
       }

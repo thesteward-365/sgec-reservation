@@ -9,6 +9,7 @@ export type MyReservation = {
   placeName: string | null;
   floorId: number | null;
   floorName: string | null;
+  userName: string | null;
   startTime: Date | string;
   endTime: Date | string;
   purpose: string;

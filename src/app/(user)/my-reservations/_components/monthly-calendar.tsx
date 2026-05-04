@@ -25,7 +25,7 @@ function isSameDay(a: Date, b: Date): boolean {
   );
 }
 
-export function MonthCalendar({
+export function MonthlyCalendar({
   selectedDate,
   viewMonth,
   onSelectDate,
@@ -89,7 +89,7 @@ export function MonthCalendar({
       </div>
 
       {/* 요일 헤더 + 날짜 셀 */}
-      <div className="grid grid-cols-7 gap-y-0.5">
+      <div className="grid grid-cols-7 gap-x-0.5 gap-y-1">
         {DOW_LABELS.map((label, i) => (
           <div
             key={label}
@@ -119,19 +119,29 @@ export function MonthCalendar({
               key={i}
               onClick={() => onSelectDate(day)}
               className={cn(
-                'relative flex flex-col items-center rounded-lg py-2 text-[14px] font-medium transition-colors',
-                isSel
-                  ? 'bg-(--color-fg-strong) font-bold text-white'
-                  : 'hover:bg-neutral-100',
+                'group relative flex aspect-square items-center justify-center rounded-lg transition-colors',
                 !inMonth && 'opacity-30',
-                !isSel && inMonth && dow === 0 && 'text-destructive',
-                !isSel && inMonth && dow === 6 && 'text-primary',
-                isToday && !isSel && 'font-bold'
+                !isSel && 'hover:bg-neutral-100'
               )}
             >
-              <span>{day.getDate()}</span>
+              <span
+                className={cn(
+                  'relative flex size-9 items-center justify-center rounded-xl text-[14px] font-medium transition-colors',
+                  isSel
+                    ? 'bg-(--color-fg-strong) font-bold text-white'
+                    : [
+                        inMonth && dow === 0 && 'text-destructive',
+                        inMonth && dow === 6 && 'text-primary',
+                        !inMonth && 'text-muted-foreground',
+                        inMonth && dow !== 0 && dow !== 6 && 'text-foreground',
+                        isToday && !isSel && 'font-bold',
+                      ]
+                )}
+              >
+                {day.getDate()}
+              </span>
               {hasIndicator && (
-                <span className="bg-primary absolute bottom-1 size-1 rounded-full" />
+                <span className="bg-primary absolute bottom-1.5 size-1 rounded-full" />
               )}
             </button>
           );

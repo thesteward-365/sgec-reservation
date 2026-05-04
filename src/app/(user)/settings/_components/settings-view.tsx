@@ -1,28 +1,28 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  ChevronRightIcon,
-  XMarkIcon,
+  ArrowRightStartOnRectangleIcon,
+  InformationCircleIcon,
+  PencilSquareIcon,
   PlusIcon,
   ShieldCheckIcon,
-  InformationCircleIcon,
-  ArrowRightStartOnRectangleIcon,
-  BellIcon,
+  TrashIcon,
 } from '@heroicons/react/24/outline';
 import { toast } from 'sonner';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { BrandHeader } from '@/components/layout/brand-header';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { cn } from '@/lib/utils';
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { SettingsActionRow } from './settings-action-row';
+import { AccountDialog, GuideDialog, PurposeDialog } from './settings-dialogs';
+import { SettingsProfileCard } from './settings-profile-card';
 
 type Props = {
   name: string;
@@ -31,103 +31,122 @@ type Props = {
   version: string;
 };
 
+type AccountForm = { name: string; phoneNumber: string };
+
 const STORAGE_PURPOSES = 'frequent-purposes';
-const STORAGE_NOTIF = 'notif';
+const MAX_PURPOSE_COUNT = 3;
 
-function getInitials(name: string): string {
-  return name.trim().slice(0, 1);
-}
-
-type RowProps = {
-  icon: React.ReactNode;
-  label: string;
-  trailing?: React.ReactNode;
-  onClick?: () => void;
-  danger?: boolean;
-};
-
-function ListRow({ icon, label, trailing, onClick, danger }: RowProps) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={!onClick}
-      className={cn(
-        'flex w-full items-center gap-3 py-3.5 text-left',
-        onClick
-          ? 'px-1 hover:bg-neutral-50 active:bg-neutral-100'
-          : 'cursor-default',
-        danger ? 'text-destructive' : 'text-foreground'
-      )}
-    >
-      <span
-        className={cn(
-          'size-5 shrink-0',
-          danger ? 'text-destructive' : 'text-foreground'
-        )}
-      >
-        {icon}
-      </span>
-      <span className="flex-1 text-[15px] font-medium">{label}</span>
-      {trailing}
-      {onClick && !trailing && (
-        <ChevronRightIcon className="text-muted-foreground size-4" />
-      )}
-    </button>
-  );
-}
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="text-muted-foreground px-0.5 pt-5 pb-1.5 text-[11px] font-medium tracking-widest uppercase">
-      {children}
-    </p>
-  );
-}
-
-export function SettingsView({ name, phoneNumber, role, version }: Props) {
+export function SettingsView({
+  name: initialName,
+  phoneNumber: initialPhoneNumber,
+  role,
+  version,
+}: Props) {
   const router = useRouter();
+  const [name, setName] = useState(initialName);
+  const [phoneNumber, setPhoneNumber] = useState(initialPhoneNumber);
   const [purposes, setPurposes] = useState<string[]>([]);
-  const [addingPurpose, setAddingPurpose] = useState(false);
-  const [newPurpose, setNewPurpose] = useState('');
-  const [notifEnabled, setNotifEnabled] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [showPurposeDialog, setShowPurposeDialog] = useState(false);
+  const [showAccountDialog, setShowAccountDialog] = useState(false);
+  const [newPurpose, setNewPurpose] = useState('');
+  const [accountForm, setAccountForm] = useState<AccountForm>({
+    name: initialName,
+    phoneNumber: initialPhoneNumber,
+  });
+  const [isSavingPurpose, setIsSavingPurpose] = useState(false);
+  const [isSavingAccount, setIsSavingAccount] = useState(false);
 
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_PURPOSES);
-      if (saved) setPurposes(JSON.parse(saved));
+      if (saved) setPurposes(JSON.parse(saved) as string[]);
     } catch {
       /* ignore */
     }
-    setNotifEnabled(localStorage.getItem(STORAGE_NOTIF) === 'true');
   }, []);
 
-  function savePurposes(next: string[]) {
-    setPurposes(next);
-    localStorage.setItem(STORAGE_PURPOSES, JSON.stringify(next));
+  function savePurposes(nextPurposes: string[]) {
+    setPurposes(nextPurposes);
+    localStorage.setItem(STORAGE_PURPOSES, JSON.stringify(nextPurposes));
   }
 
-  function addPurpose() {
-    const trimmed = newPurpose.trim();
-    if (!trimmed || purposes.includes(trimmed)) {
-      setNewPurpose('');
-      setAddingPurpose(false);
+  function handleOpenAccountDialog() {
+    setAccountForm({ name, phoneNumber });
+    setShowAccountDialog(true);
+  }
+
+  function handleRemovePurpose(targetPurpose: string) {
+    savePurposes(purposes.filter((purpose) => purpose !== targetPurpose));
+    toast.success('목적을 삭제했어요.');
+  }
+
+  function handleSavePurpose() {
+    const trimmedPurpose = newPurpose.trim();
+    if (!trimmedPurpose) {
+      toast.error('목적을 입력해주세요.');
       return;
     }
-    if (purposes.length >= 3) return;
-    savePurposes([...purposes, trimmed]);
+
+    if (purposes.includes(trimmedPurpose)) {
+      toast.error('이미 등록된 목적입니다.');
+      return;
+    }
+
+    if (purposes.length >= MAX_PURPOSE_COUNT) {
+      toast.error('목적은 최대 3개까지 등록할 수 있어요.');
+      return;
+    }
+
+    setIsSavingPurpose(true);
+    savePurposes([...purposes, trimmedPurpose]);
     setNewPurpose('');
-    setAddingPurpose(false);
+    setShowPurposeDialog(false);
+    setIsSavingPurpose(false);
+    toast.success('목적을 추가했어요.');
   }
 
-  function removePurpose(p: string) {
-    savePurposes(purposes.filter((x) => x !== p));
-  }
+  async function handleSaveAccount() {
+    const trimmedName = accountForm.name.trim();
+    const trimmedPhoneNumber = accountForm.phoneNumber.trim();
 
-  function toggleNotif(val: boolean) {
-    setNotifEnabled(val);
-    localStorage.setItem(STORAGE_NOTIF, String(val));
+    if (!trimmedName || !trimmedPhoneNumber) {
+      toast.error('이름과 휴대전화번호를 입력해주세요.');
+      return;
+    }
+
+    setIsSavingAccount(true);
+
+    try {
+      const response = await fetch('/api/account', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: trimmedName,
+          phoneNumber: trimmedPhoneNumber,
+        }),
+      });
+
+      const data = (await response.json()) as {
+        error?: string;
+        user?: AccountForm;
+      };
+
+      if (!response.ok) {
+        toast.error(data.error ?? '계정 정보 저장에 실패했어요.');
+        return;
+      }
+
+      setName(data.user?.name ?? trimmedName);
+      setPhoneNumber(data.user?.phoneNumber ?? trimmedPhoneNumber);
+      setShowAccountDialog(false);
+      toast.success('계정 정보를 저장했어요.');
+      router.refresh();
+    } catch {
+      toast.error('계정 정보 저장에 실패했어요.');
+    } finally {
+      setIsSavingAccount(false);
+    }
   }
 
   async function handleLogout() {
@@ -137,147 +156,147 @@ export function SettingsView({ name, phoneNumber, role, version }: Props) {
 
   return (
     <>
-      {/* 헤더 */}
-      <div className="px-5 pt-4 pb-2">
+      <BrandHeader />
+      <div className="px-5 pt-1 pb-3">
         <h2 className="text-h2 text-foreground font-bold">설정</h2>
       </div>
 
-      <div className="flex flex-col px-5 pb-32">
-        {/* 프로필 카드 */}
-        <div className="bg-card mt-3 flex items-center gap-3 rounded-2xl px-4 py-4 shadow-(--shadow-1)">
-          <div className="bg-primary/10 flex size-12 shrink-0 items-center justify-center rounded-full">
-            <span className="text-primary text-[16px] font-bold">
-              {getInitials(name)}
-            </span>
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-foreground text-[16px] font-bold">{name}</p>
-            <p className="text-muted-foreground text-[12px]!">{phoneNumber}</p>
-          </div>
-          {role === 'admin' && (
-            <Badge variant="subtle" color="blue">
-              관리자
-            </Badge>
-          )}
-        </div>
-
-        {/* 자주 사용하는 목적 */}
-        <SectionLabel>자주 사용하는 목적</SectionLabel>
-        <div className="bg-card flex flex-col gap-3 rounded-2xl px-4 py-4 shadow-(--shadow-1)">
-          {purposes.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {purposes.map((p) => (
-                <span
-                  key={p}
-                  className="rounded-pill text-foreground flex items-center gap-1.5 bg-(--color-neutral-150) py-1.5 pr-2 pl-3 text-[13px] font-medium"
-                >
-                  {p}
-                  <button
-                    onClick={() => removePurpose(p)}
-                    className="flex size-4 items-center justify-center rounded-full transition-colors hover:bg-neutral-300"
-                    aria-label="삭제"
-                  >
-                    <XMarkIcon className="size-3" />
-                  </button>
+      <div className="flex flex-col gap-4 px-5 pb-32">
+        <Card className="bg-card rounded-3xl p-0 shadow-(--shadow-1)">
+          <CardHeader className="px-5 pt-5 pb-3">
+            <CardTitle>계정 관리</CardTitle>
+            <CardDescription>
+              계정 정보를 최신 상태로 유지해주세요
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3 px-5 pb-5">
+            <div className="rounded-2xl bg-neutral-50 px-4 py-4">
+              <div className="flex items-center justify-between gap-3 border-b border-black/6 pb-3">
+                <span className="text-muted-foreground text-[13px] font-medium">
+                  이름
                 </span>
-              ))}
+                <span className="text-foreground text-[15px] font-semibold">
+                  {name}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-3 pt-3">
+                <span className="text-muted-foreground text-[13px] font-medium">
+                  휴대전화번호
+                </span>
+                <span className="text-foreground text-[15px] font-semibold">
+                  {phoneNumber}
+                </span>
+              </div>
             </div>
-          )}
 
-          {addingPurpose ? (
-            <div className="flex gap-2">
-              <Input
-                ref={inputRef}
-                value={newPurpose}
-                onChange={(e) => setNewPurpose(e.target.value)}
-                placeholder="목적을 입력하세요"
-                className="flex-1 text-[14px]"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') addPurpose();
-                  if (e.key === 'Escape') {
-                    setAddingPurpose(false);
-                    setNewPurpose('');
-                  }
-                }}
-                autoFocus
-                maxLength={20}
+            <SettingsActionRow
+              icon={<PencilSquareIcon />}
+              label="계정 정보 수정"
+              description="이름과 휴대전화번호를 변경할 수 있어요."
+              onClick={handleOpenAccountDialog}
+            />
+            {role === 'admin' && (
+              <SettingsActionRow
+                icon={<ShieldCheckIcon />}
+                label="관리자 페이지로 이동"
+                description="예약 현황과 설정을 관리할 수 있어요."
+                onClick={() => router.push('/admin')}
               />
-              <Button size="sm" onClick={addPurpose} className="shrink-0">
-                확인
+            )}
+            <SettingsActionRow
+              icon={<InformationCircleIcon />}
+              label="이용 안내"
+              description="예약 규칙과 이용 방법을 확인할 수 있어요."
+              onClick={() => setShowGuide(true)}
+            />
+            <SettingsActionRow
+              icon={<ArrowRightStartOnRectangleIcon />}
+              label="로그아웃"
+              description="현재 계정에서 안전하게 로그아웃합니다."
+              onClick={handleLogout}
+              danger
+            />
+          </CardContent>
+        </Card>
+        <Card className="bg-card rounded-3xl p-0 shadow-(--shadow-1)">
+          <CardHeader className="px-5 pt-5 pb-3">
+            <CardTitle>빠른 목적</CardTitle>
+            <CardDescription>
+              공간 예약 시 빠르게 선택할 수 있는 목적을 최대 3개까지
+              <br />
+              등록해보세요
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="px-5 pb-5">
+            <div className="rounded-2xl bg-neutral-50 px-4 py-4">
+              {purposes.length === 0 ? (
+                <p className="text-muted-foreground text-[13px]">
+                  아직 등록된 목적이 없습니다.
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {purposes.map((purpose) => (
+                    <span
+                      key={purpose}
+                      className="text-foreground bg-background shadow-1 inline-flex items-center gap-2 rounded-full px-3 py-2 text-[13px] font-medium"
+                    >
+                      {purpose}
+                      <button
+                        onClick={() => handleRemovePurpose(purpose)}
+                        className="text-muted-foreground hover:text-foreground transition-colors"
+                        aria-label={`${purpose} 삭제`}
+                        type="button"
+                      >
+                        <TrashIcon className="size-3.5" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <Button
+                variant="secondary"
+                size="md"
+                className="mt-4 h-11 w-full"
+                onClick={() => setShowPurposeDialog(true)}
+                disabled={purposes.length >= MAX_PURPOSE_COUNT}
+              >
+                <PlusIcon className="size-4" />
+                {purposes.length >= MAX_PURPOSE_COUNT
+                  ? '최대 3개 등록됨'
+                  : '목적 추가'}
               </Button>
             </div>
-          ) : purposes.length < 3 ? (
-            <button
-              onClick={() => {
-                setAddingPurpose(true);
-              }}
-              className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 self-start text-[13px] font-medium transition-colors"
-            >
-              <PlusIcon className="size-4" />
-              추가하기
-            </button>
-          ) : (
-            <p className="text-muted-foreground text-[12px]">
-              최대 3개까지 등록할 수 있어요
-            </p>
-          )}
-        </div>
+          </CardContent>
+        </Card>
 
-        {/* 알림 */}
-        <SectionLabel>알림</SectionLabel>
-        <div className="bg-card divide-border-subtle divide-y rounded-2xl px-4 shadow-(--shadow-1)">
-          <div className="flex items-center gap-3 py-3.5">
-            <BellIcon className="text-foreground size-5 shrink-0" />
-            <span className="text-foreground flex-1 text-[15px] font-medium">
-              예약 알림
-            </span>
-            <Switch checked={notifEnabled} onCheckedChange={toggleNotif} />
-          </div>
-        </div>
-
-        {/* 계정 */}
-        <SectionLabel>계정</SectionLabel>
-        <div className="bg-card divide-border-subtle divide-y rounded-2xl px-4 shadow-(--shadow-1)">
-          {role === 'admin' && (
-            <ListRow
-              icon={<ShieldCheckIcon />}
-              label="관리자 페이지로 이동"
-              onClick={() => router.push('/admin')}
-            />
-          )}
-          <ListRow
-            icon={<InformationCircleIcon />}
-            label="이용 안내"
-            onClick={() => setShowGuide(true)}
-          />
-          <ListRow
-            icon={<ArrowRightStartOnRectangleIcon />}
-            label="로그아웃"
-            danger
-            onClick={handleLogout}
-          />
-        </div>
-
-        {/* 푸터 */}
-        <p className="text-muted-foreground pt-8 text-center text-[12px]">
+        <p className="text-muted-foreground pt-2 text-center text-[12px]">
           v{version} · 샘깊은교회 문화사역 장소방
         </p>
       </div>
 
-      {/* 이용 안내 Dialog */}
-      <Dialog open={showGuide} onOpenChange={setShowGuide}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>이용 안내</DialogTitle>
-          </DialogHeader>
-          <div className="text-foreground flex flex-col gap-2 px-1 pb-2 text-[14px] leading-relaxed">
-            <p>• 장소 예약은 30분 단위로 진행됩니다.</p>
-            <p>• 예약 후 취소 또는 시간 변경이 가능합니다.</p>
-            <p>• 다른 예약과 시간이 겹칠 경우 예약이 불가합니다.</p>
-            <p>• 문의사항은 담당 사역자에게 연락해 주세요.</p>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <PurposeDialog
+        open={showPurposeDialog}
+        value={newPurpose}
+        disabled={isSavingPurpose}
+        onOpenChange={setShowPurposeDialog}
+        onChange={setNewPurpose}
+        onSave={handleSavePurpose}
+        onCancel={() => {
+          setNewPurpose('');
+          setShowPurposeDialog(false);
+        }}
+      />
+      <AccountDialog
+        open={showAccountDialog}
+        form={accountForm}
+        disabled={isSavingAccount}
+        onOpenChange={setShowAccountDialog}
+        onFormChange={setAccountForm}
+        onSave={handleSaveAccount}
+        onCancel={() => setShowAccountDialog(false)}
+      />
+      <GuideDialog open={showGuide} onOpenChange={setShowGuide} />
     </>
   );
 }

@@ -56,6 +56,22 @@ export const reservations = sqliteTable('reservations', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
+export const reservationHistories = sqliteTable('reservation_histories', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  reservationId: integer('reservation_id').notNull(),
+  actorUserId: integer('actor_user_id').notNull(),
+  actorUserName: text('actor_user_name').notNull(),
+  actionType: text('action_type', {
+    enum: ['created', 'updated', 'cancelled'],
+  })
+    .notNull()
+    .default('updated'),
+  changes: text('changes').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
+});
+
 export const calendarSettings = sqliteTable('calendar_settings', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   googleAccessToken: text('google_access_token'),

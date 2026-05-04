@@ -17,6 +17,7 @@ import {
   DrawerTitle,
   DrawerFooter,
 } from '@/components/ui/drawer';
+import { BrandHeader } from '@/components/layout/brand-header';
 import { cn } from '@/lib/utils';
 
 type Floor = { id: number; name: string; order: number };
@@ -181,37 +182,7 @@ export function ReserveView({ userName }: ReserveViewProps) {
 
   return (
     <div className="flex flex-col">
-      {/* 교회 헤더 (스크롤 시 사라짐) */}
-      <div className="flex items-center justify-between px-5 pt-4 pb-4">
-        <div className="flex items-center gap-2.5">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logos/logo-default.svg"
-            alt="샘깊은교회 로고"
-            className="h-14 w-auto shrink-0"
-          />
-          <div>
-            <p
-              className="text-muted-foreground mb-0.5 leading-none font-medium"
-              style={{ fontSize: 12 }}
-            >
-              샘깊은교회
-            </p>
-            <p
-              className="text-foreground leading-tight font-extrabold"
-              style={{ fontSize: 14, fontWeight: 700 }}
-            >
-              문화사역 장소방
-            </p>
-          </div>
-        </div>
-        <Link
-          href="/settings"
-          className="flex h-10 w-10 items-center justify-center rounded-xl text-(--color-fg-strong) transition-colors duration-120 ease-(--ease-standard) hover:bg-neutral-200"
-        >
-          <Cog6ToothIcon className="size-5" />
-        </Link>
-      </div>
+      <BrandHeader />
 
       {/* 인사 문구 (스크롤 시 사라짐) */}
       <div className="px-5 pt-4 pb-2">

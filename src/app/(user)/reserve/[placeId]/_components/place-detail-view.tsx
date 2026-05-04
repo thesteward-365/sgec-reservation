@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState, useTransition, useRef } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { toast } from 'sonner';
+import { LucideXCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ReservationTimeline } from '@/components/ui/reservation-timeline';
 import { WeeklyCalendar } from '@/components/ui/weekly-calendar';
@@ -16,7 +17,6 @@ import {
 } from '@/components/ui/drawer';
 import { cn } from '@/lib/utils';
 import {
-  PURPOSE_PRESETS,
   type ReservationSchedule,
   formatLocalDate,
   formatMinuteLabel,
@@ -25,7 +25,6 @@ import {
   overlapsExistingRange,
   parseLocalDate,
 } from '@/lib/services/reservation-slots';
-import { LucideXCircle, XCircleIcon } from 'lucide-react';
 
 type PickerPlace = {
   id: number;
@@ -37,6 +36,14 @@ type PickerPlace = {
 type PickerFloor = { id: number; name: string };
 type PickerTag = { id: number; name: string };
 
+type EditableReservation = {
+  id: number;
+  placeId: number;
+  startTime: Date | string;
+  endTime: Date | string;
+  purpose: string;
+};
+
 type PlaceDetailViewProps = {
   place: {
     id: number;
@@ -45,8 +52,8 @@ type PlaceDetailViewProps = {
     floorName: string | null;
     tags: string[];
   };
-  currentUser: { id: number; name: string };
   initialDate?: string;
+  initialReservation?: EditableReservation;
 };
 
 const CHIP =
@@ -75,26 +82,68 @@ function formatKoreanDate(dateStr: string): string {
   }).format(date);
 }
 
+function toDate(value: Date | string): Date {
+  return typeof value === 'string' ? new Date(value) : value;
+}
+
+function minuteOf(value: Date | string): number {
+  const date = toDate(value);
+  return date.getHours() * 60 + date.getMinutes();
+}
+
+async function readResponseError(response: Response): Promise<string | undefined> {
+  const text = await response.text();
+  if (!text) return undefined;
+
+  try {
+    const data = JSON.parse(text) as { error?: string };
+    return data.error;
+  } catch {
+    return undefined;
+  }
+}
+
 export function PlaceDetailView({
   place,
-  currentUser,
   initialDate,
+  initialReservation,
 }: PlaceDetailViewProps) {
   const router = useRouter();
-  const [selectedDate, setSelectedDate] = useState(getInitialDate(initialDate));
+  const editReservationId = initialReservation?.id ?? null;
+  const isEditMode = editReservationId !== null;
+  const initialReservationDate = initialReservation
+    ? formatLocalDate(toDate(initialReservation.startTime))
+    : undefined;
+  const [selectedDate, setSelectedDate] = useState(
+    initialReservationDate ?? getInitialDate(initialDate)
+  );
   const [reservations, setReservations] = useState<ReservationSchedule[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selection, setSelection] = useState({
-    startMin: 10 * 60,
-    endMin: 11 * 60,
+  const [selection, setSelection] = useState(() =>
+    initialReservation
+      ? {
+          startMin: minuteOf(initialReservation.startTime),
+          endMin: minuteOf(initialReservation.endTime),
+        }
+      : {
+          startMin: 10 * 60,
+          endMin: 11 * 60,
+        }
+  );
+  const [purpose, setPurpose] = useState(initialReservation?.purpose ?? '');
+  const [frequentPurposes] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const saved = window.localStorage.getItem('frequent-purposes');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
   });
-  const [purpose, setPurpose] = useState('');
-  const [frequentPurposes, setFrequentPurposes] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
   const purposeRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
 
-  // Place picker state
   const [placePickerOpen, setPlacePickerOpen] = useState(false);
   const [pickerPlaces, setPickerPlaces] = useState<PickerPlace[]>([]);
   const [pickerFloors, setPickerFloors] = useState<PickerFloor[]>([]);
@@ -103,21 +152,10 @@ export function PlaceDetailView({
   const [pickerTagId, setPickerTagId] = useState<number | null>(null);
   const [pickerLoaded, setPickerLoaded] = useState(false);
 
-  // Date picker state
   const [datePickerOpen, setDatePickerOpen] = useState(false);
 
-  // 자주 사용하는 목적 (설정 페이지에서 저장)
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('frequent-purposes');
-      if (saved) setFrequentPurposes(JSON.parse(saved));
-    } catch { /* ignore */ }
-  }, []);
-
-  // Fetch reservations when place or date changes
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
     fetch(`/api/reservations?placeId=${place.id}&date=${selectedDate}`, {
       cache: 'no-store',
     })
@@ -136,7 +174,6 @@ export function PlaceDetailView({
     };
   }, [place.id, selectedDate]);
 
-  // Lazy-load place picker data on first open
   useEffect(() => {
     if (!placePickerOpen || pickerLoaded) return;
     Promise.all([
@@ -157,14 +194,14 @@ export function PlaceDetailView({
         }
       )
       .catch(() => {});
-  }, [placePickerOpen, pickerLoaded]);
+  }, [pickerLoaded, placePickerOpen]);
 
   const normalizedReservations = normalizeReservations(reservations);
   const collision = overlapsExistingRange(
     selection.startMin,
     selection.endMin,
     normalizedReservations,
-    null
+    editReservationId
   );
   const canSubmit = !collision && purpose.trim().length > 0;
 
@@ -176,7 +213,9 @@ export function PlaceDetailView({
       ? '시간을 변경해주세요'
       : !purpose.trim()
         ? '사용 목적을 입력하세요'
-        : '예약하기';
+        : isEditMode
+          ? '변경사항 저장'
+          : '예약하기';
 
   function handleCtaClick() {
     if (isPending) return;
@@ -194,33 +233,41 @@ export function PlaceDetailView({
       });
       return;
     }
+
     startTransition(async () => {
-      const response = await fetch('/api/reservations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          placeId: place.id,
-          startTime: getDateTimeForMinute(
-            selectedDate,
-            selection.startMin
-          ).toISOString(),
-          endTime: getDateTimeForMinute(
-            selectedDate,
-            selection.endMin
-          ).toISOString(),
-          purpose: purpose.trim(),
-        }),
-      });
-      const data = (await response.json()) as { error?: string };
+      const response = await fetch(
+        isEditMode
+          ? `/api/reservations/${editReservationId}`
+          : '/api/reservations',
+        {
+          method: isEditMode ? 'PATCH' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            placeId: place.id,
+            startTime: getDateTimeForMinute(
+              selectedDate,
+              selection.startMin
+            ).toISOString(),
+            endTime: getDateTimeForMinute(
+              selectedDate,
+              selection.endMin
+            ).toISOString(),
+            purpose: purpose.trim(),
+          }),
+        }
+      );
       if (!response.ok) {
-        toast.error(data.error ?? '예약 저장에 실패했습니다.');
+        const errorMessage = await readResponseError(response);
+        toast.error(errorMessage ?? '예약 저장에 실패했습니다.');
         return;
       }
+
       const params = new URLSearchParams({
         date: selectedDate,
         start: String(selection.startMin),
         end: String(selection.endMin),
         purpose: purpose.trim(),
+        mode: isEditMode ? 'edit' : 'create',
       });
       router.push(`/reserve/${place.id}/complete?${params}`);
     });
@@ -228,32 +275,32 @@ export function PlaceDetailView({
 
   const filteredPickerPlaces = pickerPlaces.filter((p) => {
     if (pickerFloorId !== null && p.floorId !== pickerFloorId) return false;
-    if (pickerTagId !== null && !p.tags.some((t) => t.id === pickerTagId))
+    if (pickerTagId !== null && !p.tags.some((t) => t.id === pickerTagId)) {
       return false;
+    }
     return true;
   });
 
   return (
     <>
-      {/* 고정 AppBar */}
       <div className="fixed inset-x-0 top-0 z-30 bg-(--color-neutral-150)">
         <div className="mx-auto flex h-14 max-w-107.5 items-center px-4">
           <Link
-            href={`/reserve?date=${selectedDate}`}
+            href={
+              isEditMode ? '/my-reservations' : `/reserve?date=${selectedDate}`
+            }
             className="text-foreground flex size-10 items-center justify-center rounded-xl transition-colors duration-120 ease-(--ease-standard) hover:bg-neutral-200"
           >
             <ChevronLeftIcon className="size-5" />
           </Link>
           <p className="text-body text-foreground flex-1 text-center font-bold">
-            예약하기
+            {isEditMode ? '예약 수정' : '예약하기'}
           </p>
           <div className="size-10" />
         </div>
       </div>
 
-      {/* 스크롤 콘텐츠 */}
       <div className="pt-14 pb-44">
-        {/* 장소 섹션 */}
         <div className="px-5 pt-3 pb-1">
           <p className="text-body text-foreground mb-2 pl-1 font-bold">장소</p>
           <div className="bg-card rounded-2xl shadow-(--shadow-1)">
@@ -286,7 +333,6 @@ export function PlaceDetailView({
           </div>
         </div>
 
-        {/* 시간 섹션 */}
         <div className="px-5 pt-3 pb-1">
           <p className="text-body text-foreground mb-2 pl-1 font-bold">시간</p>
           <div
@@ -308,7 +354,7 @@ export function PlaceDetailView({
               <div className="bg-muted h-40 animate-pulse rounded-xl" />
             ) : (
               <ReservationTimeline
-                key={`${place.id}-${selectedDate}`}
+                key={`${place.id}-${selectedDate}-${editReservationId ?? 'new'}`}
                 reservations={normalizedReservations}
                 selection={selection}
                 onSelectionChange={setSelection}
@@ -347,17 +393,13 @@ export function PlaceDetailView({
           </div>
         </div>
 
-        {/* 사용 목적 섹션 */}
         <div ref={purposeRef} className="mb-6 px-5 pt-3">
           <p className="text-body text-foreground mb-2 pl-1 font-bold">
             사용 목적
           </p>
           <div className="bg-card flex flex-col gap-3 rounded-2xl px-4 py-4 shadow-(--shadow-1)">
             <div className="flex flex-wrap gap-2">
-              {[
-                ...frequentPurposes,
-                ...PURPOSE_PRESETS.filter((p) => !frequentPurposes.includes(p)),
-              ].map((p) => (
+              {[...frequentPurposes].map((p) => (
                 <button
                   key={p}
                   onClick={() => setPurpose(p)}
@@ -378,13 +420,13 @@ export function PlaceDetailView({
                 onChange={(e) => setPurpose(e.target.value)}
                 placeholder="직접 입력 (예: 청년부 모임)"
                 maxLength={100}
-                className="pr-10" // 오른쪽에 X 버튼이 들어갈 공간 확보
+                className="pr-10"
               />
               {purpose && (
                 <button
                   onClick={() => setPurpose('')}
                   className="text-muted-foreground hover:text-foreground absolute right-3 flex h-full items-center justify-center transition-colors"
-                  type="button" // 폼 제출 방지
+                  type="button"
                 >
                   <LucideXCircle className="size-4" />
                 </button>
@@ -394,7 +436,6 @@ export function PlaceDetailView({
         </div>
       </div>
 
-      {/* 고정 하단 CTA */}
       <div className="bg-background fixed inset-x-0 bottom-0 z-50 border-t border-(--color-border-subtle)">
         <div
           className="mx-auto max-w-107.5 px-5 pt-3"
@@ -403,7 +444,6 @@ export function PlaceDetailView({
               'calc(1.5rem + max(env(safe-area-inset-bottom), 8px))',
           }}
         >
-          {/* 장소·날짜 요약 */}
           <div className="mb-1.5 flex justify-between">
             <span className="text-muted-foreground max-w-[55%] truncate text-[11px]">
               {place.name}
@@ -412,7 +452,6 @@ export function PlaceDetailView({
               {formatKoreanDate(selectedDate)}
             </span>
           </div>
-          {/* 시간·소요시간 */}
           <div className="mb-3 flex justify-between">
             <div>
               <p
@@ -463,13 +502,11 @@ export function PlaceDetailView({
         </div>
       </div>
 
-      {/* 장소 선택 Drawer */}
       <Drawer open={placePickerOpen} onOpenChange={setPlacePickerOpen}>
         <DrawerContent className="bg-(--color-neutral-150)">
           <DrawerHeader>
             <DrawerTitle>장소 선택</DrawerTitle>
           </DrawerHeader>
-          {/* 필터 칩 */}
           <div className="flex flex-col gap-2 px-5 pb-3">
             {pickerFloors.length > 0 && (
               <div className="scrollbar-none flex gap-1.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -534,7 +571,6 @@ export function PlaceDetailView({
               </div>
             )}
           </div>
-          {/* 장소 목록 */}
           <div className="min-h-72 flex-1 overflow-y-auto px-5 pt-2 pb-6">
             <div className="flex flex-col gap-2">
               {!pickerLoaded ? (
@@ -554,7 +590,11 @@ export function PlaceDetailView({
                     key={p.id}
                     onClick={() => {
                       setPlacePickerOpen(false);
-                      router.replace(`/reserve/${p.id}?date=${selectedDate}`);
+                      const nextParams = new URLSearchParams({ date: selectedDate });
+                      if (isEditMode && editReservationId !== null) {
+                        nextParams.set('reservationId', String(editReservationId));
+                      }
+                      router.replace(`/reserve/${p.id}?${nextParams}`);
                     }}
                     className={cn(
                       'flex items-center gap-3 rounded-2xl px-4 py-3.5 text-left shadow-(--shadow-1) transition-colors',
@@ -598,7 +638,6 @@ export function PlaceDetailView({
         </DrawerContent>
       </Drawer>
 
-      {/* 날짜 선택 Drawer */}
       <Drawer open={datePickerOpen} onOpenChange={setDatePickerOpen}>
         <DrawerContent className="bg-(--color-neutral-150)">
           <DrawerHeader>
@@ -610,8 +649,11 @@ export function PlaceDetailView({
               defaultDate={parseLocalDate(selectedDate) ?? new Date()}
               selectedDate={parseLocalDate(selectedDate) ?? undefined}
               onDateSelect={(date) => {
+                setLoading(true);
                 setSelectedDate(formatLocalDate(date));
-                setSelection({ startMin: 10 * 60, endMin: 11 * 60 });
+                if (!isEditMode) {
+                  setSelection({ startMin: 10 * 60, endMin: 11 * 60 });
+                }
                 setDatePickerOpen(false);
               }}
             />

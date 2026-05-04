@@ -9,6 +9,7 @@ import {
   DrawerTitle,
 } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
+import { ReservationDetailsCard } from '@/components/reservations/reservation-details-card';
 import type { MyReservation } from './reservation-item';
 
 function fmtMin(min: number): string {
@@ -72,8 +73,8 @@ export function ReservationSheet({ reservation, open, onClose, onCancelled }: Pr
         {
           label: '장소',
           value: reservation.floorName
-            ? `${reservation.placeName} · ${reservation.floorName}`
-            : reservation.placeName,
+            ? `${reservation.placeName ?? '–'} · ${reservation.floorName}`
+            : (reservation.placeName ?? '–'),
         },
         { label: '날짜', value: formatKoreanDate(reservation.startTime) },
         {
@@ -81,6 +82,7 @@ export function ReservationSheet({ reservation, open, onClose, onCancelled }: Pr
           value: `${formatTime(reservation.startTime)} – ${formatTime(reservation.endTime)}`,
         },
         { label: '목적', value: reservation.purpose },
+        { label: '예약자', value: reservation.userName ?? '–' },
       ]
     : [];
 
@@ -92,33 +94,17 @@ export function ReservationSheet({ reservation, open, onClose, onCancelled }: Pr
         </DrawerHeader>
 
         <div className="flex flex-col gap-4 px-6 pb-8">
-          {reservation && (
-            <div className="bg-card flex flex-col gap-2.5 rounded-2xl px-4.5 py-4.5 shadow-(--shadow-1)">
-              {rows.map(({ label, value }) => (
-                <div key={label} className="flex items-start justify-between gap-3">
-                  <span className="text-muted-foreground shrink-0 text-[13px] font-medium">
-                    {label}
-                  </span>
-                  <span
-                    className="text-foreground text-right text-[14px] font-semibold"
-                    style={{ letterSpacing: '-0.003em' }}
-                  >
-                    {value}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
+          {reservation && <ReservationDetailsCard rows={rows} />}
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-3 pt-1">
             {!isPast && (
-              <Button variant="secondary" className="w-full" onClick={handleEdit}>
+              <Button variant="secondary" className="h-12 w-full rounded-2xl" onClick={handleEdit}>
                 예약 수정
               </Button>
             )}
             <Button
-              variant="ghost"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10 w-full"
+              variant="destructive"
+              className="h-12 w-full rounded-2xl"
               onClick={handleCancel}
             >
               예약 취소
