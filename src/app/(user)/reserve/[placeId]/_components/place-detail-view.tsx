@@ -89,6 +89,7 @@ export function PlaceDetailView({
     endMin: 11 * 60,
   });
   const [purpose, setPurpose] = useState('');
+  const [frequentPurposes, setFrequentPurposes] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
   const purposeRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
@@ -104,6 +105,14 @@ export function PlaceDetailView({
 
   // Date picker state
   const [datePickerOpen, setDatePickerOpen] = useState(false);
+
+  // 자주 사용하는 목적 (설정 페이지에서 저장)
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('frequent-purposes');
+      if (saved) setFrequentPurposes(JSON.parse(saved));
+    } catch { /* ignore */ }
+  }, []);
 
   // Fetch reservations when place or date changes
   useEffect(() => {
@@ -345,7 +354,10 @@ export function PlaceDetailView({
           </p>
           <div className="bg-card flex flex-col gap-3 rounded-2xl px-4 py-4 shadow-(--shadow-1)">
             <div className="flex flex-wrap gap-2">
-              {PURPOSE_PRESETS.map((p) => (
+              {[
+                ...frequentPurposes,
+                ...PURPOSE_PRESETS.filter((p) => !frequentPurposes.includes(p)),
+              ].map((p) => (
                 <button
                   key={p}
                   onClick={() => setPurpose(p)}
