@@ -38,27 +38,32 @@ export function PurposeDialog({
 }: PurposeDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-h-[95dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>목적 추가</DialogTitle>
           <DialogDescription>
-            자주 사용하는 목적을 등록해두면 예약할 때 더 빠르게 선택할 수 있어요.
+            자주 사용하는 목적을 등록해두면 예약할 때 더 빠르게 선택할 수
+            있어요.
           </DialogDescription>
         </DialogHeader>
-        <Input
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          placeholder="예: 청년부 모임"
-          maxLength={20}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') onSave();
-          }}
-        />
-        <DialogFooter>
-          <Button variant="secondary" onClick={onCancel}>
-            취소
-          </Button>
-          <Button onClick={onSave} disabled={disabled}>
+        <div className="py-2">
+          <Input
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            placeholder="예: 청년부 모임"
+            maxLength={20}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') onSave();
+            }}
+            autoFocus
+          />
+        </div>
+        <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-end">
+          <Button
+            onClick={onSave}
+            disabled={disabled}
+            className="order-1 w-full sm:order-2 sm:w-auto"
+          >
             추가
           </Button>
         </DialogFooter>
@@ -88,44 +93,62 @@ export function AccountDialog({
 }: AccountDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-h-[95dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>계정 정보 수정</DialogTitle>
           <DialogDescription>
             로그인에 사용하는 이름과 휴대전화번호를 수정할 수 있어요.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col gap-3">
-          <Input
-            value={form.name}
-            onChange={(event) =>
-              onFormChange({
-                ...form,
-                name: event.target.value,
-              })
-            }
-            placeholder="이름"
-          />
-          <Input
-            value={form.phoneNumber}
-            onChange={(event) =>
-              onFormChange({
-                ...form,
-                phoneNumber: formatPhoneNumber(event.target.value),
-              })
-            }
-            placeholder="010-0000-0000"
-            type="tel"
-            inputMode="numeric"
-            maxLength={13}
-          />
+        <div className="flex flex-col gap-4 py-2">
+          <div className="space-y-1.5">
+            <label className="text-caption text-muted-foreground ml-1">
+              이름
+            </label>
+            <Input
+              value={form.name}
+              onChange={(event) =>
+                onFormChange({
+                  ...form,
+                  name: event.target.value,
+                })
+              }
+              placeholder="이름"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-caption text-muted-foreground ml-1">
+              휴대전화번호
+            </label>
+            <Input
+              value={form.phoneNumber}
+              onChange={(event) =>
+                onFormChange({
+                  ...form,
+                  phoneNumber: formatPhoneNumber(event.target.value),
+                })
+              }
+              placeholder="010-0000-0000"
+              type="tel"
+              inputMode="numeric"
+              maxLength={13}
+            />
+          </div>
         </div>
-        <DialogFooter>
-          <Button variant="secondary" onClick={onCancel}>
-            취소
-          </Button>
-          <Button onClick={onSave} disabled={disabled}>
+        <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-end">
+          <Button
+            onClick={onSave}
+            disabled={disabled}
+            className="order-1 w-full sm:order-2 sm:w-auto"
+          >
             저장
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={onCancel}
+            className="order-2 w-full sm:order-1 sm:w-auto"
+          >
+            취소
           </Button>
         </DialogFooter>
       </DialogContent>

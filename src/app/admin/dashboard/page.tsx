@@ -209,8 +209,8 @@ export default function DashboardPage() {
                     <div className="flex items-start gap-3">
                       {getActivityIcon(activity.type)}
                       <div className="min-w-0 flex-1">
-                        <p className="text-body">{activity.message}</p>
-                        <p className="text-caption text-muted-foreground mt-1">
+                        <p className="text-body!">{activity.message}</p>
+                        <p className="text-caption! text-muted-foreground! mt-1">
                           {formatTimeAgo(new Date(activity.timestamp))}
                         </p>
                       </div>

@@ -1,17 +1,20 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { BrandHeader } from '@/components/layout/brand-header';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 import {
   UserIcon,
   CalendarDaysIcon,
   ArrowRightStartOnRectangleIcon,
   ChevronRightIcon,
+  PencilSquareIcon,
 } from '@heroicons/react/24/outline';
+import { formatPhoneNumber, normalizePhoneNumber } from '@/lib/utils';
+import { AccountDialog } from '@/app/(user)/settings/_components/settings-dialogs';
+import Link from 'next/link';
 
 interface Me {
   id: number;
@@ -24,42 +27,64 @@ export default function AdminMePage() {
   const router = useRouter();
   const [me, setMe] = useState<Me | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
-  const [tempName, setTempName] = useState('');
-  const [tempPhone, setTempPhone] = useState('');
+  const [showAccountDialog, setShowAccountDialog] = useState(false);
+  const [accountForm, setAccountForm] = useState({ name: '', phoneNumber: '' });
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/account')
       .then((r) => r.json())
       .then((data: { user: Me }) => {
         setMe(data.user);
-        setTempName(data.user.name);
-        setTempPhone(data.user.phoneNumber);
+        setAccountForm({
+          name: data.user.name,
+          phoneNumber: formatPhoneNumber(data.user.phoneNumber),
+        });
       })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 
-  async function handleSave() {
+  async function handleSaveAccount() {
     if (!me) return;
-    setSaving(true);
-    setError(null);
-    const res = await fetch('/api/account', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: tempName, phoneNumber: tempPhone }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      setError(data.error ?? '저장에 실패했습니다.');
-      setSaving(false);
+
+    const trimmedName = accountForm.name.trim();
+    const trimmedPhoneNumber = normalizePhoneNumber(accountForm.phoneNumber);
+
+    if (!trimmedName || !trimmedPhoneNumber) {
+      toast.error('이름과 휴대전화번호를 입력해주세요.');
       return;
     }
-    setMe(data.user);
-    setIsEditing(false);
-    setSaving(false);
+
+    if (trimmedPhoneNumber.length !== 11) {
+      toast.error('전화번호 11자리를 입력해주세요.');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await fetch('/api/account', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: trimmedName,
+          phoneNumber: trimmedPhoneNumber,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error ?? '저장에 실패했습니다.');
+        return;
+      }
+      setMe(data.user);
+      setShowAccountDialog(false);
+      toast.success('계정 정보를 저장했어요.');
+      router.refresh();
+    } catch (error) {
+      toast.error('저장에 실패했습니다.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleLogout() {
@@ -72,132 +97,82 @@ export default function AdminMePage() {
       <BrandHeader />
 
       <main className="flex-1 pb-24">
-        <div className="space-y-3 px-5 pt-4 pb-5">
+        <div className="space-y-4 px-5 pt-4 pb-5">
           {/* 프로필 섹션 */}
-          <div className="bg-card rounded-2xl px-4 py-4">
+          <div className="bg-card overflow-hidden rounded-xl shadow-(--shadow-1)">
             {loading ? (
-              <div className="animate-pulse space-y-2">
-                <div className="bg-muted h-5 w-24 rounded" />
-                <div className="bg-muted h-4 w-36 rounded" />
+              <div className="animate-pulse space-y-3 p-5">
+                <div className="bg-muted h-6 w-24 rounded-lg" />
+                <div className="bg-muted h-4 w-36 rounded-lg" />
               </div>
-            ) : me && !isEditing ? (
-              <>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-body text-foreground font-bold">
-                        {me.name}
-                      </span>
-                      {me.role === 'admin' && (
-                        <Badge
-                          variant="subtle"
-                          color="blue"
-                          className="text-xs"
-                        >
-                          관리자
-                        </Badge>
-                      )}
-                    </div>
-                    <span className="text-body-sm text-muted-foreground block">
-                      {me.phoneNumber}
+            ) : me ? (
+              <button
+                onClick={() => {
+                  setAccountForm({
+                    name: me.name,
+                    phoneNumber: formatPhoneNumber(me.phoneNumber),
+                  });
+                  setShowAccountDialog(true);
+                }}
+                className="flex w-full items-center justify-between p-5 text-left transition-colors hover:bg-neutral-50"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-body text-foreground font-bold">
+                      {me.name}
                     </span>
+                    {me.role === 'admin' && (
+                      <Badge
+                        variant="subtle"
+                        color="blue"
+                        className="text-[11px] font-bold"
+                      >
+                        관리자
+                      </Badge>
+                    )}
                   </div>
-                  <button
-                    className="text-caption text-muted-foreground hover:bg-muted hover:text-foreground rounded-xl px-3 py-2 transition-colors"
-                    onClick={() => {
-                      setTempName(me.name);
-                      setTempPhone(me.phoneNumber);
-                      setIsEditing(true);
-                    }}
-                  >
-                    수정
-                  </button>
-                </div>
-              </>
-            ) : me && isEditing ? (
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <span className="text-caption text-muted-foreground block">
-                    이름
+                  <span className="text-muted-foreground block text-[14px] font-medium">
+                    {formatPhoneNumber(me.phoneNumber)}
                   </span>
-                  <Input
-                    value={tempName}
-                    onChange={(e) => setTempName(e.target.value)}
-                    className="h-10"
-                  />
                 </div>
-                <div className="space-y-1.5">
-                  <span className="text-caption text-muted-foreground block">
-                    전화번호
-                  </span>
-                  <Input
-                    value={tempPhone}
-                    onChange={(e) => setTempPhone(e.target.value)}
-                    className="h-10"
-                  />
-                </div>
-                {error && (
-                  <span className="text-caption block text-red-500">
-                    {error}
-                  </span>
-                )}
-                <div className="flex gap-2 pt-1">
-                  <button
-                    disabled={saving}
-                    onClick={handleSave}
-                    className="rounded-pill bg-primary text-body-sm hover:bg-accent-hover flex-1 py-2.5 font-semibold text-white transition-colors disabled:opacity-50"
-                  >
-                    {saving ? '저장 중…' : '저장'}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsEditing(false);
-                      setError(null);
-                    }}
-                    className="rounded-pill border-border text-body-sm text-muted-foreground hover:text-foreground flex-1 border py-2.5 font-semibold transition-colors"
-                  >
-                    취소
-                  </button>
-                </div>
-              </div>
+                <ChevronRightIcon className="text-muted-foreground size-5 shrink-0" />
+              </button>
             ) : null}
           </div>
 
           {/* 메뉴 섹션 */}
-          <div className="bg-card overflow-hidden rounded-2xl">
+          <div className="bg-card overflow-hidden rounded-xl shadow-(--shadow-1)">
             <Link
               href="/reserve"
-              className="hover:bg-muted flex items-center gap-3 px-4 py-3.5 transition-colors"
+              className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-neutral-50"
             >
               <UserIcon className="text-foreground size-5" />
-              <span className="text-body-sm text-foreground flex-1 font-semibold">
+              <span className="text-foreground flex-1 text-[15px] font-semibold">
                 사용자 페이지로 이동
               </span>
-              <ChevronRightIcon className="text-muted-foreground h-4 w-4" />
+              <ChevronRightIcon className="text-muted-foreground size-4" />
             </Link>
-
-            <div className="bg-muted/60 mx-4 h-px" />
 
             <Link
               href="/admin/calendar"
-              className="hover:bg-muted flex items-center gap-3 px-4 py-3.5 transition-colors"
+              className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-neutral-50"
             >
               <CalendarDaysIcon className="text-foreground size-5" />
-              <span className="text-body-sm text-foreground flex-1 font-semibold">
+              <span className="text-foreground flex-1 text-[15px] font-semibold">
                 Google Calendar 연동
               </span>
-              <ChevronRightIcon className="text-muted-foreground h-4 w-4" />
+              <ChevronRightIcon className="text-muted-foreground size-4" />
             </Link>
           </div>
 
           {/* 로그아웃 */}
-          <div className="bg-card rounded-2xl">
+          <div className="bg-card rounded-xl shadow-(--shadow-1)">
             <button
               onClick={handleLogout}
-              className="hover:bg-muted flex w-full items-center gap-3 rounded-2xl px-4 py-3.5 transition-colors"
+              className="flex w-full items-center gap-3 rounded-3xl px-5 py-4 transition-colors hover:bg-neutral-50"
             >
               <ArrowRightStartOnRectangleIcon className="text-destructive size-5" />
-              <span className="text-body-sm text-destructive flex-1 text-left font-semibold">
+              <span className="text-destructive flex-1 text-left text-[15px] font-semibold">
                 로그아웃
               </span>
             </button>
@@ -205,12 +180,22 @@ export default function AdminMePage() {
 
           {/* 버전 */}
           <div className="pt-2 text-center">
-            <span className="text-caption text-muted-foreground block">
+            <span className="text-muted-foreground block text-[12px]">
               v1.0.0 · 샘깊은교회 문화사역 장소방
             </span>
           </div>
         </div>
       </main>
+
+      <AccountDialog
+        open={showAccountDialog}
+        form={accountForm}
+        disabled={saving}
+        onOpenChange={setShowAccountDialog}
+        onFormChange={setAccountForm}
+        onSave={handleSaveAccount}
+        onCancel={() => setShowAccountDialog(false)}
+      />
     </>
   );
 }
