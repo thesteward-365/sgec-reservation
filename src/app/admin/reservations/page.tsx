@@ -1,7 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline';
+import {
+  AdjustmentsHorizontalIcon,
+  EllipsisVerticalIcon,
+} from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { BrandHeader } from '@/components/layout/brand-header';
@@ -292,24 +295,30 @@ export default function ReservationsPage() {
                           onClick={() => setActiveReservation(reservation)}
                           className="w-full rounded-none px-4 py-4 text-left transition hover:bg-neutral-50 active:bg-neutral-100"
                         >
-                          <div className="min-w-0">
-                            <p className="text-foreground text-[16px] leading-tight font-bold">
-                              {reservation.floorName}
-                              &nbsp;
-                              {reservation.placeName ?? '장소 없음'}
-                            </p>
-                            <p className="text-muted-foreground mt-1 text-[13px]">
-                              {reservation.purpose}
-                            </p>
-                          </div>
-                          <div className="text-muted-foreground mt-3 flex flex-wrap items-center gap-2 text-[13px] font-medium">
-                            <span className="tabular-nums">
-                              {reservation.startTime && reservation.endTime
-                                ? `${formatTime(reservation.startTime)} – ${formatTime(reservation.endTime)}`
-                                : '-'}
-                            </span>
-                            <span className="bg-muted-foreground h-1 w-1 rounded-full" />
-                            <span>{reservation.userName ?? '예약자'}</span>
+                          <div className="flex items-center gap-3">
+                            <div className="flex min-w-[72px] flex-col items-center justify-center rounded-lg bg-neutral-50 px-3 py-2 text-center">
+                              <span className="text-foreground font-bold tabular-nums">
+                                {formatTime(reservation.startTime!)}
+                              </span>
+                              <span className="text-muted-foreground mt-1 text-[14px] tabular-nums">
+                                {formatTime(reservation.endTime!)}
+                              </span>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-start gap-3">
+                                <p className="text-foreground truncate text-[16px] font-bold!">
+                                  {reservation.placeName
+                                    ? `${reservation.floorName} ${reservation.placeName}`
+                                    : '장소 없음'}
+                                </p>
+                              </div>
+                              <p className="text-muted-foreground! mt-2 text-[14px]! leading-snug">
+                                {reservation.userName
+                                  ? `${reservation.userName} · `
+                                  : ''}
+                                {reservation.purpose}
+                              </p>
+                            </div>
                           </div>
                         </button>
                       ))}

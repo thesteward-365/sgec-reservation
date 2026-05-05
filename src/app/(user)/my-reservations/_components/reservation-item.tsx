@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronRightIcon } from '@heroicons/react/24/outline';
+import { EllipsisVerticalIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 
 export type MyReservation = {
@@ -23,7 +23,7 @@ type Props = {
   onTap?: () => void;
 };
 
-function fmtTime(dt: Date | string): string {
+function formatTime(dt: Date | string): string {
   const d = typeof dt === 'string' ? new Date(dt) : dt;
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
@@ -58,7 +58,7 @@ export function ReservationItem({
       onClick={onTap}
       disabled={!onTap}
       className={cn(
-        'flex w-full flex-col gap-3 px-4 py-4 text-left transition-colors',
+        'flex w-full items-center gap-4 px-4 py-4 text-left transition-colors',
         flat
           ? 'rounded-none bg-transparent shadow-none'
           : 'bg-card rounded-2xl shadow-(--shadow-1)',
@@ -67,26 +67,28 @@ export function ReservationItem({
         !onTap && 'cursor-default'
       )}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-foreground truncate text-[16px] leading-tight font-bold">
-            {reservation.placeName ?? '–'}
-            {reservation.floorName ? ` · ${reservation.floorName}` : ''}
-          </p>
-          <p className="text-muted-foreground mt-1 truncate text-[13px]">
-            {reservation.purpose}
-          </p>
-        </div>
-        <p className="text-muted-foreground text-[13px] tabular-nums">
-          {fmtTime(start)} – {fmtTime(end)}
-        </p>
+      <div className="flex min-w-[72px] flex-col items-center justify-center rounded-lg bg-neutral-50 px-3 py-2 text-center">
+        <span className="text-foreground text-[18px] font-bold tabular-nums">
+          {formatTime(start)}
+        </span>
+        <span className="text-muted-foreground mt-1 text-[12px] tabular-nums">
+          {formatTime(end)}
+        </span>
       </div>
 
-      {showDate ? (
-        <p className="text-muted-foreground text-[13px] font-medium">
-          {fmtDate(start)}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-3">
+          <p className="text-foreground truncate text-[16px] font-bold!">
+            {reservation.placeName
+              ? `${reservation.floorName} ${reservation.placeName}`
+              : '장소 없음'}
+          </p>
+        </div>
+        <p className="text-muted-foreground! mt-2 text-[14px]! leading-snug">
+          {reservation.userName ? `${reservation.userName} · ` : ''}
+          {reservation.purpose}
         </p>
-      ) : null}
+      </div>
     </button>
   );
 }
