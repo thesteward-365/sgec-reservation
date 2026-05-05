@@ -122,6 +122,7 @@ export function PlaceDetailView({
     initialReservationDate ?? getInitialDate(initialDate)
   );
   const [reservations, setReservations] = useState<ReservationSchedule[]>([]);
+  const [externalEvents, setExternalEvents] = useState<{ id: number; title: string; startMin: number; endMin: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [selection, setSelection] = useState(() =>
     initialReservation
@@ -160,13 +161,25 @@ export function PlaceDetailView({
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/reservations?placeId=${place.id}&date=${selectedDate}`, {
-      cache: 'no-store',
-    })
-      .then((r) => r.json())
-      .then((data: ReservationSchedule[]) => {
+    Promise.all([
+      fetch(`/api/reservations?placeId=${place.id}&date=${selectedDate}`, { cache: 'no-store' }).then((r) => r.json()),
+      fetch(`/api/external-events?date=${selectedDate}`, { cache: 'no-store' }).then((r) => r.json()).catch(() => []),
+    ])
+      .then(([reservationData, eventsData]: [ReservationSchedule[], { id: number; title: string; startTime: string; endTime: string }[]]) => {
         if (!cancelled) {
-          setReservations(data);
+          setReservations(reservationData);
+          setExternalEvents(
+            (eventsData ?? []).map((ev) => {
+              const s = new Date(ev.startTime);
+              const e = new Date(ev.endTime);
+              return {
+                id: ev.id,
+                title: ev.title,
+                startMin: s.getHours() * 60 + s.getMinutes(),
+                endMin: e.getHours() * 60 + e.getMinutes(),
+              };
+            })
+          );
           setLoading(false);
         }
       })
@@ -367,6 +380,7 @@ export function PlaceDetailView({
                 selection={selection}
                 onSelectionChange={setSelection}
                 collision={collision}
+                externalEvents={externalEvents}
               />
             )}
             <div className="mt-3 flex items-center gap-2">

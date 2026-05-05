@@ -67,6 +67,7 @@ export const reservationHistories = sqliteTable('reservation_histories', {
     .notNull()
     .default('updated'),
   changes: text('changes').notNull(),
+  googleEventId: text('google_event_id'),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .notNull()
     .default(sql`(unixepoch())`),
@@ -78,11 +79,23 @@ export const calendarSettings = sqliteTable('calendar_settings', {
   googleRefreshToken: text('google_refresh_token'),
   googleTokenExpiry: integer('google_token_expiry'),
   calendarId: text('calendar_id'),
+  eventCalendarId: text('event_calendar_id'),
+  connectedEmail: text('connected_email'),
+});
+
+export const externalEvents = sqliteTable('external_events', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  googleEventId: text('google_event_id').notNull().unique(),
+  title: text('title').notNull(),
+  startTime: integer('start_time', { mode: 'timestamp' }).notNull(),
+  endTime: integer('end_time', { mode: 'timestamp' }).notNull(),
+  description: text('description'),
+  syncedAt: integer('synced_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 });
 
 export const syncLogs = sqliteTable('sync_logs', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   level: text('level', { enum: ['info', 'error'] }).notNull().default('info'),
   message: text('message').notNull(),
-  timestamp: integer('timestamp', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  timestamp: integer('timestamp', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 });

@@ -26,12 +26,20 @@ function fmtMin(min: number): string {
 
 type Selection = { startMin: number; endMin: number };
 
+type ExternalEventBlock = {
+  id: number;
+  title: string;
+  startMin: number;
+  endMin: number;
+};
+
 type Props = {
   reservations: ReservationRange[];
   selection: Selection;
   onSelectionChange: (s: Selection) => void;
   editingReservationId?: number | null;
   collision?: boolean;
+  externalEvents?: ExternalEventBlock[];
 };
 
 export function ReservationTimeline({
@@ -40,6 +48,7 @@ export function ReservationTimeline({
   onSelectionChange,
   editingReservationId,
   collision = false,
+  externalEvents = [],
 }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -167,6 +176,34 @@ export function ReservationTimeline({
                 style={{ fontSize: 12 }}
               >
                 {fmtMin(r.startMinute)} – {fmtMin(r.endMinute)}
+              </p>
+            </div>
+          );
+        })}
+
+        {/* External event blocks (행사 일정) */}
+        {externalEvents.map((ev) => {
+          const top = minToY(ev.startMin);
+          const height = Math.max(SLOT_H, minToY(ev.endMin) - top);
+          return (
+            <div
+              key={ev.id}
+              className="pointer-events-none absolute px-3 py-2"
+              style={{
+                top: top + 1,
+                height,
+                left: 0,
+                right: 0,
+                background: 'var(--color-accent)/10',
+                borderLeft: '3px solid var(--color-accent)',
+                opacity: 0.7,
+              }}
+            >
+              <p
+                className="truncate text-[11px] font-semibold leading-tight"
+                style={{ color: 'var(--color-accent)' }}
+              >
+                {ev.title}
               </p>
             </div>
           );

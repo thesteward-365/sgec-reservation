@@ -18,7 +18,15 @@ sqlite.exec(`
   )
 `);
 
+// 취소 이력에 googleEventId 컬럼 추가 (없으면)
+try { sqlite.exec(`ALTER TABLE reservation_histories ADD COLUMN google_event_id text`); } catch { /* already exists */ }
+
 // CURRENT_TIMESTAMP로 잘못 저장된 텍스트 날짜를 Unix 정수로 변환
+sqlite.exec(`
+  UPDATE sync_logs
+  SET timestamp = strftime('%s', timestamp)
+  WHERE typeof(timestamp) = 'text'
+`);
 sqlite.exec(`
   UPDATE reservation_histories
   SET created_at = strftime('%s', created_at)

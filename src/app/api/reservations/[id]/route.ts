@@ -10,6 +10,7 @@ import {
   buildReservationHistoryChanges,
   hasReservationHistoryChanges,
 } from '@/lib/services/reservation-history';
+import { updateGoogleEvent, deleteGoogleEvent } from '@/lib/calendar/calendar-service';
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -21,6 +22,12 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   const { id } = await params;
   const reservationId = parseInt(id);
   if (isNaN(reservationId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
+
+  // 삭제 전 googleEventId 보존
+  const [toDelete] = await db
+    .select({ googleEventId: reservations.googleEventId })
+    .from(reservations)
+    .where(and(eq(reservations.id, reservationId), eq(reservations.userId, user.id)));
 
   const deleted = db.transaction((tx) => {
     const removed = tx
@@ -43,12 +50,8 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
         actorUserId: user.id,
         actorUserName: user.name,
         actionType: 'cancelled',
-        changes: JSON.stringify({
-          cancelled: {
-            from: 'active',
-            to: 'cancelled',
-          },
-        }),
+        changes: JSON.stringify({ cancelled: { from: 'active', to: 'cancelled' } }),
+        googleEventId: toDelete?.googleEventId ?? null,
       })
       .run();
 
@@ -57,6 +60,11 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
   if (deleted.length === 0) {
     return NextResponse.json({ error: '예약을 찾을 수 없거나 권한이 없습니다.' }, { status: 404 });
+  }
+
+  // Google Calendar 이벤트 삭제 (실패해도 취소 성공 처리)
+  if (toDelete?.googleEventId) {
+    deleteGoogleEvent(toDelete.googleEventId).catch(() => {});
   }
 
   return NextResponse.json({ success: true });
@@ -192,6 +200,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
     return [nextReservation];
   });
+
+  // Google Calendar 이벤트 업데이트 (실패해도 수정 성공 처리)
+  updateGoogleEvent(reservationId).catch(() => {});
 
   return NextResponse.json(updated);
 }

@@ -6,6 +6,7 @@ import { getIronSession } from 'iron-session';
 import { sessionOptions, SessionData } from '@/lib/session';
 import { cookies } from 'next/headers';
 import { isHalfHourRange } from '@/lib/services/reservation-slots';
+import { createGoogleEvent } from '@/lib/calendar/calendar-service';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -98,6 +99,9 @@ export async function POST(request: NextRequest) {
     actionType: 'created',
     changes: JSON.stringify({}),
   });
+
+  // Google Calendar 동기화 (실패해도 예약 성공 처리)
+  createGoogleEvent(created.id).catch(() => {});
 
   return NextResponse.json(created, { status: 201 });
 }
