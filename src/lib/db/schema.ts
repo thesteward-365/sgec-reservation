@@ -7,7 +7,7 @@ export const users = sqliteTable('users', {
   phoneNumber: text('phone_number').notNull().unique(),
   role: text('role', { enum: ['user', 'admin'] }).notNull().default('user'),
   status: text('status', { enum: ['pending', 'approved', 'rejected'] }).notNull().default('pending'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 });
 
 export const floors = sqliteTable('floors', {
@@ -53,7 +53,7 @@ export const reservations = sqliteTable('reservations', {
   endTime: integer('end_time', { mode: 'timestamp' }).notNull(),
   purpose: text('purpose').notNull(),
   googleEventId: text('google_event_id'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 });
 
 export const reservationHistories = sqliteTable('reservation_histories', {
@@ -69,7 +69,7 @@ export const reservationHistories = sqliteTable('reservation_histories', {
   changes: text('changes').notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .notNull()
-    .default(sql`CURRENT_TIMESTAMP`),
+    .default(sql`(unixepoch())`),
 });
 
 export const calendarSettings = sqliteTable('calendar_settings', {

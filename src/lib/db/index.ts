@@ -14,8 +14,25 @@ sqlite.exec(`
     actor_user_name text NOT NULL,
     action_type text DEFAULT 'updated' NOT NULL,
     changes text NOT NULL,
-    created_at integer DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_at integer DEFAULT (unixepoch()) NOT NULL
   )
+`);
+
+// CURRENT_TIMESTAMP로 잘못 저장된 텍스트 날짜를 Unix 정수로 변환
+sqlite.exec(`
+  UPDATE reservation_histories
+  SET created_at = strftime('%s', created_at)
+  WHERE typeof(created_at) = 'text'
+`);
+sqlite.exec(`
+  UPDATE users
+  SET created_at = strftime('%s', created_at)
+  WHERE typeof(created_at) = 'text'
+`);
+sqlite.exec(`
+  UPDATE reservations
+  SET created_at = strftime('%s', created_at)
+  WHERE typeof(created_at) = 'text'
 `);
 
 export const db = drizzle(sqlite, { schema });

@@ -1,207 +1,204 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { BrandHeader } from '@/components/layout/brand-header';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   UserIcon,
-  CalendarIcon,
-  ArrowRightOnRectangleIcon,
-  PencilIcon,
-  CheckIcon,
-  XMarkIcon,
+  CalendarDaysIcon,
+  ArrowRightStartOnRectangleIcon,
+  ChevronRightIcon,
 } from '@heroicons/react/24/outline';
+
+interface Me {
+  id: number;
+  name: string;
+  phoneNumber: string;
+  role: 'user' | 'admin';
+}
 
 export default function AdminMePage() {
   const router = useRouter();
+  const [me, setMe] = useState<Me | null>(null);
+  const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [name, setName] = useState('정연희');
-  const [phoneNumber, setPhoneNumber] = useState('010-4567-8901');
-  const [tempName, setTempName] = useState(name);
-  const [tempPhoneNumber, setTempPhoneNumber] = useState(phoneNumber);
+  const [tempName, setTempName] = useState('');
+  const [tempPhone, setTempPhone] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleEdit = () => {
-    setTempName(name);
-    setTempPhoneNumber(phoneNumber);
-    setIsEditing(true);
-  };
+  useEffect(() => {
+    fetch('/api/account')
+      .then((r) => r.json())
+      .then((data: { user: Me }) => {
+        setMe(data.user);
+        setTempName(data.user.name);
+        setTempPhone(data.user.phoneNumber);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
 
-  const handleSave = () => {
-    setName(tempName);
-    setPhoneNumber(tempPhoneNumber);
+  async function handleSave() {
+    if (!me) return;
+    setSaving(true);
+    setError(null);
+    const res = await fetch('/api/account', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: tempName, phoneNumber: tempPhone }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error ?? '저장에 실패했습니다.');
+      setSaving(false);
+      return;
+    }
+    setMe(data.user);
     setIsEditing(false);
-    // 실제 API 호출
-  };
+    setSaving(false);
+  }
 
-  const handleCancel = () => {
-    setTempName(name);
-    setTempPhoneNumber(phoneNumber);
-    setIsEditing(false);
-  };
-
-  const handleLogout = async () => {
-    // 실제 로그아웃 API 호출
+  async function handleLogout() {
+    await fetch('/api/auth/logout', { method: 'POST' });
     router.push('/login');
-  };
+  }
 
   return (
     <>
       <BrandHeader />
 
       <main className="flex-1 pb-24">
-        <div className="space-y-6 p-5">
-          {/* 프로필 카드 */}
-          <Card className="p-5">
-            <div className="flex items-center gap-4">
-              {/* 아바타 */}
-              <div className="bg-muted flex h-16 w-16 items-center justify-center rounded-full">
-                <span className="text-headline1 text-muted-foreground font-semibold">
-                  {name
-                    .split(' ')
-                    .map((n) => n[0])
-                    .join('')
-                    .toUpperCase()}
-                </span>
+        <div className="space-y-3 px-5 pt-4 pb-5">
+          {/* 프로필 섹션 */}
+          <div className="bg-card rounded-2xl px-4 py-4">
+            {loading ? (
+              <div className="space-y-2 animate-pulse">
+                <div className="bg-muted h-5 w-24 rounded" />
+                <div className="bg-muted h-4 w-36 rounded" />
               </div>
-
-              {/* 프로필 정보 */}
-              <div className="flex-1">
-                <div className="mb-1 flex items-center gap-2">
-                  <h2 className="text-headline2">{name}</h2>
-                  <Badge variant="solid" color="neutral">관리자</Badge>
-                </div>
-                <p className="text-body-medium text-muted-foreground">
-                  {phoneNumber}
-                </p>
-              </div>
-
-              {/* 수정 버튼 */}
-              {!isEditing && (
-                <Button variant="secondary" size="sm" onClick={handleEdit}>
-                  <PencilIcon className="mr-1 h-4 w-4" />
-                  수정
-                </Button>
-              )}
-            </div>
-
-            {/* 수정 모드 */}
-            {isEditing && (
-              <div className="border-border-subtle mt-4 space-y-4 border-t pt-4">
-                <div className="grid gap-4">
-                  <div>
-                    <Label htmlFor="name">이름</Label>
-                    <Input
-                      id="name"
-                      value={tempName}
-                      onChange={(e) => setTempName(e.target.value)}
-                      className="mt-1"
-                    />
+            ) : me && !isEditing ? (
+              <>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-body font-bold text-foreground">{me.name}</span>
+                      {me.role === 'admin' && (
+                        <Badge variant="subtle" color="blue" className="text-xs">
+                          관리자
+                        </Badge>
+                      )}
+                    </div>
+                    <span className="block text-body-sm text-muted-foreground">
+                      {me.phoneNumber}
+                    </span>
                   </div>
-                  <div>
-                    <Label htmlFor="phone">전화번호</Label>
-                    <Input
-                      id="phone"
-                      value={tempPhoneNumber}
-                      onChange={(e) => setTempPhoneNumber(e.target.value)}
-                      className="mt-1"
-                    />
-                  </div>
+                  <button
+                    className="text-caption text-muted-foreground rounded-xl px-3 py-2 transition-colors hover:bg-muted hover:text-foreground"
+                    onClick={() => {
+                      setTempName(me.name);
+                      setTempPhone(me.phoneNumber);
+                      setIsEditing(true);
+                    }}
+                  >
+                    수정
+                  </button>
                 </div>
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={handleSave}>
-                    <CheckIcon className="mr-1 h-4 w-4" />
-                    저장
-                  </Button>
-                  <Button variant="secondary" size="sm" onClick={handleCancel}>
-                    <XMarkIcon className="mr-1 h-4 w-4" />
+              </>
+            ) : me && isEditing ? (
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <span className="block text-caption text-muted-foreground">이름</span>
+                  <Input
+                    value={tempName}
+                    onChange={(e) => setTempName(e.target.value)}
+                    className="h-10"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <span className="block text-caption text-muted-foreground">전화번호</span>
+                  <Input
+                    value={tempPhone}
+                    onChange={(e) => setTempPhone(e.target.value)}
+                    className="h-10"
+                  />
+                </div>
+                {error && (
+                  <span className="block text-caption text-red-500">{error}</span>
+                )}
+                <div className="flex gap-2 pt-1">
+                  <button
+                    disabled={saving}
+                    onClick={handleSave}
+                    className="rounded-pill bg-primary flex-1 py-2.5 text-body-sm font-semibold text-white transition-colors disabled:opacity-50 hover:bg-accent-hover"
+                  >
+                    {saving ? '저장 중…' : '저장'}
+                  </button>
+                  <button
+                    onClick={() => { setIsEditing(false); setError(null); }}
+                    className="rounded-pill border-border flex-1 border py-2.5 text-body-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                  >
                     취소
-                  </Button>
+                  </button>
                 </div>
               </div>
-            )}
-          </Card>
-
-          {/* 메뉴 목록 */}
-          <div className="space-y-3">
-            {/* 사용자 페이지로 이동 */}
-            <Link href="/reserve">
-              <Card className="p-4 transition-shadow hover:shadow-md">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100">
-                      <UserIcon className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="text-body-medium font-semibold">
-                        사용자 페이지로 이동
-                      </p>
-                      <p className="text-body-small text-muted-foreground">
-                        일반 사용자 모드로 전환합니다
-                      </p>
-                    </div>
-                  </div>
-                  <ArrowRightOnRectangleIcon className="text-muted-foreground h-5 w-5" />
-                </div>
-              </Card>
-            </Link>
-
-            {/* Google Calendar 연동 */}
-            <Link href="/admin/calendar">
-              <Card className="p-4 transition-shadow hover:shadow-md">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100">
-                      <CalendarIcon className="h-5 w-5 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-body-medium font-semibold">
-                        Google Calendar 연동
-                      </p>
-                      <p className="text-body-small text-muted-foreground">
-                        캘린더 동기화 설정을 관리합니다
-                      </p>
-                    </div>
-                  </div>
-                  <ArrowRightOnRectangleIcon className="text-muted-foreground h-5 w-5" />
-                </div>
-              </Card>
-            </Link>
-
-            {/* 로그아웃 */}
-            <Card className="border-red-200 p-4">
-              <button
-                onClick={handleLogout}
-                className="flex w-full items-center justify-between text-left"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-100">
-                    <ArrowRightOnRectangleIcon className="h-5 w-5 text-red-600" />
-                  </div>
-                  <div>
-                    <p className="text-body-medium font-semibold text-red-600">
-                      로그아웃
-                    </p>
-                    <p className="text-body-small text-muted-foreground">
-                      계정에서 로그아웃합니다
-                    </p>
-                  </div>
-                </div>
-                <ArrowRightOnRectangleIcon className="h-5 w-5 text-red-600" />
-              </button>
-            </Card>
+            ) : null}
           </div>
 
-          {/* 버전 정보 */}
-          <div className="border-border-subtle border-t pt-4 text-center">
-            <p className="text-body-small text-muted-foreground">
+          {/* 메뉴 섹션 */}
+          <div className="bg-card rounded-2xl overflow-hidden">
+            <Link
+              href="/reserve"
+              className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted"
+            >
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-100">
+                <UserIcon className="h-4 w-4 text-blue-600" />
+              </div>
+              <span className="flex-1 text-body-sm font-semibold text-foreground">
+                사용자 페이지로 이동
+              </span>
+              <ChevronRightIcon className="h-4 w-4 text-muted-foreground" />
+            </Link>
+
+            <div className="mx-4 h-px bg-muted/60" />
+
+            <Link
+              href="/admin/calendar"
+              className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted"
+            >
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-green-100">
+                <CalendarDaysIcon className="h-4 w-4 text-green-600" />
+              </div>
+              <span className="flex-1 text-body-sm font-semibold text-foreground">
+                Google Calendar 연동
+              </span>
+              <ChevronRightIcon className="h-4 w-4 text-muted-foreground" />
+            </Link>
+          </div>
+
+          {/* 로그아웃 */}
+          <div className="bg-card rounded-2xl">
+            <button
+              onClick={handleLogout}
+              className="flex w-full items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted rounded-2xl"
+            >
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-red-100">
+                <ArrowRightStartOnRectangleIcon className="h-4 w-4 text-red-500" />
+              </div>
+              <span className="flex-1 text-left text-body-sm font-semibold text-red-500">
+                로그아웃
+              </span>
+            </button>
+          </div>
+
+          {/* 버전 */}
+          <div className="pt-2 text-center">
+            <span className="block text-caption text-muted-foreground">
               v1.0.0 · 샘깊은교회 문화사역 장소방
-            </p>
+            </span>
           </div>
         </div>
       </main>

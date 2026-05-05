@@ -5,28 +5,24 @@ import Link from 'next/link';
 import { BrandHeader } from '@/components/layout/brand-header';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   UsersIcon,
   CalendarDaysIcon,
   MapPinIcon,
   CalendarIcon,
   ChevronRightIcon,
-  UserIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  CogIcon,
 } from '@heroicons/react/24/outline';
 
 interface DashboardStats {
   pendingUsersCount: number;
   totalUsersCount: number;
   totalReservationsCount: number;
+  totalPlacesCount: number;
   recentActivities: Array<{
     id: number;
     type: string;
     message: string;
-    timestamp: Date;
+    timestamp: string;
   }>;
 }
 
@@ -75,14 +71,14 @@ function formatTimeAgo(date: Date): string {
 
 function getActivityIcon(type: string) {
   switch (type) {
-    case 'user_approved':
-      return <CheckCircleIcon className="h-5 w-5 text-green-500" />;
-    case 'reservation_cancelled':
-      return <XCircleIcon className="h-5 w-5 text-red-500" />;
-    case 'place_updated':
-      return <CogIcon className="h-5 w-5 text-blue-500" />;
+    case 'created':
+      return <div className="mt-1.5 h-2.5 w-2.5 rounded-full bg-green-500" />;
+    case 'cancelled':
+      return <div className="mt-1.5 h-2.5 w-2.5 rounded-full bg-red-500" />;
+    case 'updated':
+      return <div className="mt-1.5 h-2.5 w-2.5 rounded-full bg-blue-500" />;
     default:
-      return <UserIcon className="h-5 w-5 text-gray-500" />;
+      return <div className="mt-1.5 h-2.5 w-2.5 rounded-full bg-gray-500" />;
   }
 }
 
@@ -108,56 +104,51 @@ export default function DashboardPage() {
     fetchStats();
   }, []);
 
+  const now = new Date();
+  const month = now.getMonth() + 1;
+  const day = now.getDate();
+  const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'][now.getDay()];
+
   return (
     <>
-      <BrandHeader
-        action={
-          <div className="flex items-center gap-2">
-            <span className="text-body-small text-muted-foreground">
-              관리자
-            </span>
-            <UserIcon className="text-muted-foreground h-5 w-5" />
-          </div>
-        }
-      />
+      <BrandHeader />
 
       <main className="flex-1 pb-24">
-        {/* 상단 요약 */}
-        <section className="px-5 py-6">
-          <div className="mb-6">
-            <h1 className="text-headline1 mb-1">정연희님</h1>
-            <p className="text-body-medium text-muted-foreground">
-              관리자로 로그인하셨습니다
-            </p>
-            <p className="text-body-small text-muted-foreground mt-2">
-              오늘 처리할 일: 승인 대기 사용자 확인, 예약 현황 점검
-            </p>
+        <section className="space-y-3 px-5 py-6">
+          {!loading && stats && stats.pendingUsersCount > 0 && (
+            <Link href="/admin/users">
+              <div
+                className="group flex items-center justify-between gap-3 rounded-2xl p-4 transition"
+                style={{ backgroundColor: 'var(--color-warning-subtle)' }}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="flex h-2.5 w-2.5 shrink-0 rounded-full bg-orange-400" />
+                  <div>
+                    <p className="text-body-sm text-foreground font-semibold">
+                      {stats.pendingUsersCount}명이 가입 승인을 기다리고 있어요
+                    </p>
+                    <p
+                      className="text-caption"
+                      style={{ color: 'var(--color-warning)' }}
+                    >
+                      탭하여 승인 처리
+                    </p>
+                  </div>
+                </div>
+                <ChevronRightIcon
+                  className="h-4 w-4 shrink-0 transition"
+                  style={{ color: 'var(--color-warning)' }}
+                />
+              </div>
+            </Link>
+          )}
+        </section>
+
+        <section className="px-5 pb-10">
+          <div className="mb-4">
+            <p className="text-h5 font-bold!">관리</p>
           </div>
 
-          {/* 승인 대기 카드 */}
-          <Card className="mb-6 p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="mb-1 flex items-center gap-2">
-                  <span className="text-headline2 font-bold text-orange-600">
-                    {loading ? '...' : stats?.pendingUsersCount || 0}
-                  </span>
-                  <span className="text-body-medium">명의 승인 대기</span>
-                </div>
-                <p className="text-body-small text-muted-foreground">
-                  확인 필요
-                </p>
-              </div>
-              <Link href="/admin/users">
-                <Button variant="secondary" size="sm">
-                  확인하기
-                  <ChevronRightIcon className="ml-1 h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
-          </Card>
-
-          {/* 빠른 진입 메뉴 */}
           <div className="grid grid-cols-2 gap-3">
             {QUICK_ACTIONS.map((action) => {
               const Icon = action.icon;
@@ -169,20 +160,25 @@ export default function DashboardPage() {
               return (
                 <Link key={action.href} href={action.href}>
                   <Card className="p-4 transition-shadow hover:shadow-md">
-                    <div className="mb-2 flex items-start justify-between">
-                      <Icon className="text-muted-foreground h-6 w-6" />
-                      {badgeValue && badgeValue > 0 && (
-                        <Badge variant="solid" color="orange" className="text-xs">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <div className="bg-muted flex h-9 w-9 items-center justify-center rounded-2xl">
+                          <Icon className="text-foreground h-4 w-4" />
+                        </div>
+                        <p className="text-body-sm font-semibold">
+                          {action.title}
+                        </p>
+                      </div>
+                      {badgeValue && badgeValue > 0 ? (
+                        <Badge
+                          variant="solid"
+                          color="orange"
+                          className="h-5 min-w-5 px-1.5 text-xs"
+                        >
                           {badgeValue}
                         </Badge>
-                      )}
+                      ) : null}
                     </div>
-                    <h3 className="text-body-medium mb-1 font-semibold">
-                      {action.title}
-                    </h3>
-                    <p className="text-body-small text-muted-foreground">
-                      {action.description}
-                    </p>
                   </Card>
                 </Link>
               );
@@ -190,44 +186,47 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* 최근 활동 */}
-        <section className="px-5 pb-6">
-          <h2 className="text-headline2 mb-4">최근 활동</h2>
-          <div className="space-y-3">
+        <section className="px-5 pb-10">
+          <div className="mb-4">
+            <p className="text-h5 font-bold!">최근 활동</p>
+          </div>
+
+          <Card className="space-y-3 p-4">
             {loading ? (
               Array.from({ length: 3 }).map((_, i) => (
-                <Card key={i} className="p-4">
-                  <div className="animate-pulse">
-                    <div className="mb-2 flex items-center gap-3">
-                      <div className="bg-muted h-5 w-5 rounded" />
-                      <div className="bg-muted h-4 flex-1 rounded" />
-                    </div>
-                    <div className="bg-muted h-3 w-16 rounded" />
+                <div key={i} className="animate-pulse space-y-2">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-muted h-5 w-5 rounded" />
+                    <div className="bg-muted h-4 w-3/4 rounded" />
                   </div>
-                </Card>
+                  <div className="bg-muted h-3 w-16 rounded" />
+                </div>
               ))
             ) : stats?.recentActivities?.length ? (
               stats.recentActivities.map((activity) => (
-                <Card key={activity.id} className="p-4">
+                <div
+                  key={activity.id}
+                  className="border-border-subtle border-b pb-3 last:border-b-0 last:pb-0"
+                >
                   <div className="flex items-start gap-3">
                     {getActivityIcon(activity.type)}
-                    <div className="flex-1">
-                      <p className="text-body-medium">{activity.message}</p>
-                      <p className="text-body-small text-muted-foreground mt-1">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-body">{activity.message}</p>
+                      <p className="text-caption text-muted-foreground mt-1">
                         {formatTimeAgo(new Date(activity.timestamp))}
                       </p>
                     </div>
                   </div>
-                </Card>
+                </div>
               ))
             ) : (
-              <Card className="p-4">
-                <p className="text-body-medium text-muted-foreground text-center">
+              <div>
+                <p className="text-body text-muted-foreground text-center">
                   최근 활동이 없습니다
                 </p>
-              </Card>
+              </div>
             )}
-          </div>
+          </Card>
         </section>
       </main>
     </>

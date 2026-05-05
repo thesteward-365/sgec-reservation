@@ -60,14 +60,18 @@ export default function PlacesPage() {
     switch (activeTab) {
       case '장소':
         return (
-          <div className="divide-border-subtle divide-y">
+          <Card className="p-1">
             {PLACES.map((place) => (
               <div
                 key={place.id}
-                className="flex items-center justify-between px-5 py-4"
+                className="border-border-subtle flex items-center gap-3 border-b px-4 py-3 last:border-b-0"
               >
-                <div className="flex-1">
-                  <h3 className="text-body-medium mb-1 font-semibold">
+                {/* 장소 정보 */}
+                <div className="min-w-0 flex-1">
+                  <h3
+                    className="text-body-medium mb-0.5 font-semibold"
+                    style={{ fontSize: 15 }}
+                  >
                     {place.name}
                   </h3>
                   <div className="text-body-small text-muted-foreground flex items-center gap-2">
@@ -75,62 +79,74 @@ export default function PlacesPage() {
                     <span>•</span>
                     <span>정원 {place.capacity}명</span>
                   </div>
-                  <div className="mt-2 flex gap-1">
+                  <div className="mt-1 flex gap-1">
                     {place.tags.map((tag) => (
-                      <Badge key={tag} variant="outline" className="text-xs">
+                      <Badge
+                        key={tag}
+                        variant="outline"
+                        className="px-2 py-0.5 text-xs"
+                      >
                         #{tag}
                       </Badge>
                     ))}
                   </div>
                 </div>
-                <ChevronRightIcon className="text-muted-foreground h-5 w-5" />
+                <ChevronRightIcon className="text-muted-foreground h-4 w-4 flex-shrink-0" />
               </div>
             ))}
-          </div>
+          </Card>
         );
 
       case '층':
         return (
-          <div className="divide-border-subtle divide-y">
+          <Card className="p-1">
             {FLOORS.map((floor) => (
               <div
                 key={floor.id}
-                className="flex items-center justify-between px-5 py-4"
+                className="border-border-subtle flex items-center gap-3 border-b px-4 py-3 last:border-b-0"
               >
-                <div className="flex-1">
-                  <h3 className="text-body-medium mb-1 font-semibold">
+                {/* 층 정보 */}
+                <div className="min-w-0 flex-1">
+                  <h3
+                    className="text-body-medium mb-0.5 font-semibold"
+                    style={{ fontSize: 15 }}
+                  >
                     {floor.name}
                   </h3>
                   <p className="text-body-small text-muted-foreground">
                     {floor.placesCount}개 장소
                   </p>
                 </div>
-                <ChevronRightIcon className="text-muted-foreground h-5 w-5" />
+                <ChevronRightIcon className="text-muted-foreground h-4 w-4 flex-shrink-0" />
               </div>
             ))}
-          </div>
+          </Card>
         );
 
       case '태그':
         return (
-          <div className="divide-border-subtle divide-y">
+          <Card className="p-1">
             {TAGS.map((tag) => (
               <div
                 key={tag.id}
-                className="flex items-center justify-between px-5 py-4"
+                className="border-border-subtle flex items-center gap-3 border-b px-4 py-3 last:border-b-0"
               >
-                <div className="flex-1">
-                  <h3 className="text-body-medium mb-1 font-semibold">
+                {/* 태그 정보 */}
+                <div className="min-w-0 flex-1">
+                  <h3
+                    className="text-body-medium mb-0.5 font-semibold"
+                    style={{ fontSize: 15 }}
+                  >
                     #{tag.name}
                   </h3>
                   <p className="text-body-small text-muted-foreground">
                     {tag.placesCount}개 장소
                   </p>
                 </div>
-                <ChevronRightIcon className="text-muted-foreground h-5 w-5" />
+                <ChevronRightIcon className="text-muted-foreground h-4 w-4 flex-shrink-0" />
               </div>
             ))}
-          </div>
+          </Card>
         );
 
       default:
@@ -161,12 +177,12 @@ export default function PlacesPage() {
         </div>
 
         {/* 탭 */}
-        <div className="border-border-subtle flex border-b px-5 py-3">
+        <div className="border-border-subtle flex gap-2 border-b px-5 py-3">
           {TABS.map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`text-body-medium rounded-lg px-4 py-2 transition-colors ${
+              className={`text-body-small rounded-full px-3 py-1.5 transition-colors ${
                 activeTab === tab
                   ? 'bg-fg-strong text-background font-semibold'
                   : 'text-muted-foreground hover:text-foreground'

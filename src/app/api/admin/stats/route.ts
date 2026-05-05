@@ -3,10 +3,33 @@ import { getIronSession } from 'iron-session';
 import { sessionOptions, SessionData } from '@/lib/session';
 import { cookies } from 'next/headers';
 import { db } from '@/lib/db';
-import { users, reservations } from '@/lib/db/schema';
-import { eq, count, sql } from 'drizzle-orm';
+import {
+  places,
+  reservationHistories,
+  reservations,
+  users,
+} from '@/lib/db/schema';
+import { eq, count, desc } from 'drizzle-orm';
 
-export async function GET(request: NextRequest) {
+function buildActivityMessage(
+  actionType: string,
+  actorUserName: string,
+  placeName?: string | null
+) {
+  const place = placeName ? `${placeName} ` : '';
+  switch (actionType) {
+    case 'created':
+      return `${actorUserName}님이 ${place}예약을 생성했습니다`;
+    case 'updated':
+      return `${actorUserName}님이 ${place}예약을 수정했습니다`;
+    case 'cancelled':
+      return `${actorUserName}님이 ${place}예약을 취소했습니다`;
+    default:
+      return `${actorUserName}님이 작업을 수행하였습니다`;
+  }
+}
+
+export async function GET(_request: NextRequest) {
   try {
     const session = await getIronSession<SessionData>(
       await cookies(),
@@ -25,36 +48,40 @@ export async function GET(request: NextRequest) {
     // 전체 사용자 수
     const totalUsers = await db.select({ count: count() }).from(users);
 
-    // 오늘 예약 수 (간단하게 전체 예약 수로 대체)
+    // 전체 장소 수
+    const totalPlaces = await db.select({ count: count() }).from(places);
+
+    // 전체 예약 수
     const totalReservations = await db
       .select({ count: count() })
       .from(reservations);
 
-    // 최근 처리 항목 (더미 데이터로 대체 - 실제로는 reservation_history 테이블에서 조회)
-    const recentActivities = [
-      {
-        id: 1,
-        type: 'user_approved',
-        message: '김철수님이 승인되었습니다',
-        timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30분 전
-      },
-      {
-        id: 2,
-        type: 'reservation_cancelled',
-        message: '예약이 취소되었습니다 (본당, 2024-01-15 14:00)',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2시간 전
-      },
-      {
-        id: 3,
-        type: 'place_updated',
-        message: '카페 공간 정보가 수정되었습니다',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4), // 4시간 전
-      },
-    ];
+    // 최근 활동 항목
+    const recentHistory = await db
+      .select({
+        id: reservationHistories.id,
+        actionType: reservationHistories.actionType,
+        actorUserName: reservationHistories.actorUserName,
+        createdAt: reservationHistories.createdAt,
+        placeName: places.name,
+      })
+      .from(reservationHistories)
+      .leftJoin(reservations, eq(reservationHistories.reservationId, reservations.id))
+      .leftJoin(places, eq(reservations.placeId, places.id))
+      .orderBy(desc(reservationHistories.createdAt))
+      .limit(5);
+
+    const recentActivities = recentHistory.map((item) => ({
+      id: item.id,
+      type: item.actionType,
+      message: buildActivityMessage(item.actionType, item.actorUserName, item.placeName),
+      timestamp: new Date(item.createdAt).toISOString(),
+    }));
 
     return NextResponse.json({
       pendingUsersCount: pendingUsers[0]?.count || 0,
       totalUsersCount: totalUsers[0]?.count || 0,
+      totalPlacesCount: totalPlaces[0]?.count || 0,
       totalReservationsCount: totalReservations[0]?.count || 0,
       recentActivities,
     });

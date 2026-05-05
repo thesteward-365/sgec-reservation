@@ -2,15 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { BrandHeader } from '@/components/layout/brand-header';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import {
-  CheckCircleIcon,
-  XCircleIcon,
-  UserIcon,
-  ClockIcon,
-} from '@heroicons/react/24/outline';
+import { CheckIcon } from '@heroicons/react/24/solid';
+import { EllipsisHorizontalIcon } from '@heroicons/react/24/outline';
+import { Drawer, DrawerContent, DrawerTitle, DrawerClose } from '@/components/ui/drawer';
+import { Switch } from '@/components/ui/switch';
 
 interface User {
   id: number;
@@ -18,260 +14,266 @@ interface User {
   phoneNumber: string;
   role: 'user' | 'admin';
   status: 'pending' | 'approved' | 'rejected';
-  createdAt: string;
+  createdAt: string | null;
 }
 
-const TABS = ['승인 대기', '전체 사용자'] as const;
-type TabType = (typeof TABS)[number];
+type TabType = '승인 대기' | '전체 사용자';
 
-// 더미 데이터
-const PENDING_USERS: User[] = [
-  {
-    id: 1,
-    name: '홍길동',
-    phoneNumber: '010-1234-5678',
-    role: 'user',
-    status: 'pending',
-    createdAt: '2024-01-15T10:30:00Z',
-  },
-  {
-    id: 2,
-    name: '김철수',
-    phoneNumber: '010-2345-6789',
-    role: 'user',
-    status: 'pending',
-    createdAt: '2024-01-14T14:20:00Z',
-  },
-];
+const CHIP_BASE =
+  'inline-flex items-center font-medium leading-none rounded-pill px-3 py-[6px] text-caption transition-colors duration-120 cursor-pointer select-none whitespace-nowrap';
+const CHIP_ACTIVE = 'bg-(--color-fg-strong) text-white';
+const CHIP_INACTIVE = 'bg-neutral-300 text-foreground';
 
-const ALL_USERS: User[] = [
-  ...PENDING_USERS,
-  {
-    id: 3,
-    name: '관리자',
-    phoneNumber: '010-3456-7890',
-    role: 'admin',
-    status: 'approved',
-    createdAt: '2024-01-10T09:00:00Z',
-  },
-  {
-    id: 4,
-    name: '정연희',
-    phoneNumber: '010-4567-8901',
-    role: 'admin',
-    status: 'approved',
-    createdAt: '2024-01-12T11:15:00Z',
-  },
-];
-
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase();
+function formatTimeAgo(isoString: string | null): string {
+  if (!isoString) return '';
+  const diffMs = Date.now() - new Date(isoString).getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 60) return `${diffMin}분 전`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `${diffH}시간 전`;
+  return `${Math.floor(diffH / 24)}일 전`;
 }
 
-function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('ko-KR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-}
-
-function formatTimeAgo(dateString: string): string {
-  const now = new Date();
-  const date = new Date(dateString);
-  const diffInHours = Math.floor(
-    (now.getTime() - date.getTime()) / (1000 * 60 * 60)
-  );
-
-  if (diffInHours < 24) {
-    return `${diffInHours}시간 전`;
-  } else {
-    const diffInDays = Math.floor(diffInHours / 24);
-    return `${diffInDays}일 전`;
-  }
+function formatJoinDate(isoString: string | null): string {
+  if (!isoString) return '';
+  const d = new Date(isoString);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `가입 ${y}.${m}.${day}`;
 }
 
 export default function UsersPage() {
   const [activeTab, setActiveTab] = useState<TabType>('승인 대기');
-  const [pendingUsers, setPendingUsers] = useState<User[]>(PENDING_USERS);
-  const [allUsers, setAllUsers] = useState<User[]>(ALL_USERS);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [menuUser, setMenuUser] = useState<User | null>(null);
 
-  const handleApprove = async (userId: number) => {
-    // 실제 API 호출
-    setPendingUsers((prev) => prev.filter((u) => u.id !== userId));
-    setAllUsers((prev) =>
-      prev.map((u) =>
-        u.id === userId ? { ...u, status: 'approved' as const } : u
-      )
+  useEffect(() => {
+    fetch('/api/admin/users')
+      .then((r) => r.json())
+      .then((data: User[]) => setUsers(data))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const pendingUsers = users.filter((u) => u.status === 'pending');
+
+  async function callPatch(userId: number, body: object) {
+    const res = await fetch(`/api/admin/users/${userId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) return;
+    const updated = (await res.json()) as {
+      id: number;
+      role: User['role'];
+      status: User['status'];
+    };
+    setUsers((prev) =>
+      prev.map((u) => (u.id === updated.id ? { ...u, ...updated } : u))
     );
-  };
-
-  const handleReject = async (userId: number) => {
-    // 실제 API 호출
-    setPendingUsers((prev) => prev.filter((u) => u.id !== userId));
-    setAllUsers((prev) =>
-      prev.map((u) =>
-        u.id === userId ? { ...u, status: 'rejected' as const } : u
-      )
+    setMenuUser((prev) =>
+      prev?.id === updated.id ? { ...prev, ...updated } : prev
     );
-  };
+  }
 
-  const renderPendingUsers = () => (
-    <div className="space-y-4">
-      {pendingUsers.length === 0 ? (
-        <Card className="p-8 text-center">
-          <p className="text-body-medium text-muted-foreground">
+  // ── 승인 대기 렌더 ─────────────────────────────────
+  const renderPending = () => {
+    if (loading) {
+      return Array.from({ length: 2 }).map((_, i) => (
+        <div key={i} className="bg-card animate-pulse rounded-2xl p-5">
+          <div className="space-y-2">
+            <div className="bg-muted h-5 w-24 rounded" />
+            <div className="bg-muted h-4 w-36 rounded" />
+            <div className="bg-muted h-3 w-28 rounded" />
+          </div>
+          <div className="mt-5 flex gap-2">
+            <div className="rounded-pill bg-muted h-12 flex-1" />
+            <div className="rounded-pill bg-muted h-12 flex-1" />
+          </div>
+        </div>
+      ));
+    }
+
+    if (pendingUsers.length === 0) {
+      return (
+        <div className="bg-card rounded-2xl p-8 text-center">
+          <p className="text-body text-muted-foreground">
             승인 대기 중인 사용자가 없습니다
           </p>
-        </Card>
-      ) : (
-        pendingUsers.map((user) => (
-          <Card key={user.id} className="p-5">
-            <div className="flex items-center gap-4">
-              {/* 아바타 */}
-              <div className="bg-muted flex h-12 w-12 items-center justify-center rounded-full">
-                <span className="text-body-medium text-muted-foreground font-semibold">
-                  {getInitials(user.name)}
-                </span>
-              </div>
+        </div>
+      );
+    }
 
-              {/* 사용자 정보 */}
-              <div className="flex-1">
-                <h3 className="text-body-medium font-semibold">{user.name}</h3>
-                <p className="text-body-small text-muted-foreground">
-                  {user.phoneNumber}
-                </p>
-                <div className="mt-1 flex items-center gap-1">
-                  <ClockIcon className="text-muted-foreground h-3 w-3" />
-                  <span className="text-body-small text-muted-foreground">
-                    {formatTimeAgo(user.createdAt)} 요청
-                  </span>
-                </div>
-              </div>
+    return pendingUsers.map((user) => (
+      <div key={user.id} className="bg-card rounded-2xl p-5">
+        <div className="space-y-1">
+          <p className="text-body text-foreground font-bold">{user.name}</p>
+          <p className="text-body-sm text-foreground">{user.phoneNumber}</p>
+          <p className="text-caption text-muted-foreground">
+            {formatTimeAgo(user.createdAt)}
+          </p>
+        </div>
+        <div className="mt-5 flex gap-2">
+          <button
+            className="text-body-sm rounded-pill border-border text-foreground hover:bg-muted flex flex-1 items-center justify-center border py-3 font-semibold transition-colors"
+            onClick={() => callPatch(user.id, { action: 'reject' })}
+          >
+            거절
+          </button>
+          <button
+            className="text-body-sm rounded-pill bg-primary hover:bg-accent-hover flex flex-1 items-center justify-center gap-1.5 py-3 font-semibold text-white transition-colors"
+            onClick={() => callPatch(user.id, { action: 'approve' })}
+          >
+            <CheckIcon className="h-4 w-4" />
+            승인
+          </button>
+        </div>
+      </div>
+    ));
+  };
 
-              {/* 액션 버튼 */}
-              <div className="flex gap-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => handleReject(user.id)}
-                  className="border-red-200 text-red-600 hover:bg-red-50"
-                >
-                  <XCircleIcon className="mr-1 h-4 w-4" />
-                  거절
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => handleApprove(user.id)}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  <CheckCircleIcon className="mr-1 h-4 w-4" />
-                  승인
-                </Button>
-              </div>
+  // ── 전체 사용자 렌더 ───────────────────────────────
+  const renderAll = () => {
+    if (loading) {
+      return Array.from({ length: 3 }).map((_, i) => (
+        <div key={i} className="bg-card animate-pulse rounded-2xl p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="bg-muted h-5 w-20 rounded" />
+              <div className="rounded-pill bg-muted h-5 w-14" />
             </div>
-          </Card>
-        ))
-      )}
-    </div>
-  );
-
-  const renderAllUsers = () => (
-    <div className="space-y-4">
-      {allUsers.map((user) => (
-        <Card key={user.id} className="p-5">
-          <div className="flex items-center gap-4">
-            {/* 아바타 */}
-            <div className="bg-muted flex h-12 w-12 items-center justify-center rounded-full">
-              <span className="text-body-medium text-muted-foreground font-semibold">
-                {getInitials(user.name)}
-              </span>
-            </div>
-
-            {/* 사용자 정보 */}
-            <div className="flex-1">
-              <div className="mb-1 flex items-center gap-2">
-                <h3 className="text-body-medium font-semibold">{user.name}</h3>
-                <Badge
-                  variant="solid"
-                  color={user.role === 'admin' ? 'neutral' : 'blue'}
-                >
-                  {user.role === 'admin' ? '관리자' : '사용자'}
-                </Badge>
-              </div>
-              <p className="text-body-small text-muted-foreground">
-                {user.phoneNumber}
-              </p>
-              <p className="text-body-small text-muted-foreground">
-                가입일: {formatDate(user.createdAt)}
-              </p>
-            </div>
-
-            {/* 상태 */}
-            <div className="text-right">
-              <Badge
-                variant="solid"
-                color={
-                  user.status === 'approved'
-                    ? 'green'
-                    : user.status === 'pending'
-                    ? 'orange'
-                    : 'red'
-                }
-              >
-                {user.status === 'approved'
-                  ? '승인됨'
-                  : user.status === 'pending'
-                    ? '대기중'
-                    : '거절됨'}
-              </Badge>
-            </div>
+            <div className="bg-muted h-6 w-6 rounded" />
           </div>
-        </Card>
-      ))}
-    </div>
-  );
+          <div className="bg-muted mt-1.5 h-4 w-48 rounded" />
+        </div>
+      ));
+    }
+
+    return users.map((user) => (
+      <div key={user.id} className="bg-card rounded-2xl px-4 py-3.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-body font-bold text-foreground">{user.name}</span>
+            {user.role === 'admin' && (
+              <Badge variant="subtle" color="blue" className="text-xs">
+                관리자
+              </Badge>
+            )}
+          </div>
+          <button
+            className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            onClick={() => setMenuUser(user)}
+          >
+            <EllipsisHorizontalIcon className="h-5 w-5" />
+          </button>
+        </div>
+        <span className="mt-1.5 block text-caption text-muted-foreground">
+          {user.phoneNumber} · {formatJoinDate(user.createdAt)}
+        </span>
+      </div>
+    ));
+  };
 
   return (
     <>
       <BrandHeader />
 
       <main className="flex-1 pb-24">
-        {/* 헤더 */}
-        <div className="border-border-subtle border-b px-5 py-4">
-          <h1 className="text-headline2">사용자 관리</h1>
-        </div>
-
         {/* 탭 */}
-        <div className="border-border-subtle flex border-b px-5 py-3">
-          {TABS.map((tab) => (
+        <div className="flex gap-1.5 px-5 py-4">
+          {(['승인 대기', '전체 사용자'] as TabType[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`text-body-medium mr-2 rounded-lg px-4 py-2 transition-colors ${
-                activeTab === tab
-                  ? 'bg-fg-strong text-background font-semibold'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
+              className={`${CHIP_BASE} ${activeTab === tab ? CHIP_ACTIVE : CHIP_INACTIVE}`}
             >
               {tab}
               {tab === '승인 대기' && pendingUsers.length > 0 && (
-                <span className="ml-1 text-xs">· {pendingUsers.length}</span>
+                <span className="ml-1 opacity-80">· {pendingUsers.length}</span>
               )}
             </button>
           ))}
         </div>
 
         {/* 컨텐츠 */}
-        <div className="p-5">
-          {activeTab === '승인 대기' ? renderPendingUsers() : renderAllUsers()}
+        <div className="space-y-2 px-5 pb-5">
+          {activeTab === '승인 대기' ? renderPending() : renderAll()}
         </div>
       </main>
+
+      {/* 사용자 액션 드로어 */}
+      <Drawer
+        open={!!menuUser}
+        onOpenChange={(open) => !open && setMenuUser(null)}
+      >
+        <DrawerContent>
+          {menuUser && (
+            <>
+              {/* sr-only 접근성 타이틀 */}
+              <DrawerTitle className="sr-only">{menuUser.name} 설정</DrawerTitle>
+
+              {/* 프로필 정보 — 배경으로 섹션 구분 */}
+              <div className="bg-muted/50 mx-4 mt-2 mb-4 rounded-2xl px-4 py-4">
+                <div className="space-y-2.5">
+                  {(
+                    [
+                      { label: '이름', value: menuUser.name },
+                      { label: '전화번호', value: menuUser.phoneNumber },
+                      { label: '가입일', value: formatJoinDate(menuUser.createdAt)?.replace('가입 ', '') ?? '-' },
+                    ] as { label: string; value: string }[]
+                  ).map(({ label, value }) => (
+                    <div key={label} className="flex items-center gap-4">
+                      <span className="w-14 shrink-0 text-caption text-muted-foreground">{label}</span>
+                      <span className="text-body-sm font-medium text-foreground">{value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 토글 액션 */}
+              <div className="space-y-1 px-4">
+                {/* 관리자 권한 */}
+                <div className="flex items-center justify-between gap-4 rounded-2xl px-4 py-3.5">
+                  <div>
+                    <span className="block text-body-sm font-semibold text-foreground">관리자 권한</span>
+                    <span className="mt-0.5 block text-caption text-muted-foreground">관리자 페이지에 접근할 수 있습니다</span>
+                  </div>
+                  <Switch
+                    checked={menuUser.role === 'admin'}
+                    onCheckedChange={(checked) =>
+                      callPatch(menuUser.id, { action: 'set-role', role: checked ? 'admin' : 'user' })
+                    }
+                  />
+                </div>
+
+                {/* 계정 활성화 */}
+                <div className="flex items-center justify-between gap-4 rounded-2xl px-4 py-3.5">
+                  <div>
+                    <span className="block text-body-sm font-semibold text-foreground">계정 활성화</span>
+                    <span className="mt-0.5 block text-caption text-muted-foreground">비활성화 시 로그인이 차단됩니다</span>
+                  </div>
+                  <Switch
+                    checked={menuUser.status === 'approved'}
+                    onCheckedChange={(checked) =>
+                      callPatch(menuUser.id, { action: 'set-status', status: checked ? 'approved' : 'rejected' })
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* 닫기 */}
+              <DrawerClose asChild>
+                <button className="mx-4 mt-4 mb-6 w-[calc(100%-2rem)] rounded-pill border border-border py-3 text-body-sm font-semibold text-muted-foreground transition-colors hover:text-foreground">
+                  닫기
+                </button>
+              </DrawerClose>
+            </>
+          )}
+        </DrawerContent>
+      </Drawer>
     </>
   );
 }

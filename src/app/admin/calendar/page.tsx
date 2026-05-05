@@ -98,7 +98,7 @@ export default function CalendarPage() {
       <main className="flex-1 pb-24">
         {/* 헤더 */}
         <div className="border-border-subtle border-b px-5 py-4">
-          <h1 className="text-headline2">Google Calendar 연동</h1>
+          <h1 className="text-headline2">캘린더</h1>
         </div>
 
         <div className="space-y-6 p-5">
@@ -140,9 +140,7 @@ export default function CalendarPage() {
               </div>
               <div className="flex-1">
                 <div className="mb-2 flex items-center gap-2">
-                  <h3 className="text-body-medium font-semibold">
-                    예약 캘린더
-                  </h3>
+                  <h3 className="text-h4 font-semibold">예약 캘린더</h3>
                   <Badge variant="solid" color="blue" className="text-xs">
                     양방향 동기화
                   </Badge>
@@ -166,9 +164,7 @@ export default function CalendarPage() {
               </div>
               <div className="flex-1">
                 <div className="mb-2 flex items-center gap-2">
-                  <h3 className="text-body-medium font-semibold">
-                    행사 일정 캘린더
-                  </h3>
+                  <h3 className="text-h4 font-semibold">행사 일정 캘린더</h3>
                   <Badge variant="outline" className="text-xs">
                     읽기 전용
                   </Badge>

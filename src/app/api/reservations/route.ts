@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { reservations, users } from '@/lib/db/schema';
+import { reservationHistories, reservations, users } from '@/lib/db/schema';
 import { eq, and, asc, gt, lt } from 'drizzle-orm';
 import { getIronSession } from 'iron-session';
 import { sessionOptions, SessionData } from '@/lib/session';
@@ -90,6 +90,14 @@ export async function POST(request: NextRequest) {
       purpose: purpose.trim(),
     })
     .returning();
+
+  await db.insert(reservationHistories).values({
+    reservationId: created.id,
+    actorUserId: session.user.id,
+    actorUserName: session.user.name,
+    actionType: 'created',
+    changes: JSON.stringify({}),
+  });
 
   return NextResponse.json(created, { status: 201 });
 }
