@@ -58,37 +58,35 @@ export function ReservationItem({
       onClick={onTap}
       disabled={!onTap}
       className={cn(
-        'flex w-full flex-col gap-2 rounded-2xl px-4 py-4 text-left transition-colors',
+        'flex w-full flex-col gap-3 px-4 py-4 text-left transition-colors',
         flat
-          ? 'bg-(--color-neutral-150) shadow-none'
-          : 'bg-card shadow-(--shadow-1)',
+          ? 'rounded-none bg-transparent shadow-none'
+          : 'bg-card rounded-2xl shadow-(--shadow-1)',
         isPast && 'opacity-50',
         onTap && !flat && 'hover:bg-neutral-50 active:bg-neutral-100',
         !onTap && 'cursor-default'
       )}
     >
-      <div className="flex items-start gap-2">
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-foreground truncate text-[16px] leading-tight font-bold">
             {reservation.placeName ?? '–'}
+            {reservation.floorName ? ` · ${reservation.floorName}` : ''}
           </p>
-          <p className="text-muted-foreground mt-0.5 truncate text-[13px]">
+          <p className="text-muted-foreground mt-1 truncate text-[13px]">
             {reservation.purpose}
           </p>
         </div>
+        <p className="text-muted-foreground text-[13px] tabular-nums">
+          {fmtTime(start)} – {fmtTime(end)}
+        </p>
       </div>
 
-      <div className="text-muted-foreground flex items-center gap-1.5 text-[13px] font-medium">
-        {showDate && (
-          <>
-            <span>{fmtDate(start)}</span>
-            <span className="size-1 rounded-full bg-current opacity-40" />
-          </>
-        )}
-        <span className="tabular-nums">
-          {fmtTime(start)} – {fmtTime(end)}
-        </span>
-      </div>
+      {showDate ? (
+        <p className="text-muted-foreground text-[13px] font-medium">
+          {fmtDate(start)}
+        </p>
+      ) : null}
     </button>
   );
 }

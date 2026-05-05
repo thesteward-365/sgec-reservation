@@ -54,6 +54,7 @@ type PlaceDetailViewProps = {
   };
   initialDate?: string;
   initialReservation?: EditableReservation;
+  backUrl?: string;
 };
 
 const CHIP =
@@ -91,7 +92,9 @@ function minuteOf(value: Date | string): number {
   return date.getHours() * 60 + date.getMinutes();
 }
 
-async function readResponseError(response: Response): Promise<string | undefined> {
+async function readResponseError(
+  response: Response
+): Promise<string | undefined> {
   const text = await response.text();
   if (!text) return undefined;
 
@@ -107,6 +110,7 @@ export function PlaceDetailView({
   place,
   initialDate,
   initialReservation,
+  backUrl,
 }: PlaceDetailViewProps) {
   const router = useRouter();
   const editReservationId = initialReservation?.id ?? null;
@@ -287,7 +291,10 @@ export function PlaceDetailView({
         <div className="mx-auto flex h-14 max-w-107.5 items-center px-4">
           <Link
             href={
-              isEditMode ? '/my-reservations' : `/reserve?date=${selectedDate}`
+              backUrl ??
+              (isEditMode
+                ? '/my-reservations'
+                : `/reserve?date=${selectedDate}`)
             }
             className="text-foreground flex size-10 items-center justify-center rounded-xl transition-colors duration-120 ease-(--ease-standard) hover:bg-neutral-200"
           >
@@ -590,9 +597,14 @@ export function PlaceDetailView({
                     key={p.id}
                     onClick={() => {
                       setPlacePickerOpen(false);
-                      const nextParams = new URLSearchParams({ date: selectedDate });
+                      const nextParams = new URLSearchParams({
+                        date: selectedDate,
+                      });
                       if (isEditMode && editReservationId !== null) {
-                        nextParams.set('reservationId', String(editReservationId));
+                        nextParams.set(
+                          'reservationId',
+                          String(editReservationId)
+                        );
                       }
                       router.replace(`/reserve/${p.id}?${nextParams}`);
                     }}

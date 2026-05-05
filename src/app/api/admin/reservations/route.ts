@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 import { db } from '@/lib/db';
 import { reservations, users, places } from '@/lib/db/schema';
 import { eq, asc } from 'drizzle-orm';
+import { floors } from '@/lib/db/schema';
 
 export async function GET() {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
@@ -19,6 +20,8 @@ export async function GET() {
       userName: users.name,
       placeId: reservations.placeId,
       placeName: places.name,
+      floorId: places.floorId,
+      floorName: floors.name,
       purpose: reservations.purpose,
       startTime: reservations.startTime,
       endTime: reservations.endTime,
@@ -26,6 +29,7 @@ export async function GET() {
     .from(reservations)
     .leftJoin(users, eq(reservations.userId, users.id))
     .leftJoin(places, eq(reservations.placeId, places.id))
+    .leftJoin(floors, eq(places.floorId, floors.id))
     .orderBy(asc(reservations.startTime));
 
   return NextResponse.json(

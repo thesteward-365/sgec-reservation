@@ -5,10 +5,13 @@ import { AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { BrandHeader } from '@/components/layout/brand-header';
-import { MonthlyCalendar } from './monthly-calendar';
+import { MonthlyCalendar } from '@/components/calendar/monthly-calendar';
 import { ReservationItem, type MyReservation } from './reservation-item';
 import { ReservationSheet } from './reservation-sheet';
-import { FilterSheet, type FilterState } from './filter-sheet';
+import {
+  FilterSheet,
+  type FilterState,
+} from '@/components/reservations/filter-sheet';
 
 type PlaceTagMap = Record<number, number[]>; // placeId -> tagId[]
 
@@ -204,15 +207,6 @@ export function MyReservationsView() {
               />
             </div>
 
-            {/* 선택 날짜 헤더 */}
-            <h4 className="text-body text-foreground px-0.5 font-bold">
-              {selectedDate.toLocaleDateString('ko-KR', {
-                month: 'long',
-                day: 'numeric',
-                weekday: 'short',
-              })}
-            </h4>
-
             {dailyList.length === 0 ? (
               <div className="bg-card flex flex-col items-center gap-1.5 rounded-2xl px-4 py-10 shadow-(--shadow-1)">
                 <p className="text-foreground text-[15px] font-semibold">
@@ -220,16 +214,35 @@ export function MyReservationsView() {
                 </p>
               </div>
             ) : (
-              <div className="flex flex-col gap-2">
-                {dailyList.map((r) => (
-                  <ReservationItem
-                    key={r.id}
-                    reservation={r}
-                    isPast={new Date(r.endTime) < now}
-                    onTap={() => setActiveRes(r)}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="mt-4 flex items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-foreground !text-[16px] font-bold">
+                      {selectedDate.toLocaleDateString('ko-KR', {
+                        month: 'long',
+                        day: 'numeric',
+                        weekday: 'short',
+                      })}
+                    </h3>
+                  </div>
+                  <span className="text-muted-foreground !text-[14px] text-[13px]">
+                    {dailyList.length}건
+                  </span>
+                </div>
+                <div className="bg-card rounded-xl shadow-(--shadow-1)">
+                  <div className="divide-border/50 divide-y">
+                    {dailyList.map((r) => (
+                      <ReservationItem
+                        key={r.id}
+                        reservation={r}
+                        isPast={new Date(r.endTime) < now}
+                        onTap={() => setActiveRes(r)}
+                        flat
+                      />
+                    ))}
+                  </div>
+                </div>
+              </>
             )}
           </>
         ) : /* 전체 목록 뷰 */
@@ -242,25 +255,30 @@ export function MyReservationsView() {
         ) : (
           <div className="flex flex-col gap-5">
             {grouped.map(([ymd, items]) => (
-              <div key={ymd} className="flex flex-col gap-2">
-                <div className="flex items-center gap-2 px-0.5">
-                  <h3 className="text-foreground text-[15px] font-bold">
-                    {formatGroupHeader(ymd)}
-                  </h3>
-                  {isToday(ymd) && (
-                    <Badge variant="subtle" className="px-2 py-0.5 text-[11px]">
-                      오늘
-                    </Badge>
-                  )}
+              <div key={ymd} className="space-y-3">
+                <div className="flex items-center justify-between gap-2 px-5">
+                  <div>
+                    <h3 className="text-foreground !text-[15px] font-bold">
+                      {formatGroupHeader(ymd)}
+                    </h3>
+                  </div>
+                  <span className="text-muted-foreground !text-[13px] text-[13px]">
+                    {items.length}건
+                  </span>
                 </div>
-                {items.map((r) => (
-                  <ReservationItem
-                    key={r.id}
-                    reservation={r}
-                    isPast={new Date(r.endTime) < now}
-                    onTap={() => setActiveRes(r)}
-                  />
-                ))}
+                <div className="bg-card rounded-3xl shadow-(--shadow-1)">
+                  <div className="divide-border/50 divide-y">
+                    {items.map((r) => (
+                      <ReservationItem
+                        key={r.id}
+                        reservation={r}
+                        isPast={new Date(r.endTime) < now}
+                        onTap={() => setActiveRes(r)}
+                        flat
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
             ))}
           </div>

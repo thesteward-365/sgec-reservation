@@ -18,41 +18,45 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ReservationDetailsCard } from '@/components/reservations/reservation-details-card';
-import type { MyReservation } from './reservation-item';
 
-function fmtMin(min: number): string {
-  const h = Math.floor(min / 60);
-  const m = min % 60;
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-}
-
-function formatTime(dt: Date | string): string {
-  const d = typeof dt === 'string' ? new Date(dt) : dt;
-  return fmtMin(d.getHours() * 60 + d.getMinutes());
-}
-
-function formatKoreanDate(dt: Date | string): string {
-  const d = typeof dt === 'string' ? new Date(dt) : dt;
-  return new Intl.DateTimeFormat('ko-KR', {
-    month: 'long',
-    day: 'numeric',
-    weekday: 'short',
-  }).format(d);
-}
-
-function toYMD(dt: Date | string): string {
-  const d = typeof dt === 'string' ? new Date(dt) : dt;
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
+export type AdminReservation = {
+  id: number;
+  placeId: number;
+  placeName: string | null;
+  floorId: number | null;
+  floorName: string | null;
+  userName: string | null;
+  purpose: string;
+  startTime: string | null;
+  endTime: string | null;
+};
 
 type Props = {
-  reservation: MyReservation | null;
+  reservation: AdminReservation | null;
   open: boolean;
   onClose: () => void;
   onCancelled: () => void;
 };
 
-export function ReservationSheet({
+function formatKoreanDate(iso: string): string {
+  return new Intl.DateTimeFormat('ko-KR', {
+    month: 'long',
+    day: 'numeric',
+    weekday: 'short',
+  }).format(new Date(iso));
+}
+
+function formatTime(iso: string): string {
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+function toYMD(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+export function AdminReservationSheet({
   reservation,
   open,
   onClose,
@@ -66,7 +70,7 @@ export function ReservationSheet({
     if (!reservation) return;
     setCancelling(true);
     try {
-      const res = await fetch(`/api/reservations/${reservation.id}`, {
+      const res = await fetch(`/api/admin/reservations/${reservation.id}`, {
         method: 'DELETE',
       });
       if (!res.ok) throw new Error();
@@ -82,14 +86,18 @@ export function ReservationSheet({
   }
 
   function handleEdit() {
-    if (!reservation) return;
+    if (!reservation?.startTime) return;
     const date = toYMD(reservation.startTime);
-    router.push(
-      `/reserve/${reservation.placeId}?date=${date}&reservationId=${reservation.id}`
-    );
+    const params = new URLSearchParams({
+      date,
+      reservationId: String(reservation.id),
+      backUrl: '/admin/reservations',
+    });
+    router.push(`/reserve/${reservation.placeId}?${params}`);
+    onClose();
   }
 
-  const isPast = reservation
+  const isPast = reservation?.endTime
     ? new Date(reservation.endTime) < new Date()
     : false;
 
@@ -101,10 +109,18 @@ export function ReservationSheet({
             ? `${reservation.placeName ?? '–'} · ${reservation.floorName}`
             : (reservation.placeName ?? '–'),
         },
-        { label: '날짜', value: formatKoreanDate(reservation.startTime) },
+        {
+          label: '날짜',
+          value: reservation.startTime
+            ? formatKoreanDate(reservation.startTime)
+            : '–',
+        },
         {
           label: '시간',
-          value: `${formatTime(reservation.startTime)} – ${formatTime(reservation.endTime)}`,
+          value:
+            reservation.startTime && reservation.endTime
+              ? `${formatTime(reservation.startTime)} – ${formatTime(reservation.endTime)}`
+              : '–',
         },
         { label: '목적', value: reservation.purpose },
         { label: '예약자', value: reservation.userName ?? '–' },
@@ -121,7 +137,7 @@ export function ReservationSheet({
 
           <div className="flex flex-col gap-4 px-6 pb-8">
             {reservation && (
-              <ReservationDetailsCard rows={rows} tone="surface" />
+              <ReservationDetailsCard rows={rows} tone="subtle" />
             )}
 
             <div className="flex gap-2 pt-1">
@@ -129,10 +145,6 @@ export function ReservationSheet({
                 variant="secondary"
                 className="h-12 flex-1 rounded-2xl"
                 onClick={handleEdit}
-                disabled={isPast}
-                title={
-                  isPast ? '이미 지난 예약은 수정할 수 없습니다.' : undefined
-                }
               >
                 예약 수정
               </Button>
@@ -144,11 +156,6 @@ export function ReservationSheet({
                 예약 취소
               </Button>
             </div>
-            {isPast && (
-              <p className="text-caption text-muted-foreground">
-                이미 지난 예약은 수정할 수 없습니다.
-              </p>
-            )}
           </div>
         </DrawerContent>
       </Drawer>

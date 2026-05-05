@@ -93,6 +93,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: '예약은 30분 단위로만 가능합니다.' }, { status: 400 });
   }
 
+  const isAdmin = user.role === 'admin';
+
   const [currentReservation] = await db
     .select({
       id: reservations.id,
@@ -103,10 +105,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     })
     .from(reservations)
     .where(
-      and(
-        eq(reservations.id, reservationId),
-        eq(reservations.userId, user.id)
-      )
+      isAdmin
+        ? eq(reservations.id, reservationId)
+        : and(eq(reservations.id, reservationId), eq(reservations.userId, user.id))
     );
 
   if (!currentReservation) {
@@ -171,10 +172,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         purpose: trimmedPurpose,
       })
       .where(
-        and(
-          eq(reservations.id, reservationId),
-          eq(reservations.userId, user.id)
-        )
+        isAdmin
+          ? eq(reservations.id, reservationId)
+          : and(eq(reservations.id, reservationId), eq(reservations.userId, user.id))
       )
       .returning()
       .all();

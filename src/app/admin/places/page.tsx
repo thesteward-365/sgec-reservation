@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { BrandHeader } from '@/components/layout/brand-header';
 import { Card } from '@/components/ui/card';
@@ -15,137 +15,180 @@ import {
 const TABS = ['장소', '층', '태그'] as const;
 type TabType = (typeof TABS)[number];
 
-// 더미 데이터
-const PLACES = [
-  {
-    id: 1,
-    name: '본당',
-    floor: '1층',
-    capacity: 200,
-    tags: ['예배', '대형모임'],
-  },
-  {
-    id: 2,
-    name: '카페 공간',
-    floor: '2층',
-    capacity: 50,
-    tags: ['소모임', '휴식'],
-  },
-  {
-    id: 3,
-    name: '소예배실',
-    floor: 'B1층',
-    capacity: 30,
-    tags: ['예배', '소모임'],
-  },
-];
+type PlaceRow = {
+  id: number;
+  name: string;
+  description: string | null;
+  floorId: number | null;
+  floorName: string | null;
+  tags: { id: number; name: string }[];
+};
 
-const FLOORS = [
-  { id: 1, name: '1층', placesCount: 5 },
-  { id: 2, name: '2층', placesCount: 3 },
-  { id: 3, name: 'B1층', placesCount: 2 },
-];
+type FloorRow = {
+  id: number;
+  name: string;
+  order: number;
+};
 
-const TAGS = [
-  { id: 1, name: '예배', placesCount: 8 },
-  { id: 2, name: '소모임', placesCount: 12 },
-  { id: 3, name: '대형모임', placesCount: 3 },
-  { id: 4, name: '휴식', placesCount: 5 },
-];
+type TagRow = {
+  id: number;
+  name: string;
+};
 
 export default function PlacesPage() {
   const [activeTab, setActiveTab] = useState<TabType>('장소');
+  const [places, setPlaces] = useState<PlaceRow[]>([]);
+  const [floors, setFloors] = useState<FloorRow[]>([]);
+  const [tags, setTags] = useState<TagRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    Promise.all([
+      fetch('/api/places').then((r) => r.json()),
+      fetch('/api/floors').then((r) => r.json()),
+      fetch('/api/tags').then((r) => r.json()),
+    ])
+      .then(([placesData, floorsData, tagsData]) => {
+        if (cancelled) return;
+        setPlaces(placesData ?? []);
+        setFloors(floorsData ?? []);
+        setTags(tagsData ?? []);
+      })
+      .catch(console.error)
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const placeCountByFloor = useMemo(() => {
+    const counts = new Map<number, number>();
+    for (const place of places) {
+      if (place.floorId !== null) {
+        counts.set(place.floorId, (counts.get(place.floorId) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [places]);
+
+  const placeCountByTag = useMemo(() => {
+    const counts = new Map<number, number>();
+    for (const place of places) {
+      for (const tag of place.tags) {
+        counts.set(tag.id, (counts.get(tag.id) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [places]);
 
   const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div
+              key={index}
+              className="bg-card/50 h-24 animate-pulse rounded-3xl"
+            />
+          ))}
+        </div>
+      );
+    }
+
     switch (activeTab) {
       case '장소':
-        return (
-          <Card className="p-1">
-            {PLACES.map((place) => (
-              <div
-                key={place.id}
-                className="border-border-subtle flex items-center gap-3 border-b px-4 py-3 last:border-b-0"
-              >
-                {/* 장소 정보 */}
-                <div className="min-w-0 flex-1">
-                  <h3
-                    className="text-body-medium mb-0.5 font-semibold"
-                    style={{ fontSize: 15 }}
-                  >
-                    {place.name}
-                  </h3>
-                  <div className="text-body-small text-muted-foreground flex items-center gap-2">
-                    <span>{place.floor}</span>
-                    <span>•</span>
-                    <span>정원 {place.capacity}명</span>
+        return places.length === 0 ? (
+          <div className="bg-card rounded-3xl px-5 py-10 text-center">
+            <p className="text-muted-foreground">등록된 장소가 없습니다.</p>
+          </div>
+        ) : (
+          <Card className="overflow-hidden">
+            <div className="divide-border-subtle divide-y">
+              {places.map((place) => (
+                <Link
+                  key={place.id}
+                  href={`/admin/places?placeId=${place.id}`}
+                  className="block px-4 py-4 hover:bg-neutral-50"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-foreground text-[16px] font-semibold">
+                        {place.name}
+                      </p>
+                      <div className="text-muted-foreground mt-1 flex flex-wrap gap-2 text-[13px]">
+                        {place.floorName && <span>{place.floorName}</span>}
+                        <span>{place.tags.length}개 태그</span>
+                      </div>
+                      {place.description ? (
+                        <p className="text-muted-foreground mt-3 text-[13px]">
+                          {place.description}
+                        </p>
+                      ) : null}
+                    </div>
+                    <ChevronRightIcon className="text-muted-foreground h-4 w-4 shrink-0" />
                   </div>
-                  <div className="mt-1 flex gap-1">
-                    {place.tags.map((tag) => (
-                      <Badge
-                        key={tag}
-                        variant="outline"
-                        className="px-2 py-0.5 text-xs"
-                      >
-                        #{tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-                <ChevronRightIcon className="text-muted-foreground h-4 w-4 flex-shrink-0" />
-              </div>
-            ))}
+                </Link>
+              ))}
+            </div>
           </Card>
         );
 
       case '층':
-        return (
-          <Card className="p-1">
-            {FLOORS.map((floor) => (
-              <div
-                key={floor.id}
-                className="border-border-subtle flex items-center gap-3 border-b px-4 py-3 last:border-b-0"
-              >
-                {/* 층 정보 */}
-                <div className="min-w-0 flex-1">
-                  <h3
-                    className="text-body-medium mb-0.5 font-semibold"
-                    style={{ fontSize: 15 }}
-                  >
-                    {floor.name}
-                  </h3>
-                  <p className="text-body-small text-muted-foreground">
-                    {floor.placesCount}개 장소
-                  </p>
+        return floors.length === 0 ? (
+          <div className="bg-card rounded-3xl px-5 py-10 text-center">
+            <p className="text-muted-foreground">등록된 층이 없습니다.</p>
+          </div>
+        ) : (
+          <Card className="overflow-hidden">
+            <div className="divide-border-subtle divide-y">
+              {floors.map((floor) => (
+                <div key={floor.id} className="px-4 py-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-foreground text-[15px] font-semibold">
+                        {floor.name}
+                      </p>
+                      <p className="text-muted-foreground mt-1 text-[13px]">
+                        {placeCountByFloor.get(floor.id) ?? 0}개 장소
+                      </p>
+                    </div>
+                    <ChevronRightIcon className="text-muted-foreground h-4 w-4 shrink-0" />
+                  </div>
                 </div>
-                <ChevronRightIcon className="text-muted-foreground h-4 w-4 flex-shrink-0" />
-              </div>
-            ))}
+              ))}
+            </div>
           </Card>
         );
 
       case '태그':
-        return (
-          <Card className="p-1">
-            {TAGS.map((tag) => (
-              <div
-                key={tag.id}
-                className="border-border-subtle flex items-center gap-3 border-b px-4 py-3 last:border-b-0"
-              >
-                {/* 태그 정보 */}
-                <div className="min-w-0 flex-1">
-                  <h3
-                    className="text-body-medium mb-0.5 font-semibold"
-                    style={{ fontSize: 15 }}
-                  >
-                    #{tag.name}
-                  </h3>
-                  <p className="text-body-small text-muted-foreground">
-                    {tag.placesCount}개 장소
-                  </p>
+        return tags.length === 0 ? (
+          <div className="bg-card rounded-3xl px-5 py-10 text-center">
+            <p className="text-muted-foreground">등록된 태그가 없습니다.</p>
+          </div>
+        ) : (
+          <Card className="overflow-hidden">
+            <div className="divide-border-subtle divide-y">
+              {tags.map((tag) => (
+                <div key={tag.id} className="px-4 py-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-foreground text-[15px] font-semibold">
+                        #{tag.name}
+                      </p>
+                      <p className="text-muted-foreground mt-1 text-[13px]">
+                        {placeCountByTag.get(tag.id) ?? 0}개 장소
+                      </p>
+                    </div>
+                    <ChevronRightIcon className="text-muted-foreground h-4 w-4 shrink-0" />
+                  </div>
                 </div>
-                <ChevronRightIcon className="text-muted-foreground h-4 w-4 flex-shrink-0" />
-              </div>
-            ))}
+              ))}
+            </div>
           </Card>
         );
 
@@ -167,7 +210,6 @@ export default function PlacesPage() {
       />
 
       <main className="flex-1 pb-24">
-        {/* 헤더 */}
         <div className="border-border-subtle flex items-center justify-between border-b px-5 py-4">
           <h1 className="text-headline2">장소 관리</h1>
           <Button size="sm">
@@ -176,7 +218,6 @@ export default function PlacesPage() {
           </Button>
         </div>
 
-        {/* 탭 */}
         <div className="border-border-subtle flex gap-2 border-b px-5 py-3">
           {TABS.map((tab) => (
             <button
@@ -193,8 +234,7 @@ export default function PlacesPage() {
           ))}
         </div>
 
-        {/* 컨텐츠 */}
-        <div className="flex-1">{renderContent()}</div>
+        <div className="px-5 pt-5">{renderContent()}</div>
       </main>
     </>
   );

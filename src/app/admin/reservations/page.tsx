@@ -1,50 +1,61 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 import { BrandHeader } from '@/components/layout/brand-header';
+import { MonthlyCalendar } from '@/components/calendar/monthly-calendar';
+import {
+  FilterSheet,
+  type FilterState,
+} from '@/components/reservations/filter-sheet';
+import {
+  AdminReservationSheet,
+  type AdminReservation,
+} from '@/components/reservations/admin-reservation-sheet';
 
-interface Reservation {
-  id: number;
-  userId: number;
-  userName: string | null;
-  placeId: number;
-  placeName: string | null;
-  purpose: string;
-  startTime: string | null;
-  endTime: string | null;
-}
+type PlaceTagMap = Record<number, number[]>;
 
 type ListTab = '예정' | '지난 예약' | '전체';
+type MainView = 'calendar' | 'list';
 
-const CHIP_BASE =
-  'inline-flex items-center font-medium leading-none rounded-pill px-3 py-[6px] text-caption transition-colors duration-120 cursor-pointer select-none whitespace-nowrap';
-const CHIP_ACTIVE = 'bg-(--color-fg-strong) text-white';
-const CHIP_INACTIVE = 'bg-neutral-300 text-foreground';
+function toYMD(dt: Date | string): string {
+  const d = typeof dt === 'string' ? new Date(dt) : dt;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function isSameDay(a: Date | string, b: Date): boolean {
+  const d = typeof a === 'string' ? new Date(a) : a;
+  return (
+    d.getFullYear() === b.getFullYear() &&
+    d.getMonth() === b.getMonth() &&
+    d.getDate() === b.getDate()
+  );
+}
 
 function formatDateHeader(isoString: string): string {
   const d = new Date(isoString);
   const today = new Date();
-  const todayStr = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
-  const dStr = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-  if (dStr === todayStr) return '오늘';
+  const todayKey = toYMD(today);
+  const dateKey = toYMD(d);
+  if (dateKey === todayKey) return '오늘';
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
-  const tmrStr = `${tomorrow.getFullYear()}-${tomorrow.getMonth()}-${tomorrow.getDate()}`;
-  if (dStr === tmrStr) return '내일';
-  const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
-  return `${d.getMonth() + 1}월 ${d.getDate()}일 (${DAYS[d.getDay()]})`;
+  if (dateKey === toYMD(tomorrow)) return '내일';
+
+  return d.toLocaleDateString('ko-KR', {
+    month: 'long',
+    day: 'numeric',
+    weekday: 'short',
+  });
 }
 
 function formatTime(isoString: string): string {
   const d = new Date(isoString);
-  const h = String(d.getHours()).padStart(2, '0');
-  const m = String(d.getMinutes()).padStart(2, '0');
-  return `${h}:${m}`;
-}
-
-function getDateKey(isoString: string): string {
-  const d = new Date(isoString);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
 }
 
 function isPast(isoString: string): boolean {
@@ -54,126 +65,381 @@ function isPast(isoString: string): boolean {
   return d < today;
 }
 
+const VIEW_CHIPS: { value: MainView; label: string }[] = [
+  { value: 'calendar', label: '캘린더' },
+  { value: 'list', label: '전체 목록' },
+];
+
+const LIST_TABS: ListTab[] = ['예정', '지난 예약', '전체'];
+
+const CHIP_BASE =
+  'inline-flex items-center justify-center rounded-pill px-4 py-1.5 text-[13px] font-semibold transition-colors';
+const CHIP_ACTIVE = 'bg-(--color-fg-strong) text-white';
+const CHIP_INACTIVE = 'bg-(--color-neutral-300) text-foreground';
+
 export default function ReservationsPage() {
-  const [activeTab, setActiveTab] = useState<ListTab>('예정');
-  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [view, setView] = useState<MainView>('calendar');
+  const [listTab, setListTab] = useState<ListTab>('예정');
+  const [selectedDate, setSelectedDate] = useState(() => new Date());
+  const [viewMonth, setViewMonth] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+  const [reservations, setReservations] = useState<AdminReservation[]>([]);
+  const [placeTagMap, setPlaceTagMap] = useState<PlaceTagMap>({});
+  const [filter, setFilter] = useState<FilterState>({
+    floorId: null,
+    tagId: null,
+    sortOrder: 'asc',
+  });
+  const [showFilter, setShowFilter] = useState(false);
+  const [activeReservation, setActiveReservation] =
+    useState<AdminReservation | null>(null);
   const [loading, setLoading] = useState(true);
+  const [now] = useState(() => new Date());
 
   useEffect(() => {
-    fetch('/api/admin/reservations')
-      .then((r) => r.json())
-      .then((data: Reservation[]) => setReservations(data))
+    Promise.all([
+      fetch('/api/admin/reservations').then((r) => r.json()),
+      fetch('/api/places').then((r) => r.json()),
+    ])
+      .then(([adminReservations, places]) => {
+        setReservations(adminReservations as AdminReservation[]);
+
+        const map: PlaceTagMap = {};
+        (places as any[]).forEach((place) => {
+          map[place.id] = (place.tags ?? []).map(
+            (tag: { id: number }) => tag.id
+          );
+        });
+        setPlaceTagMap(map);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 
-  const filtered = reservations.filter((r) => {
-    if (!r.startTime) return activeTab === '전체';
-    if (activeTab === '예정') return !isPast(r.startTime);
-    if (activeTab === '지난 예약') return isPast(r.startTime);
+  function refreshReservations() {
+    setLoading(true);
+    fetch('/api/admin/reservations')
+      .then((r) => r.json())
+      .then((data: AdminReservation[]) => setReservations(data))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }
+
+  function handleCancelled() {
+    setActiveReservation(null);
+    refreshReservations();
+  }
+
+  const filteredReservations = useMemo(() => {
+    let list = reservations;
+
+    if (filter.floorId !== null) {
+      list = list.filter(
+        (reservation) => reservation.floorId === filter.floorId
+      );
+    }
+    if (filter.tagId !== null) {
+      list = list.filter((reservation) =>
+        (placeTagMap[reservation.placeId] ?? []).includes(filter.tagId!)
+      );
+    }
+
+    return [...list].sort((a, b) => {
+      const aTime = a.startTime ? new Date(a.startTime).getTime() : 0;
+      const bTime = b.startTime ? new Date(b.startTime).getTime() : 0;
+      return filter.sortOrder === 'asc' ? aTime - bTime : bTime - aTime;
+    });
+  }, [filter, placeTagMap, reservations]);
+
+  const indicatorDates = useMemo(
+    () =>
+      new Set(
+        filteredReservations
+          .filter((r) => r.startTime)
+          .map((r) => toYMD(r.startTime!))
+      ),
+    [filteredReservations]
+  );
+
+  const dailyList = useMemo(
+    () =>
+      filteredReservations.filter(
+        (reservation) =>
+          reservation.startTime &&
+          isSameDay(reservation.startTime, selectedDate)
+      ),
+    [filteredReservations, selectedDate]
+  );
+
+  const activeFilter =
+    filter.floorId !== null ||
+    filter.tagId !== null ||
+    filter.sortOrder !== 'asc';
+
+  const listViewReservations = filteredReservations.filter((reservation) => {
+    if (!reservation.startTime) return listTab === '전체';
+    if (listTab === '예정') return !isPast(reservation.startTime);
+    if (listTab === '지난 예약') return isPast(reservation.startTime);
     return true;
   });
 
-  const grouped: Record<string, Reservation[]> = {};
-  for (const r of filtered) {
-    const key = r.startTime ? getDateKey(r.startTime) : '날짜 없음';
-    if (!grouped[key]) grouped[key] = [];
-    grouped[key].push(r);
-  }
-  const sortedDates = Object.keys(grouped).sort();
+  const groupedListView = useMemo(() => {
+    const groups = new Map<string, AdminReservation[]>();
+
+    for (const reservation of listViewReservations) {
+      const key = reservation.startTime
+        ? toYMD(reservation.startTime)
+        : '날짜 없음';
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(reservation);
+    }
+
+    return Array.from(groups.entries()).sort(([a], [b]) =>
+      filter.sortOrder === 'asc' ? a.localeCompare(b) : b.localeCompare(a)
+    );
+  }, [filter.sortOrder, listViewReservations]);
 
   return (
     <>
       <BrandHeader />
+      <div className="flex items-end justify-between px-5 pt-1 pb-4">
+        <h2 className="text-h2 text-foreground font-bold">예약 관리</h2>
 
+        <button
+          type="button"
+          onClick={() => setShowFilter(true)}
+          className="relative flex size-10 items-center justify-center rounded-full transition-colors hover:bg-neutral-100"
+          aria-label="필터"
+        >
+          <AdjustmentsHorizontalIcon className="text-foreground size-5" />
+          {activeFilter && (
+            <span className="bg-primary absolute top-1 right-1 size-2 rounded-full" />
+          )}
+        </button>
+      </div>
       <main className="flex-1 pb-24">
-        {/* 탭 */}
-        <div className="flex gap-1.5 px-5 py-4">
-          {(['예정', '지난 예약', '전체'] as ListTab[]).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`${CHIP_BASE} ${activeTab === tab ? CHIP_ACTIVE : CHIP_INACTIVE}`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
+        <div className="space-y-4 px-5">
+          <div className="flex flex-wrap gap-1.5">
+            {VIEW_CHIPS.map((item) => (
+              <button
+                key={item.value}
+                type="button"
+                onClick={() => setView(item.value)}
+                className={cn(
+                  CHIP_BASE,
+                  view === item.value ? CHIP_ACTIVE : CHIP_INACTIVE
+                )}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
 
-        {/* 예약 목록 */}
-        <div className="px-5 pb-5">
-          {loading ? (
-            <div className="space-y-4">
-              {Array.from({ length: 2 }).map((_, i) => (
-                <div key={i} className="space-y-2">
-                  <div className="bg-muted h-4 w-24 animate-pulse rounded" />
-                  <div className="space-y-2">
-                    {Array.from({ length: 2 }).map((_, j) => (
-                      <div key={j} className="bg-card animate-pulse rounded-2xl p-4">
-                        <div className="space-y-2">
-                          <div className="bg-muted h-5 w-32 rounded" />
-                          <div className="bg-muted h-4 w-48 rounded" />
-                          <div className="bg-muted h-3 w-40 rounded" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+          {view === 'calendar' ? (
+            <div className="space-y-5">
+              <div className="bg-card rounded-2xl p-4 shadow-(--shadow-1)">
+                <MonthlyCalendar
+                  selectedDate={selectedDate}
+                  viewMonth={viewMonth}
+                  onSelectDate={(date) => {
+                    setSelectedDate(date);
+                    setViewMonth(
+                      new Date(date.getFullYear(), date.getMonth(), 1)
+                    );
+                  }}
+                  onChangeMonth={setViewMonth}
+                  indicators={indicatorDates}
+                />
+              </div>
+
+              {loading ? (
+                <div className="space-y-3 px-1">
+                  {Array.from({ length: 2 }).map((_, index) => (
+                    <div
+                      key={index}
+                      className="bg-card animate-pulse rounded-2xl p-4"
+                    />
+                  ))}
                 </div>
-              ))}
-            </div>
-          ) : sortedDates.length === 0 ? (
-            <div className="bg-card rounded-2xl p-8 text-center">
-              <span className="block text-body text-muted-foreground">
-                {activeTab === '예정'
-                  ? '예정된 예약이 없습니다'
-                  : activeTab === '지난 예약'
-                    ? '지난 예약이 없습니다'
-                    : '예약이 없습니다'}
-              </span>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {sortedDates.map((dateKey) => (
-                <div key={dateKey}>
-                  {/* 날짜 헤더 */}
-                  <div className="mb-2 px-1">
-                    <span className="text-body-sm font-semibold text-foreground">
-                      {grouped[dateKey][0].startTime
-                        ? formatDateHeader(grouped[dateKey][0].startTime)
-                        : dateKey}
+              ) : dailyList.length === 0 ? (
+                <div className="bg-card rounded-2xl px-4 py-10 text-center shadow-(--shadow-1)">
+                  <p className="text-foreground text-[15px] font-semibold">
+                    예약이 없는 날이에요
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="mt-8 flex items-center justify-between gap-2">
+                    <h3 className="text-foreground !text-[16px] font-bold">
+                      {selectedDate.toLocaleDateString('ko-KR', {
+                        month: 'long',
+                        day: 'numeric',
+                        weekday: 'short',
+                      })}
+                    </h3>
+                    <span className="text-muted-foreground !text-[14px]">
+                      {dailyList.length}건
                     </span>
                   </div>
-
-                  {/* 해당 날짜 예약 카드들 */}
-                  <div className="space-y-2">
-                    {grouped[dateKey].map((r) => (
-                      <div key={r.id} className="bg-card rounded-2xl px-4 py-3.5">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0 flex-1 space-y-1">
-                            <span className="block text-body font-bold text-foreground">
-                              {r.placeName ?? '장소 없음'}
-                            </span>
-                            <span className="block text-body-sm text-foreground">
-                              {r.startTime && r.endTime
-                                ? `${formatTime(r.startTime)} – ${formatTime(r.endTime)}`
-                                : '-'}
-                              {' · '}
-                              {r.userName ?? '알 수 없음'}
-                            </span>
-                            <span className="block text-caption text-muted-foreground">
-                              {r.purpose}
-                            </span>
+                  <div className="bg-card rounded-2xl shadow-(--shadow-1)">
+                    <div className="divide-border/50 divide-y">
+                      {dailyList.map((reservation) => (
+                        <button
+                          key={reservation.id}
+                          type="button"
+                          onClick={() => setActiveReservation(reservation)}
+                          className="w-full rounded-none px-4 py-4 text-left transition hover:bg-neutral-50 active:bg-neutral-100"
+                        >
+                          <div className="min-w-0">
+                            <p className="text-foreground text-[16px] leading-tight font-bold">
+                              {reservation.floorName}
+                              &nbsp;
+                              {reservation.placeName ?? '장소 없음'}
+                            </p>
+                            <p className="text-muted-foreground mt-1 text-[13px]">
+                              {reservation.purpose}
+                            </p>
                           </div>
+                          <div className="text-muted-foreground mt-3 flex flex-wrap items-center gap-2 text-[13px] font-medium">
+                            <span className="tabular-nums">
+                              {reservation.startTime && reservation.endTime
+                                ? `${formatTime(reservation.startTime)} – ${formatTime(reservation.endTime)}`
+                                : '-'}
+                            </span>
+                            <span className="bg-muted-foreground h-1 w-1 rounded-full" />
+                            <span>{reservation.userName ?? '예약자'}</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-5">
+              <div className="flex flex-wrap gap-1.5 px-1">
+                {LIST_TABS.map((tab) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setListTab(tab)}
+                    className={cn(
+                      CHIP_BASE,
+                      listTab === tab ? CHIP_ACTIVE : CHIP_INACTIVE
+                    )}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+
+              {loading ? (
+                <div className="space-y-4 px-1">
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <div
+                      key={index}
+                      className="bg-card animate-pulse rounded-2xl p-4"
+                    />
+                  ))}
+                </div>
+              ) : groupedListView.length === 0 ? (
+                <div className="bg-card rounded-2xl px-4 py-10 text-center shadow-(--shadow-1)">
+                  <p className="text-foreground text-[15px] font-semibold">
+                    예약 내역이 없습니다
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-5 px-1">
+                  {groupedListView.map(([dateKey, items]) => (
+                    <div key={dateKey} className="space-y-3">
+                      <div className="flex items-center justify-between gap-2 px-4">
+                        <div>
+                          <h3 className="text-foreground !text-[15px] font-bold">
+                            {items[0].startTime
+                              ? formatDateHeader(items[0].startTime)
+                              : dateKey}
+                          </h3>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground !text-[13px] text-[13px]">
+                            {items.length}건
+                          </span>
+                          {dateKey === toYMD(now) && (
+                            <Badge
+                              variant="subtle"
+                              className="px-2 py-0.5 text-[11px]"
+                            >
+                              오늘
+                            </Badge>
+                          )}
                         </div>
                       </div>
-                    ))}
-                  </div>
+
+                      <div className="bg-card rounded-3xl shadow-(--shadow-1)">
+                        <div className="divide-border/50 divide-y">
+                          {items.map((reservation) => (
+                            <button
+                              key={reservation.id}
+                              type="button"
+                              onClick={() => setActiveReservation(reservation)}
+                              className="w-full rounded-none px-4 py-4 text-left transition hover:bg-neutral-50 active:bg-neutral-100"
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0 space-y-1">
+                                  <p className="text-foreground !text-[16px] font-bold">
+                                    {reservation.placeName ?? '장소 없음'}
+                                  </p>
+                                  <p className="text-muted-foreground !text-[13px]">
+                                    {reservation.startTime &&
+                                    reservation.endTime
+                                      ? `${formatTime(reservation.startTime)} – ${formatTime(reservation.endTime)}`
+                                      : '-'}
+                                  </p>
+                                </div>
+                                {reservation.floorName && (
+                                  <Badge
+                                    variant="subtle"
+                                    className="text-[11px]"
+                                  >
+                                    {reservation.floorName}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="text-caption text-muted-foreground mt-3">
+                                {reservation.purpose}
+                              </div>
+                              <div className="text-caption text-foreground mt-1">
+                                {reservation.userName ?? '예약자 미정'}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
           )}
         </div>
       </main>
+
+      <AdminReservationSheet
+        reservation={activeReservation}
+        open={!!activeReservation}
+        onClose={() => setActiveReservation(null)}
+        onCancelled={handleCancelled}
+      />
+
+      <FilterSheet
+        open={showFilter}
+        onClose={() => setShowFilter(false)}
+        current={filter}
+        onApply={(state) => setFilter(state)}
+      />
     </>
   );
 }

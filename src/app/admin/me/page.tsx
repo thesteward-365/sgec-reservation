@@ -76,7 +76,7 @@ export default function AdminMePage() {
           {/* 프로필 섹션 */}
           <div className="bg-card rounded-2xl px-4 py-4">
             {loading ? (
-              <div className="space-y-2 animate-pulse">
+              <div className="animate-pulse space-y-2">
                 <div className="bg-muted h-5 w-24 rounded" />
                 <div className="bg-muted h-4 w-36 rounded" />
               </div>
@@ -85,19 +85,25 @@ export default function AdminMePage() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2">
-                      <span className="text-body font-bold text-foreground">{me.name}</span>
+                      <span className="text-body text-foreground font-bold">
+                        {me.name}
+                      </span>
                       {me.role === 'admin' && (
-                        <Badge variant="subtle" color="blue" className="text-xs">
+                        <Badge
+                          variant="subtle"
+                          color="blue"
+                          className="text-xs"
+                        >
                           관리자
                         </Badge>
                       )}
                     </div>
-                    <span className="block text-body-sm text-muted-foreground">
+                    <span className="text-body-sm text-muted-foreground block">
                       {me.phoneNumber}
                     </span>
                   </div>
                   <button
-                    className="text-caption text-muted-foreground rounded-xl px-3 py-2 transition-colors hover:bg-muted hover:text-foreground"
+                    className="text-caption text-muted-foreground hover:bg-muted hover:text-foreground rounded-xl px-3 py-2 transition-colors"
                     onClick={() => {
                       setTempName(me.name);
                       setTempPhone(me.phoneNumber);
@@ -111,7 +117,9 @@ export default function AdminMePage() {
             ) : me && isEditing ? (
               <div className="space-y-3">
                 <div className="space-y-1.5">
-                  <span className="block text-caption text-muted-foreground">이름</span>
+                  <span className="text-caption text-muted-foreground block">
+                    이름
+                  </span>
                   <Input
                     value={tempName}
                     onChange={(e) => setTempName(e.target.value)}
@@ -119,7 +127,9 @@ export default function AdminMePage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <span className="block text-caption text-muted-foreground">전화번호</span>
+                  <span className="text-caption text-muted-foreground block">
+                    전화번호
+                  </span>
                   <Input
                     value={tempPhone}
                     onChange={(e) => setTempPhone(e.target.value)}
@@ -127,19 +137,24 @@ export default function AdminMePage() {
                   />
                 </div>
                 {error && (
-                  <span className="block text-caption text-red-500">{error}</span>
+                  <span className="text-caption block text-red-500">
+                    {error}
+                  </span>
                 )}
                 <div className="flex gap-2 pt-1">
                   <button
                     disabled={saving}
                     onClick={handleSave}
-                    className="rounded-pill bg-primary flex-1 py-2.5 text-body-sm font-semibold text-white transition-colors disabled:opacity-50 hover:bg-accent-hover"
+                    className="rounded-pill bg-primary text-body-sm hover:bg-accent-hover flex-1 py-2.5 font-semibold text-white transition-colors disabled:opacity-50"
                   >
                     {saving ? '저장 중…' : '저장'}
                   </button>
                   <button
-                    onClick={() => { setIsEditing(false); setError(null); }}
-                    className="rounded-pill border-border flex-1 border py-2.5 text-body-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                    onClick={() => {
+                      setIsEditing(false);
+                      setError(null);
+                    }}
+                    className="rounded-pill border-border text-body-sm text-muted-foreground hover:text-foreground flex-1 border py-2.5 font-semibold transition-colors"
                   >
                     취소
                   </button>
@@ -149,33 +164,29 @@ export default function AdminMePage() {
           </div>
 
           {/* 메뉴 섹션 */}
-          <div className="bg-card rounded-2xl overflow-hidden">
+          <div className="bg-card overflow-hidden rounded-2xl">
             <Link
               href="/reserve"
-              className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted"
+              className="hover:bg-muted flex items-center gap-3 px-4 py-3.5 transition-colors"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-100">
-                <UserIcon className="h-4 w-4 text-blue-600" />
-              </div>
-              <span className="flex-1 text-body-sm font-semibold text-foreground">
+              <UserIcon className="text-foreground size-5" />
+              <span className="text-body-sm text-foreground flex-1 font-semibold">
                 사용자 페이지로 이동
               </span>
-              <ChevronRightIcon className="h-4 w-4 text-muted-foreground" />
+              <ChevronRightIcon className="text-muted-foreground h-4 w-4" />
             </Link>
 
-            <div className="mx-4 h-px bg-muted/60" />
+            <div className="bg-muted/60 mx-4 h-px" />
 
             <Link
               href="/admin/calendar"
-              className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted"
+              className="hover:bg-muted flex items-center gap-3 px-4 py-3.5 transition-colors"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-green-100">
-                <CalendarDaysIcon className="h-4 w-4 text-green-600" />
-              </div>
-              <span className="flex-1 text-body-sm font-semibold text-foreground">
+              <CalendarDaysIcon className="text-foreground size-5" />
+              <span className="text-body-sm text-foreground flex-1 font-semibold">
                 Google Calendar 연동
               </span>
-              <ChevronRightIcon className="h-4 w-4 text-muted-foreground" />
+              <ChevronRightIcon className="text-muted-foreground h-4 w-4" />
             </Link>
           </div>
 
@@ -183,12 +194,10 @@ export default function AdminMePage() {
           <div className="bg-card rounded-2xl">
             <button
               onClick={handleLogout}
-              className="flex w-full items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted rounded-2xl"
+              className="hover:bg-muted flex w-full items-center gap-3 rounded-2xl px-4 py-3.5 transition-colors"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-red-100">
-                <ArrowRightStartOnRectangleIcon className="h-4 w-4 text-red-500" />
-              </div>
-              <span className="flex-1 text-left text-body-sm font-semibold text-red-500">
+              <ArrowRightStartOnRectangleIcon className="text-destructive size-5" />
+              <span className="text-body-sm text-destructive flex-1 text-left font-semibold">
                 로그아웃
               </span>
             </button>
@@ -196,7 +205,7 @@ export default function AdminMePage() {
 
           {/* 버전 */}
           <div className="pt-2 text-center">
-            <span className="block text-caption text-muted-foreground">
+            <span className="text-caption text-muted-foreground block">
               v1.0.0 · 샘깊은교회 문화사역 장소방
             </span>
           </div>

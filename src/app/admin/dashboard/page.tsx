@@ -203,22 +203,21 @@ export default function DashboardPage() {
                 </div>
               ))
             ) : stats?.recentActivities?.length ? (
-              stats.recentActivities.map((activity) => (
-                <div
-                  key={activity.id}
-                  className="border-border-subtle border-b pb-3 last:border-b-0 last:pb-0"
-                >
-                  <div className="flex items-start gap-3">
-                    {getActivityIcon(activity.type)}
-                    <div className="min-w-0 flex-1">
-                      <p className="text-body">{activity.message}</p>
-                      <p className="text-caption text-muted-foreground mt-1">
-                        {formatTimeAgo(new Date(activity.timestamp))}
-                      </p>
+              <div className="divide-border-subtle divide-y">
+                {stats.recentActivities.map((activity) => (
+                  <div key={activity.id} className="px-4 py-3">
+                    <div className="flex items-start gap-3">
+                      {getActivityIcon(activity.type)}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-body">{activity.message}</p>
+                        <p className="text-caption text-muted-foreground mt-1">
+                          {formatTimeAgo(new Date(activity.timestamp))}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                ))}
+              </div>
             ) : (
               <div>
                 <p className="text-body text-muted-foreground text-center">
