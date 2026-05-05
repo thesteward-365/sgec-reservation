@@ -273,6 +273,7 @@ export function PlaceDetailView({
         purpose: purpose.trim(),
         mode: isEditMode ? 'edit' : 'create',
       });
+      if (backUrl) params.set('backUrl', backUrl);
       router.push(`/reserve/${place.id}/complete?${params}`);
     });
   }

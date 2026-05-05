@@ -162,12 +162,10 @@ export default function DashboardPage() {
                   <Card className="p-4 transition-shadow hover:shadow-md">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
-                        <div className="bg-muted flex h-9 w-9 items-center justify-center rounded-2xl">
-                          <Icon className="text-foreground h-4 w-4" />
-                        </div>
-                        <p className="text-body-sm font-semibold">
+                        <Icon className="text-foreground size-5" />
+                        <span className="text-foreground flex-1 text-[15px] font-semibold">
                           {action.title}
-                        </p>
+                        </span>
                       </div>
                       {badgeValue && badgeValue > 0 ? (
                         <Badge

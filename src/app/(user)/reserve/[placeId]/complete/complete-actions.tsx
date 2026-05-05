@@ -9,9 +9,15 @@ type Props = {
   placeId: string;
   shareText: string;
   backUrl: string;
+  returnUrl: string;
 };
 
-export function CompleteActions({ placeId, shareText, backUrl }: Props) {
+export function CompleteActions({
+  placeId,
+  shareText,
+  backUrl,
+  returnUrl,
+}: Props) {
   async function handleShare() {
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
@@ -38,10 +44,10 @@ export function CompleteActions({ placeId, shareText, backUrl }: Props) {
         <Link href={backUrl}>동일 장소 재예약하기</Link>
       </Button>
       <Link
-        href="/my-reservations"
+        href={returnUrl}
         className="text-body-sm text-muted-foreground flex justify-center py-2 font-semibold"
       >
-        나의 예약 보기
+        돌아가기
       </Link>
     </div>
   );
