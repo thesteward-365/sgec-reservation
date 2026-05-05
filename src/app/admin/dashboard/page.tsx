@@ -114,7 +114,7 @@ export default function DashboardPage() {
       <BrandHeader />
 
       <main className="flex-1 pb-24">
-        <section className="space-y-3 px-5 py-6">
+        <section className="space-y-3 px-5 pb-6">
           {!loading && stats && stats.pendingUsersCount > 0 && (
             <Link href="/admin/users">
               <div
@@ -189,9 +189,9 @@ export default function DashboardPage() {
             <p className="text-h5 font-bold!">최근 활동</p>
           </div>
 
-          <Card className="p-0 overflow-hidden">
+          <Card className="overflow-hidden p-0">
             {loading ? (
-              <div className="p-4 space-y-3">
+              <div className="space-y-3 p-4">
                 {Array.from({ length: 3 }).map((_, i) => (
                   <div key={i} className="animate-pulse space-y-2">
                     <div className="flex items-center gap-3">
@@ -209,7 +209,9 @@ export default function DashboardPage() {
                     <div className="flex items-start gap-3">
                       {getActivityIcon(activity.type)}
                       <div className="min-w-0 flex-1">
-                        <p className="text-body font-medium">{activity.message}</p>
+                        <p className="text-body font-medium">
+                          {activity.message}
+                        </p>
                         <p className="text-caption text-muted-foreground mt-1">
                           {formatTimeAgo(new Date(activity.timestamp))}
                         </p>
