@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { BrandHeader } from '@/components/layout/brand-header';
 import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { CheckIcon } from '@heroicons/react/24/solid';
 import { EllipsisHorizontalIcon } from '@heroicons/react/24/outline';
 import { Drawer, DrawerContent, DrawerTitle, DrawerClose } from '@/components/ui/drawer';
@@ -83,7 +84,7 @@ export default function UsersPage() {
   const renderPending = () => {
     if (loading) {
       return Array.from({ length: 2 }).map((_, i) => (
-        <div key={i} className="bg-card animate-pulse rounded-2xl p-5">
+        <div key={i} className="bg-card animate-pulse rounded-2xl p-5 mb-3 shadow-(--shadow-1)">
           <div className="space-y-2">
             <div className="bg-muted h-5 w-24 rounded" />
             <div className="bg-muted h-4 w-36 rounded" />
@@ -99,82 +100,105 @@ export default function UsersPage() {
 
     if (pendingUsers.length === 0) {
       return (
-        <div className="bg-card rounded-2xl p-8 text-center">
-          <p className="text-body text-muted-foreground">
+        <div className="bg-card rounded-2xl p-10 text-center shadow-(--shadow-1)">
+          <p className="text-body text-muted-foreground font-medium">
             승인 대기 중인 사용자가 없습니다
           </p>
         </div>
       );
     }
 
-    return pendingUsers.map((user) => (
-      <div key={user.id} className="bg-card rounded-2xl p-5">
-        <div className="space-y-1">
-          <p className="text-body text-foreground font-bold">{user.name}</p>
-          <p className="text-body-sm text-foreground">{user.phoneNumber}</p>
-          <p className="text-caption text-muted-foreground">
-            {formatTimeAgo(user.createdAt)}
-          </p>
-        </div>
-        <div className="mt-5 flex gap-2">
-          <button
-            className="text-body-sm rounded-pill border-border text-foreground hover:bg-muted flex flex-1 items-center justify-center border py-3 font-semibold transition-colors"
-            onClick={() => callPatch(user.id, { action: 'reject' })}
-          >
-            거절
-          </button>
-          <button
-            className="text-body-sm rounded-pill bg-primary hover:bg-accent-hover flex flex-1 items-center justify-center gap-1.5 py-3 font-semibold text-white transition-colors"
-            onClick={() => callPatch(user.id, { action: 'approve' })}
-          >
-            <CheckIcon className="h-4 w-4" />
-            승인
-          </button>
-        </div>
+    return (
+      <div className="space-y-3">
+        {pendingUsers.map((user) => (
+          <div key={user.id} className="bg-card rounded-2xl p-5 shadow-(--shadow-1)">
+            <div className="space-y-1">
+              <p className="text-body text-foreground font-bold">{user.name}</p>
+              <p className="text-body-sm text-foreground font-medium">{user.phoneNumber}</p>
+              <p className="text-caption text-muted-foreground mt-1">
+                {formatTimeAgo(user.createdAt)}
+              </p>
+            </div>
+            <div className="mt-5 flex gap-2">
+              <button
+                className="text-body-sm rounded-pill border-border text-foreground hover:bg-neutral-50 flex flex-1 items-center justify-center border py-3 font-semibold transition-colors"
+                onClick={() => callPatch(user.id, { action: 'reject' })}
+              >
+                거절
+              </button>
+              <button
+                className="text-body-sm rounded-pill bg-primary hover:bg-accent-hover flex flex-1 items-center justify-center gap-1.5 py-3 font-semibold text-white transition-colors"
+                onClick={() => callPatch(user.id, { action: 'approve' })}
+              >
+                <CheckIcon className="h-4 w-4" />
+                승인
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
-    ));
+    );
   };
 
   // ── 전체 사용자 렌더 ───────────────────────────────
   const renderAll = () => {
     if (loading) {
-      return Array.from({ length: 3 }).map((_, i) => (
-        <div key={i} className="bg-card animate-pulse rounded-2xl p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="bg-muted h-5 w-20 rounded" />
-              <div className="rounded-pill bg-muted h-5 w-14" />
-            </div>
-            <div className="bg-muted h-6 w-6 rounded" />
+      return (
+        <Card className="p-0 overflow-hidden">
+          <div className="divide-y divide-border/50">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="animate-pulse p-4 flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <div className="bg-muted h-5 w-20 rounded" />
+                  <div className="bg-muted h-8 w-8 rounded-full" />
+                </div>
+                <div className="bg-muted h-4 w-48 rounded" />
+              </div>
+            ))}
           </div>
-          <div className="bg-muted mt-1.5 h-4 w-48 rounded" />
-        </div>
-      ));
+        </Card>
+      );
     }
 
-    return users.map((user) => (
-      <div key={user.id} className="bg-card rounded-2xl px-4 py-3.5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-body font-bold text-foreground">{user.name}</span>
-            {user.role === 'admin' && (
-              <Badge variant="subtle" color="blue" className="text-xs">
-                관리자
-              </Badge>
-            )}
-          </div>
-          <button
-            className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            onClick={() => setMenuUser(user)}
-          >
-            <EllipsisHorizontalIcon className="h-5 w-5" />
-          </button>
+    if (users.length === 0) {
+      return (
+        <div className="bg-card rounded-2xl p-10 text-center shadow-(--shadow-1)">
+          <p className="text-body text-muted-foreground font-medium">
+            가입된 사용자가 없습니다
+          </p>
         </div>
-        <span className="mt-1.5 block text-caption text-muted-foreground">
-          {user.phoneNumber} · {formatJoinDate(user.createdAt)}
-        </span>
-      </div>
-    ));
+      );
+    }
+
+    return (
+      <Card className="p-0 overflow-hidden">
+        <div className="divide-y divide-border/50">
+          {users.map((user) => (
+            <div key={user.id} className="flex items-center justify-between px-5 py-4 transition-colors hover:bg-neutral-50">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-body font-bold text-foreground">{user.name}</span>
+                  {user.role === 'admin' && (
+                    <Badge variant="subtle" color="blue" className="text-[11px] font-bold">
+                      관리자
+                    </Badge>
+                  )}
+                </div>
+                <span className="mt-1.5 block text-caption text-muted-foreground font-medium">
+                  {user.phoneNumber} · {formatJoinDate(user.createdAt)}
+                </span>
+              </div>
+              <button
+                className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-neutral-100 hover:text-foreground active:bg-neutral-200"
+                onClick={() => setMenuUser(user)}
+              >
+                <EllipsisHorizontalIcon className="h-5 w-5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      </Card>
+    );
   };
 
   return (

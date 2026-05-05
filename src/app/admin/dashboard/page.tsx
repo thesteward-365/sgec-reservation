@@ -189,26 +189,28 @@ export default function DashboardPage() {
             <p className="text-h5 font-bold!">최근 활동</p>
           </div>
 
-          <Card className="space-y-3 p-4">
+          <Card className="p-0 overflow-hidden">
             {loading ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="animate-pulse space-y-2">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-muted h-5 w-5 rounded" />
-                    <div className="bg-muted h-4 w-3/4 rounded" />
+              <div className="p-4 space-y-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="animate-pulse space-y-2">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-muted h-5 w-5 rounded" />
+                      <div className="bg-muted h-4 w-3/4 rounded" />
+                    </div>
+                    <div className="bg-muted h-3 w-16 rounded" />
                   </div>
-                  <div className="bg-muted h-3 w-16 rounded" />
-                </div>
-              ))
+                ))}
+              </div>
             ) : stats?.recentActivities?.length ? (
-              <div className="divide-border-subtle divide-y">
+              <div className="divide-border/50 divide-y">
                 {stats.recentActivities.map((activity) => (
-                  <div key={activity.id} className="px-4 py-3">
+                  <div key={activity.id} className="px-5 py-4">
                     <div className="flex items-start gap-3">
                       {getActivityIcon(activity.type)}
                       <div className="min-w-0 flex-1">
-                        <p className="text-body!">{activity.message}</p>
-                        <p className="text-caption! text-muted-foreground! mt-1">
+                        <p className="text-body font-medium">{activity.message}</p>
+                        <p className="text-caption text-muted-foreground mt-1">
                           {formatTimeAgo(new Date(activity.timestamp))}
                         </p>
                       </div>
@@ -217,7 +219,7 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : (
-              <div>
+              <div className="p-10">
                 <p className="text-body text-muted-foreground text-center">
                   최근 활동이 없습니다
                 </p>

@@ -89,7 +89,11 @@ export default async function PlaceDetailPage({
       .where(reservationFilter);
 
     if (!reservation) notFound();
-    if (reservation.endTime < new Date()) redirect('/my-reservations');
+    
+    // 관리자가 아니면서 종료 시간이 지난 예약은 수정할 수 없음
+    if (session.user.role !== 'admin' && reservation.endTime < new Date()) {
+      redirect(backUrl ?? '/my-reservations');
+    }
 
     initialReservation = reservation;
   }

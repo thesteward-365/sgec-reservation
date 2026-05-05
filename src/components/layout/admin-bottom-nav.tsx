@@ -46,6 +46,9 @@ const NAV_ITEMS = [
 function AdminBottomNav() {
   const pathname = usePathname();
 
+  // 장소 관리 페이지에서는 내비게이션을 숨김
+  if (pathname === '/admin/places') return null;
+
   return (
     <nav
       className="bg-background fixed inset-x-0 bottom-0 z-40"
