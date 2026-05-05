@@ -118,7 +118,7 @@ export default function DashboardPage() {
           {!loading && stats && stats.pendingUsersCount > 0 && (
             <Link href="/admin/users">
               <div
-                className="group flex items-center justify-between gap-3 rounded-2xl p-4 transition"
+                className="group flex items-center justify-between gap-3 rounded-xl p-4 transition"
                 style={{ backgroundColor: 'var(--color-warning-subtle)' }}
               >
                 <div className="flex items-center gap-3">

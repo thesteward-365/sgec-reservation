@@ -236,7 +236,7 @@ export default function ReservationsPage() {
 
           {view === 'calendar' ? (
             <div className="space-y-5">
-              <div className="bg-card rounded-2xl p-4 shadow-(--shadow-1)">
+              <div className="bg-card rounded-xl p-4 shadow-(--shadow-1)">
                 <MonthlyCalendar
                   selectedDate={selectedDate}
                   viewMonth={viewMonth}
@@ -256,12 +256,12 @@ export default function ReservationsPage() {
                   {Array.from({ length: 2 }).map((_, index) => (
                     <div
                       key={index}
-                      className="bg-card animate-pulse rounded-2xl p-4"
+                      className="bg-card animate-pulse rounded-xl p-4"
                     />
                   ))}
                 </div>
               ) : dailyList.length === 0 ? (
-                <div className="bg-card rounded-2xl px-4 py-10 text-center shadow-(--shadow-1)">
+                <div className="bg-card rounded-xl px-4 py-10 text-center shadow-(--shadow-1)">
                   <p className="text-foreground text-[15px] font-semibold">
                     예약이 없는 날이에요
                   </p>
@@ -280,7 +280,7 @@ export default function ReservationsPage() {
                       {dailyList.length}건
                     </span>
                   </div>
-                  <div className="bg-card rounded-2xl shadow-(--shadow-1)">
+                  <div className="bg-card rounded-xl shadow-(--shadow-1)">
                     <div className="divide-border/50 divide-y">
                       {dailyList.map((reservation) => (
                         <button
@@ -344,12 +344,12 @@ export default function ReservationsPage() {
                   {Array.from({ length: 3 }).map((_, index) => (
                     <div
                       key={index}
-                      className="bg-card animate-pulse rounded-2xl p-4"
+                      className="bg-card animate-pulse rounded-xl p-4"
                     />
                   ))}
                 </div>
               ) : groupedListView.length === 0 ? (
-                <div className="bg-card rounded-2xl px-4 py-10 text-center shadow-(--shadow-1)">
+                <div className="bg-card rounded-xl px-4 py-10 text-center shadow-(--shadow-1)">
                   <p className="text-foreground text-[15px] font-semibold">
                     예약 내역이 없습니다
                   </p>
@@ -381,7 +381,7 @@ export default function ReservationsPage() {
                           </span>
                         </div>
                       </div>
-                      <div className="bg-card rounded-2xl shadow-(--shadow-1)">
+                      <div className="bg-card rounded-xl shadow-(--shadow-1)">
                         <div className="divide-border/50 divide-y">
                           {dailyList.map((reservation) => (
                             <button
@@ -419,7 +419,7 @@ export default function ReservationsPage() {
                           ))}
                         </div>
                       </div>
-                      {/* <div className="bg-card rounded-2xl shadow-(--shadow-1)">
+                      {/* <div className="bg-card rounded-xl shadow-(--shadow-1)">
                         <div className="divide-border/50 divide-y">
                           {items.map((reservation) => (
                             <button

@@ -338,75 +338,77 @@
 /* ============================================================
    SEMANTIC ELEMENT STYLES — drop-in defaults
    ============================================================ */
-html, body {
-  font-family: var(--font-sans);
-  font-size:   var(--fs-body-lg);
-  line-height: var(--lh-body-lg);
-  letter-spacing: var(--ls-body-lg);
-  color:       var(--color-fg);
-  background:  var(--color-bg);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
+@layer base {
+  html, body {
+    font-family: var(--font-sans);
+    font-size:   var(--fs-body-lg);
+    line-height: var(--lh-body-lg);
+    letter-spacing: var(--ls-body-lg);
+    color:       var(--color-fg);
+    background:  var(--color-bg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
 
-h1, .h1 {
-  font-family: var(--font-display);
-  font-size:   var(--fs-display-md);
-  line-height: var(--lh-display-md);
-  letter-spacing: var(--ls-display-md);
-  font-weight: var(--fw-bold);
-  color: var(--color-fg-strong);
-  margin: 0;
+  h1, .h1 {
+    font-family: var(--font-display);
+    font-size:   var(--fs-display-md);
+    line-height: var(--lh-display-md);
+    letter-spacing: var(--ls-display-md);
+    font-weight: var(--fw-bold);
+    color: var(--color-fg-strong);
+    margin: 0;
+  }
+  h2, .h2 {
+    font-size:   var(--fs-h1);
+    line-height: var(--lh-h1);
+    letter-spacing: var(--ls-h1);
+    font-weight: var(--fw-bold);
+    color: var(--color-fg-strong);
+    margin: 0;
+  }
+  h3, .h3 {
+    font-size:   var(--fs-h2);
+    line-height: var(--lh-h2);
+    letter-spacing: var(--ls-h2);
+    font-weight: var(--fw-bold);
+    color: var(--color-fg-strong);
+    margin: 0;
+  }
+  h4, .h4 {
+    font-size:   var(--fs-h3);
+    line-height: var(--lh-h3);
+    letter-spacing: var(--ls-h3);
+    font-weight: var(--fw-semibold);
+    color: var(--color-fg-strong);
+    margin: 0;
+  }
+  p, .body {
+    font-size:   var(--fs-body-lg);
+    line-height: var(--lh-body-lg);
+    letter-spacing: var(--ls-body-lg);
+    font-weight: var(--fw-medium);
+    color: var(--color-fg);
+    margin: 0;
+  }
+  small, .caption {
+    font-size:   var(--fs-caption);
+    line-height: var(--lh-caption);
+    letter-spacing: var(--ls-caption);
+    color: var(--color-fg-tertiary);
+  }
+  code, kbd, samp, pre, .mono {
+    font-family: var(--font-mono);
+    font-size:   var(--fs-body-sm);
+  }
+  a {
+    color: var(--color-fg-link);
+    text-decoration: none;
+    transition: color var(--dur-fast) var(--ease-standard);
+  }
+  a:hover { text-decoration: underline; }
 }
-h2, .h2 {
-  font-size:   var(--fs-h1);
-  line-height: var(--lh-h1);
-  letter-spacing: var(--ls-h1);
-  font-weight: var(--fw-bold);
-  color: var(--color-fg-strong);
-  margin: 0;
-}
-h3, .h3 {
-  font-size:   var(--fs-h2);
-  line-height: var(--lh-h2);
-  letter-spacing: var(--ls-h2);
-  font-weight: var(--fw-bold);
-  color: var(--color-fg-strong);
-  margin: 0;
-}
-h4, .h4 {
-  font-size:   var(--fs-h3);
-  line-height: var(--lh-h3);
-  letter-spacing: var(--ls-h3);
-  font-weight: var(--fw-semibold);
-  color: var(--color-fg-strong);
-  margin: 0;
-}
-p, .body {
-  font-size:   var(--fs-body-lg);
-  line-height: var(--lh-body-lg);
-  letter-spacing: var(--ls-body-lg);
-  font-weight: var(--fw-medium);
-  color: var(--color-fg);
-  margin: 0;
-}
-small, .caption {
-  font-size:   var(--fs-caption);
-  line-height: var(--lh-caption);
-  letter-spacing: var(--ls-caption);
-  color: var(--color-fg-tertiary);
-}
-code, kbd, samp, pre, .mono {
-  font-family: var(--font-mono);
-  font-size:   var(--fs-body-sm);
-}
-a {
-  color: var(--color-fg-link);
-  text-decoration: none;
-  transition: color var(--dur-fast) var(--ease-standard);
-}
-a:hover { text-decoration: underline; }
 
 /* Section divider — Wanted's signature 4-px solid black rule */
 .divider-strong {

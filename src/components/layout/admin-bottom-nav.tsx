@@ -46,8 +46,10 @@ const NAV_ITEMS = [
 function AdminBottomNav() {
   const pathname = usePathname();
 
-  // 장소 관리 페이지에서는 내비게이션을 숨김
-  if (pathname === '/admin/places') return null;
+  // 장소 관리 및 캘린더 연동 페이지에서는 내비게이션을 숨김
+  if (pathname === '/admin/places' || pathname === '/admin/calendar') {
+    return null;
+  }
 
   return (
     <nav

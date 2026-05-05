@@ -169,7 +169,7 @@ export default function AdminMePage() {
           <div className="bg-card rounded-xl shadow-(--shadow-1)">
             <button
               onClick={handleLogout}
-              className="flex w-full items-center gap-3 rounded-3xl px-5 py-4 transition-colors hover:bg-neutral-50"
+              className="flex w-full items-center gap-3 rounded-xl px-5 py-4 transition-colors hover:bg-neutral-50"
             >
               <ArrowRightStartOnRectangleIcon className="text-destructive size-5" />
               <span className="text-destructive flex-1 text-left text-[15px] font-semibold">

@@ -68,16 +68,28 @@ export default function PlacesPage() {
   };
 
   useEffect(() => {
-    if (editingId && activeTab === '장소') {
-      const place = places.find(p => p.id === editingId);
-      if (place) {
-        setName(place.name);
-        setDescription(place.description ?? '');
-        setFloorId(place.floorId);
-        setSelectedTagIds(place.tags.map(t => t.id));
+    if (editingId) {
+      if (activeTab === '장소') {
+        const place = places.find((p) => p.id === editingId);
+        if (place) {
+          setName(place.name);
+          setDescription(place.description ?? '');
+          setFloorId(place.floorId);
+          setSelectedTagIds(place.tags.map((t) => t.id));
+        }
+      } else if (activeTab === '층') {
+        const floor = floors.find((f) => f.id === editingId);
+        if (floor) {
+          setName(floor.name);
+        }
+      } else if (activeTab === '태그') {
+        const tag = tags.find((t) => t.id === editingId);
+        if (tag) {
+          setName(tag.name);
+        }
       }
     }
-  }, [editingId, activeTab, places]);
+  }, [editingId, activeTab, places, floors, tags]);
 
   const handleSave = async () => {
     if (!name.trim()) {
@@ -93,11 +105,16 @@ export default function PlacesPage() {
 
       if (activeTab === '장소') {
         endpoint = editingId ? `/api/places/${editingId}` : '/api/places';
-        body = { ...body, description: description.trim(), floorId, tagIds: selectedTagIds };
+        body = {
+          ...body,
+          description: description.trim(),
+          floorId,
+          tagIds: selectedTagIds,
+        };
       } else if (activeTab === '층') {
-        endpoint = '/api/floors'; // floors/tags are add-only for now in this UI
+        endpoint = editingId ? `/api/floors/${editingId}` : '/api/floors';
       } else {
-        endpoint = '/api/tags';
+        endpoint = editingId ? `/api/tags/${editingId}` : '/api/tags';
       }
 
       const res = await fetch(endpoint, {
@@ -106,12 +123,15 @@ export default function PlacesPage() {
         body: JSON.stringify(body),
       });
 
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || '저장에 실패했습니다.');
+      }
 
       toast.success(`${activeTab}가 ${editingId ? '수정' : '추가'}되었습니다.`);
       setFormOpen(false);
       resetForm();
-      
+
       // Refresh data
       const [placesData, floorsData, tagsData] = await Promise.all([
         fetch('/api/places').then((r) => r.json()),
@@ -121,8 +141,8 @@ export default function PlacesPage() {
       setPlaces(placesData ?? []);
       setFloors(floorsData ?? []);
       setTags(tagsData ?? []);
-    } catch (error) {
-      toast.error('저장에 실패했습니다.');
+    } catch (error: any) {
+      toast.error(error.message || '저장에 실패했습니다.');
     } finally {
       setSaving(false);
     }
@@ -133,20 +153,32 @@ export default function PlacesPage() {
 
     setSaving(true);
     try {
-      const res = await fetch(`/api/places/${editingId}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error();
+      let endpoint = '';
+      if (activeTab === '장소') endpoint = `/api/places/${editingId}`;
+      else if (activeTab === '층') endpoint = `/api/floors/${editingId}`;
+      else endpoint = `/api/tags/${editingId}`;
+
+      const res = await fetch(endpoint, { method: 'DELETE' });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || '삭제에 실패했습니다.');
+      }
 
       toast.success('삭제되었습니다.');
       setFormOpen(false);
       resetForm();
-      
+
       // Refresh data
-      const [placesData] = await Promise.all([
+      const [placesData, floorsData, tagsData] = await Promise.all([
         fetch('/api/places').then((r) => r.json()),
+        fetch('/api/floors').then((r) => r.json()),
+        fetch('/api/tags').then((r) => r.json()),
       ]);
       setPlaces(placesData ?? []);
-    } catch (error) {
-      toast.error('삭제에 실패했습니다.');
+      setFloors(floorsData ?? []);
+      setTags(tagsData ?? []);
+    } catch (error: any) {
+      toast.error(error.message || '삭제에 실패했습니다.');
     } finally {
       setSaving(false);
     }
@@ -169,7 +201,9 @@ export default function PlacesPage() {
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const placeCountByFloor = useMemo(() => {
@@ -197,31 +231,39 @@ export default function PlacesPage() {
       return (
         <div className="space-y-3">
           {Array.from({ length: 4 }).map((_, index) => (
-            <div key={index} className="bg-card/50 h-24 animate-pulse rounded-2xl shadow-(--shadow-1)" />
+            <div
+              key={index}
+              className="bg-card/50 h-24 animate-pulse rounded-xl shadow-(--shadow-1)"
+            />
           ))}
         </div>
       );
     }
 
     const Container = ({ children }: { children: React.ReactNode }) => (
-      <Card className="p-0 overflow-hidden shadow-(--shadow-1)">
-        <div className="divide-y divide-border/50">{children}</div>
+      <Card className="overflow-hidden p-0 shadow-(--shadow-1)">
+        <div className="divide-border/50 divide-y">{children}</div>
       </Card>
     );
 
     switch (activeTab) {
       case '장소':
         return places.length === 0 ? (
-          <div className="bg-card rounded-2xl p-10 text-center shadow-(--shadow-1)">
-            <p className="text-muted-foreground font-medium">등록된 장소가 없습니다.</p>
+          <div className="bg-card rounded-xl p-10 text-center shadow-(--shadow-1)">
+            <p className="text-body text-muted-foreground font-medium">
+              등록된 장소가 없습니다.
+            </p>
           </div>
         ) : (
           <Container>
             {places.map((place) => (
               <button
                 key={place.id}
-                onClick={() => { setEditingId(place.id); setFormOpen(true); }}
-                className="w-full block px-5 py-4 text-left transition-colors hover:bg-neutral-50 active:bg-neutral-100"
+                onClick={() => {
+                  setEditingId(place.id);
+                  setFormOpen(true);
+                }}
+                className="block w-full px-5 py-4 text-left transition-colors hover:bg-neutral-50 active:bg-neutral-100"
               >
                 <div className="flex items-center gap-3">
                   <div className="min-w-0 flex-1">
@@ -242,16 +284,21 @@ export default function PlacesPage() {
 
       case '층':
         return floors.length === 0 ? (
-          <div className="bg-card rounded-2xl p-10 text-center shadow-(--shadow-1)">
-            <p className="text-muted-foreground font-medium">등록된 층이 없습니다.</p>
+          <div className="bg-card rounded-xl p-10 text-center shadow-(--shadow-1)">
+            <p className="text-body text-muted-foreground font-medium">
+              등록된 층이 없습니다.
+            </p>
           </div>
         ) : (
           <Container>
             {floors.map((floor) => (
               <button
                 key={floor.id}
-                onClick={() => { /* Edit floor */ }}
-                className="w-full block px-5 py-4 text-left transition-colors hover:bg-neutral-50 active:bg-neutral-100"
+                onClick={() => {
+                  setEditingId(floor.id);
+                  setFormOpen(true);
+                }}
+                className="block w-full px-5 py-4 text-left transition-colors hover:bg-neutral-50 active:bg-neutral-100"
               >
                 <div className="flex items-center justify-between gap-3">
                   <div>
@@ -271,16 +318,21 @@ export default function PlacesPage() {
 
       case '태그':
         return tags.length === 0 ? (
-          <div className="bg-card rounded-2xl p-10 text-center shadow-(--shadow-1)">
-            <p className="text-muted-foreground font-medium">등록된 태그가 없습니다.</p>
+          <div className="bg-card rounded-xl p-10 text-center shadow-(--shadow-1)">
+            <p className="text-body text-muted-foreground font-medium">
+              등록된 태그가 없습니다.
+            </p>
           </div>
         ) : (
           <Container>
             {tags.map((tag) => (
               <button
                 key={tag.id}
-                onClick={() => { /* Edit tag */ }}
-                className="w-full block px-5 py-4 text-left transition-colors hover:bg-neutral-50 active:bg-neutral-100"
+                onClick={() => {
+                  setEditingId(tag.id);
+                  setFormOpen(true);
+                }}
+                className="block w-full px-5 py-4 text-left transition-colors hover:bg-neutral-50 active:bg-neutral-100"
               >
                 <div className="flex items-center justify-between gap-3">
                   <div>
@@ -297,7 +349,8 @@ export default function PlacesPage() {
             ))}
           </Container>
         );
-      default: return null;
+      default:
+        return null;
     }
   };
 
@@ -309,9 +362,9 @@ export default function PlacesPage() {
             href="/admin/dashboard"
             className="text-foreground flex size-10 items-center justify-center rounded-xl transition-colors duration-120 ease-(--ease-standard) hover:bg-neutral-200"
           >
-            <ChevronLeftIcon className="size-5" />
+            <ChevronLeftIcon className="text-black size-5" />
           </Link>
-          <p className="text-body text-foreground flex-1 text-center font-bold">
+          <p className="text-body text-foreground flex-1 text-center font-bold!">
             장소 관리
           </p>
           <button
@@ -330,10 +383,10 @@ export default function PlacesPage() {
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={cn(
-                'inline-flex items-center font-semibold leading-none rounded-pill px-4 py-2 text-caption transition-colors duration-120 ease-(--ease-standard) cursor-pointer select-none whitespace-nowrap',
+                'rounded-pill text-caption inline-flex cursor-pointer items-center px-4 py-2 leading-none font-semibold whitespace-nowrap transition-colors duration-120 ease-(--ease-standard) select-none',
                 activeTab === tab
                   ? 'bg-(--color-fg-strong) text-white'
-                  : 'bg-neutral-200 text-muted-foreground'
+                  : 'text-muted-foreground! bg-neutral-300!'
               )}
             >
               {tab}
@@ -345,110 +398,117 @@ export default function PlacesPage() {
       </main>
 
       {formOpen && (
-        <div className="fixed inset-0 z-50 bg-background flex flex-col max-w-107.5 mx-auto animate-in slide-in-from-bottom duration-300">
+        <div className="bg-background animate-in slide-in-from-bottom fixed inset-0 z-50 mx-auto flex max-w-107.5 flex-col duration-300">
           <div className="flex h-14 items-center px-4">
             <button
               onClick={() => setFormOpen(false)}
               className="text-foreground flex size-10 items-center justify-center rounded-xl transition-colors duration-120 ease-(--ease-standard) hover:bg-neutral-200"
             >
-              <ChevronLeftIcon className="size-5" />
+              <ChevronLeftIcon className="text-black size-5" />
             </button>
-            <p className="text-body text-foreground flex-1 text-center font-bold">
-              {editingId ? '장소 수정' : `${activeTab} 추가`}
+            <p className="text-body text-foreground flex-1 text-center font-bold!">
+              {editingId ? `${activeTab} 수정` : `${activeTab} 추가`}
             </p>
             <div className="size-10" />
           </div>
-          
-          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
-             <div className="space-y-1.5">
-                <Label htmlFor="name">이름</Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder={`${activeTab} 이름을 입력하세요`}
-                  autoFocus
-                />
-             </div>
 
-             {activeTab === '장소' && (
-               <>
-                 <div className="space-y-1.5">
-                    <Label htmlFor="description">설명 (선택)</Label>
-                    <Input
-                      id="description"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="장소에 대한 설명을 입력하세요"
-                    />
-                 </div>
+          <div className="flex-1 space-y-6 overflow-y-auto px-5 py-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="name">이름</Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={`${activeTab} 이름을 입력하세요`}
+                autoFocus
+              />
+            </div>
 
-                 <div className="space-y-3">
-                    <Label>층 선택</Label>
-                    <div className="flex flex-wrap gap-2">
-                       {floors.map((f) => (
-                         <button
-                           key={f.id}
-                           onClick={() => setFloorId(floorId === f.id ? null : f.id)}
-                           className={cn(
-                             'inline-flex items-center font-semibold leading-none rounded-pill px-3 py-1.5 text-[13px] transition-colors duration-120 ease-(--ease-standard) cursor-pointer select-none whitespace-nowrap',
-                             floorId === f.id
-                               ? 'bg-(--color-fg-strong) text-white font-bold'
-                               : 'bg-neutral-200 text-muted-foreground'
-                           )}
-                         >
-                           {f.name}
-                         </button>
-                       ))}
-                    </div>
-                 </div>
+            {activeTab === '장소' && (
+              <>
+                <div className="space-y-1.5">
+                  <Label htmlFor="description">설명 (선택)</Label>
+                  <Input
+                    id="description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="장소에 대한 설명을 입력하세요"
+                  />
+                </div>
 
-                 <div className="space-y-3">
-                    <Label>태그 선택</Label>
-                    <div className="flex flex-wrap gap-2">
-                       {tags.map((t) => (
-                         <button
-                           key={t.id}
-                           onClick={() => {
-                             setSelectedTagIds(prev => 
-                               prev.includes(t.id) 
-                                 ? prev.filter(id => id !== t.id)
-                                 : [...prev, t.id]
-                             );
-                           }}
-                           className={cn(
-                             'inline-flex items-center font-semibold leading-none rounded-pill px-3 py-1.5 text-[13px] transition-colors duration-120 ease-(--ease-standard) cursor-pointer select-none whitespace-nowrap',
-                             selectedTagIds.includes(t.id)
-                               ? 'bg-(--color-fg-strong) text-white font-bold'
-                               : 'bg-neutral-200 text-muted-foreground'
-                           )}
-                         >
-                           #{t.name}
-                         </button>
-                       ))}
-                    </div>
-                 </div>
-               </>
-             )}
+                <div className="space-y-3">
+                  <Label>층 선택</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {floors.map((f) => (
+                      <button
+                        key={f.id}
+                        onClick={() =>
+                          setFloorId(floorId === f.id ? null : f.id)
+                        }
+                        className={cn(
+                          'rounded-pill inline-flex cursor-pointer items-center px-3 py-1.5 text-[13px] leading-none font-semibold whitespace-nowrap transition-colors duration-120 ease-(--ease-standard) select-none',
+                          floorId === f.id
+                            ? 'bg-(--color-fg-strong) font-bold text-white'
+                            : 'text-muted-foreground bg-neutral-200'
+                        )}
+                      >
+                        {f.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Label>태그 선택</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {tags.map((t) => (
+                      <button
+                        key={t.id}
+                        onClick={() => {
+                          setSelectedTagIds((prev) =>
+                            prev.includes(t.id)
+                              ? prev.filter((id) => id !== t.id)
+                              : [...prev, t.id]
+                          );
+                        }}
+                        className={cn(
+                          'rounded-pill inline-flex cursor-pointer items-center px-3 py-1.5 text-[13px] leading-none font-semibold whitespace-nowrap transition-colors duration-120 ease-(--ease-standard) select-none',
+                          selectedTagIds.includes(t.id)
+                            ? 'bg-(--color-fg-strong) font-bold text-white'
+                            : 'text-muted-foreground bg-neutral-200'
+                        )}
+                      >
+                        #{t.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
-          
-          <div className="p-5 space-y-2" style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))' }}>
-             <button
-               onClick={handleSave}
-               disabled={saving}
-               className="w-full bg-primary text-white font-bold rounded-pill py-4 shadow-md transition-all active:scale-[0.98] disabled:opacity-50"
-             >
-               {saving ? '저장 중...' : '저장하기'}
-             </button>
-             {editingId && (
-               <button
-                 onClick={handleDelete}
-                 disabled={saving}
-                 className="w-full text-danger font-semibold py-3 transition-all active:opacity-70 disabled:opacity-50"
-               >
-                 {activeTab} 삭제하기
-               </button>
-             )}
+
+          <div
+            className="space-y-2 p-5"
+            style={{
+              paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))',
+            }}
+          >
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="bg-primary rounded-pill w-full py-4 font-bold text-white shadow-md transition-all active:scale-[0.98] disabled:opacity-50"
+            >
+              {saving ? '저장 중...' : '저장하기'}
+            </button>
+            {editingId && (
+              <button
+                onClick={handleDelete}
+                disabled={saving}
+                className="text-danger w-full py-3 font-semibold transition-all active:opacity-70 disabled:opacity-50"
+              >
+                {activeTab} 삭제하기
+              </button>
+            )}
           </div>
         </div>
       )}

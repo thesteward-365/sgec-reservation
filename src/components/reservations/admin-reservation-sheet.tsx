@@ -143,14 +143,14 @@ export function AdminReservationSheet({
             <div className="flex gap-2 pt-1">
               <Button
                 variant="secondary"
-                className="h-12 flex-1 rounded-2xl"
+                className="h-12 flex-1 rounded-xl"
                 onClick={handleEdit}
               >
                 예약 수정
               </Button>
               <Button
                 variant="destructive"
-                className="h-12 flex-1 rounded-2xl"
+                className="h-12 flex-1 rounded-xl"
                 onClick={() => setConfirmOpen(true)}
               >
                 예약 취소

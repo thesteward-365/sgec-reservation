@@ -6,7 +6,12 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { CheckIcon } from '@heroicons/react/24/solid';
 import { EllipsisHorizontalIcon } from '@heroicons/react/24/outline';
-import { Drawer, DrawerContent, DrawerTitle, DrawerClose } from '@/components/ui/drawer';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerTitle,
+  DrawerClose,
+} from '@/components/ui/drawer';
 import { Switch } from '@/components/ui/switch';
 
 interface User {
@@ -84,7 +89,10 @@ export default function UsersPage() {
   const renderPending = () => {
     if (loading) {
       return Array.from({ length: 2 }).map((_, i) => (
-        <div key={i} className="bg-card animate-pulse rounded-2xl p-5 mb-3 shadow-(--shadow-1)">
+        <div
+          key={i}
+          className="bg-card mb-3 animate-pulse rounded-xl p-5 shadow-(--shadow-1)"
+        >
           <div className="space-y-2">
             <div className="bg-muted h-5 w-24 rounded" />
             <div className="bg-muted h-4 w-36 rounded" />
@@ -100,7 +108,7 @@ export default function UsersPage() {
 
     if (pendingUsers.length === 0) {
       return (
-        <div className="bg-card rounded-2xl p-10 text-center shadow-(--shadow-1)">
+        <div className="bg-card rounded-xl p-10 text-center shadow-(--shadow-1)">
           <p className="text-body text-muted-foreground font-medium">
             승인 대기 중인 사용자가 없습니다
           </p>
@@ -111,17 +119,22 @@ export default function UsersPage() {
     return (
       <div className="space-y-3">
         {pendingUsers.map((user) => (
-          <div key={user.id} className="bg-card rounded-2xl p-5 shadow-(--shadow-1)">
+          <div
+            key={user.id}
+            className="bg-card rounded-xl p-5 shadow-(--shadow-1)"
+          >
             <div className="space-y-1">
               <p className="text-body text-foreground font-bold">{user.name}</p>
-              <p className="text-body-sm text-foreground font-medium">{user.phoneNumber}</p>
+              <p className="text-body-sm text-foreground font-medium">
+                {user.phoneNumber}
+              </p>
               <p className="text-caption text-muted-foreground mt-1">
                 {formatTimeAgo(user.createdAt)}
               </p>
             </div>
             <div className="mt-5 flex gap-2">
               <button
-                className="text-body-sm rounded-pill border-border text-foreground hover:bg-neutral-50 flex flex-1 items-center justify-center border py-3 font-semibold transition-colors"
+                className="text-body-sm rounded-pill border-border text-foreground flex flex-1 items-center justify-center border py-3 font-semibold transition-colors hover:bg-neutral-50"
                 onClick={() => callPatch(user.id, { action: 'reject' })}
               >
                 거절
@@ -144,10 +157,10 @@ export default function UsersPage() {
   const renderAll = () => {
     if (loading) {
       return (
-        <Card className="p-0 overflow-hidden">
-          <div className="divide-y divide-border/50">
+        <Card className="overflow-hidden p-0">
+          <div className="divide-border/50 divide-y">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="animate-pulse p-4 flex flex-col gap-2">
+              <div key={i} className="flex animate-pulse flex-col gap-2 p-4">
                 <div className="flex items-center justify-between">
                   <div className="bg-muted h-5 w-20 rounded" />
                   <div className="bg-muted h-8 w-8 rounded-full" />
@@ -162,7 +175,7 @@ export default function UsersPage() {
 
     if (users.length === 0) {
       return (
-        <div className="bg-card rounded-2xl p-10 text-center shadow-(--shadow-1)">
+        <div className="bg-card rounded-xl p-10 text-center shadow-(--shadow-1)">
           <p className="text-body text-muted-foreground font-medium">
             가입된 사용자가 없습니다
           </p>
@@ -171,25 +184,34 @@ export default function UsersPage() {
     }
 
     return (
-      <Card className="p-0 overflow-hidden">
-        <div className="divide-y divide-border/50">
+      <Card className="overflow-hidden p-0">
+        <div className="divide-border/50 divide-y">
           {users.map((user) => (
-            <div key={user.id} className="flex items-center justify-between px-5 py-4 transition-colors hover:bg-neutral-50">
+            <div
+              key={user.id}
+              className="flex items-center justify-between px-5 py-4 transition-colors hover:bg-neutral-50"
+            >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-body font-bold text-foreground">{user.name}</span>
+                  <span className="text-body text-foreground font-bold">
+                    {user.name}
+                  </span>
                   {user.role === 'admin' && (
-                    <Badge variant="subtle" color="blue" className="text-[11px] font-bold">
+                    <Badge
+                      variant="subtle"
+                      color="blue"
+                      className="text-[11px] font-bold"
+                    >
                       관리자
                     </Badge>
                   )}
                 </div>
-                <span className="mt-1.5 block text-caption text-muted-foreground font-medium">
-                  {user.phoneNumber} · {formatJoinDate(user.createdAt)}
+                <span className="text-caption text-muted-foreground mt-1.5 block font-medium">
+                  {user.phoneNumber}
                 </span>
               </div>
               <button
-                className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-neutral-100 hover:text-foreground active:bg-neutral-200"
+                className="text-muted-foreground hover:text-foreground flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-neutral-100 active:bg-neutral-200"
                 onClick={() => setMenuUser(user)}
               >
                 <EllipsisHorizontalIcon className="h-5 w-5" />
@@ -237,21 +259,34 @@ export default function UsersPage() {
           {menuUser && (
             <>
               {/* sr-only 접근성 타이틀 */}
-              <DrawerTitle className="sr-only">{menuUser.name} 설정</DrawerTitle>
+              <DrawerTitle className="sr-only">
+                {menuUser.name} 설정
+              </DrawerTitle>
 
               {/* 프로필 정보 — 배경으로 섹션 구분 */}
-              <div className="bg-muted/50 mx-4 mt-2 mb-4 rounded-2xl px-4 py-4">
+              <div className="bg-muted/50 mx-4 mt-2 mb-4 rounded-xl px-4 py-4">
                 <div className="space-y-2.5">
                   {(
                     [
                       { label: '이름', value: menuUser.name },
                       { label: '전화번호', value: menuUser.phoneNumber },
-                      { label: '가입일', value: formatJoinDate(menuUser.createdAt)?.replace('가입 ', '') ?? '-' },
+                      {
+                        label: '가입일',
+                        value:
+                          formatJoinDate(menuUser.createdAt)?.replace(
+                            '가입 ',
+                            ''
+                          ) ?? '-',
+                      },
                     ] as { label: string; value: string }[]
                   ).map(({ label, value }) => (
                     <div key={label} className="flex items-center gap-4">
-                      <span className="w-14 shrink-0 text-caption text-muted-foreground">{label}</span>
-                      <span className="text-body-sm font-medium text-foreground">{value}</span>
+                      <span className="text-caption text-muted-foreground w-14 shrink-0">
+                        {label}
+                      </span>
+                      <span className="text-body-sm text-foreground font-medium">
+                        {value}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -260,29 +295,43 @@ export default function UsersPage() {
               {/* 토글 액션 */}
               <div className="space-y-1 px-4">
                 {/* 관리자 권한 */}
-                <div className="flex items-center justify-between gap-4 rounded-2xl px-4 py-3.5">
+                <div className="flex items-center justify-between gap-4 rounded-xl px-4 py-3.5">
                   <div>
-                    <span className="block text-body-sm font-semibold text-foreground">관리자 권한</span>
-                    <span className="mt-0.5 block text-caption text-muted-foreground">관리자 페이지에 접근할 수 있습니다</span>
+                    <span className="text-body-sm text-foreground block font-semibold">
+                      관리자 권한
+                    </span>
+                    <span className="text-caption text-muted-foreground mt-0.5 block">
+                      관리자 페이지에 접근할 수 있습니다
+                    </span>
                   </div>
                   <Switch
                     checked={menuUser.role === 'admin'}
                     onCheckedChange={(checked) =>
-                      callPatch(menuUser.id, { action: 'set-role', role: checked ? 'admin' : 'user' })
+                      callPatch(menuUser.id, {
+                        action: 'set-role',
+                        role: checked ? 'admin' : 'user',
+                      })
                     }
                   />
                 </div>
 
                 {/* 계정 활성화 */}
-                <div className="flex items-center justify-between gap-4 rounded-2xl px-4 py-3.5">
+                <div className="flex items-center justify-between gap-4 rounded-xl px-4 py-3.5">
                   <div>
-                    <span className="block text-body-sm font-semibold text-foreground">계정 활성화</span>
-                    <span className="mt-0.5 block text-caption text-muted-foreground">비활성화 시 로그인이 차단됩니다</span>
+                    <span className="text-body-sm text-foreground block font-semibold">
+                      계정 활성화
+                    </span>
+                    <span className="text-caption text-muted-foreground mt-0.5 block">
+                      비활성화 시 로그인이 차단됩니다
+                    </span>
                   </div>
                   <Switch
                     checked={menuUser.status === 'approved'}
                     onCheckedChange={(checked) =>
-                      callPatch(menuUser.id, { action: 'set-status', status: checked ? 'approved' : 'rejected' })
+                      callPatch(menuUser.id, {
+                        action: 'set-status',
+                        status: checked ? 'approved' : 'rejected',
+                      })
                     }
                   />
                 </div>
@@ -290,7 +339,7 @@ export default function UsersPage() {
 
               {/* 닫기 */}
               <DrawerClose asChild>
-                <button className="mx-4 mt-4 mb-6 w-[calc(100%-2rem)] rounded-pill border border-border py-3 text-body-sm font-semibold text-muted-foreground transition-colors hover:text-foreground">
+                <button className="rounded-pill border-border text-body-sm text-muted-foreground hover:text-foreground mx-4 mt-4 mb-6 w-[calc(100%-2rem)] border py-3 font-semibold transition-colors">
                   닫기
                 </button>
               </DrawerClose>
