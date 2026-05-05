@@ -87,13 +87,6 @@ export default async function ReservationCompletePage({
 
   return (
     <>
-      {/* AppBar */}
-      <div className="fixed inset-x-0 top-0 z-30 bg-(--color-neutral-150)">
-        <div className="mx-auto flex h-14 max-w-107.5 items-center justify-center">
-          <p className="text-body text-foreground font-bold">예약 완료</p>
-        </div>
-      </div>
-
       {/* 콘텐츠 */}
       <div className="px-5 pt-14 pb-48">
         {/* 성공 아이콘 */}

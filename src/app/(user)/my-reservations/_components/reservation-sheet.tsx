@@ -145,7 +145,7 @@ export function ReservationSheet({
               </Button>
             </div>
             {isPast && (
-              <p className="text-caption text-muted-foreground">
+              <p className="text-caption! text-muted-foreground!">
                 이미 지난 예약은 수정할 수 없습니다.
               </p>
             )}

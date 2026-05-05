@@ -14,19 +14,16 @@ export function ReservationDetailsCard({ rows, tone = 'surface' }: Props) {
   return (
     <div
       className={cn(
-        'flex flex-col gap-3 rounded-3xl p-4',
-        tone === 'surface' ? 'bg-card' : 'bg-neutral-50'
+        'flex flex-col gap-4 rounded-3xl p-8',
+        tone === 'surface' ? 'bg-gray-50' : 'bg-neutral-50'
       )}
     >
       {rows.map(({ label, value }) => (
-        <div
-          key={label}
-          className="flex items-start justify-between gap-3 py-3"
-        >
-          <span className="text-muted-foreground shrink-0 pt-0.5 text-[13px] font-medium">
+        <div key={label} className="flex items-start justify-between">
+          <span className="text-muted-foreground shrink-0 pt-0.5 font-medium">
             {label}
           </span>
-          <span className="text-foreground text-right text-[14px] font-semibold">
+          <span className="text-foreground text-right font-semibold">
             {value}
           </span>
         </div>
