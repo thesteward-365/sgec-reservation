@@ -40,12 +40,6 @@ function isSameDay(a: Date | string, b: Date): boolean {
 function formatDateHeader(isoString: string): string {
   const d = new Date(isoString);
   const today = new Date();
-  const todayKey = toYMD(today);
-  const dateKey = toYMD(d);
-  if (dateKey === todayKey) return '오늘';
-  const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1);
-  if (dateKey === toYMD(tomorrow)) return '내일';
 
   return d.toLocaleDateString('ko-KR', {
     month: 'long',
@@ -363,31 +357,69 @@ export default function ReservationsPage() {
               ) : (
                 <div className="space-y-5 px-1">
                   {groupedListView.map(([dateKey, items]) => (
-                    <div key={dateKey} className="space-y-3">
-                      <div className="flex items-center justify-between gap-2 px-4">
-                        <div>
-                          <h3 className="text-foreground !text-[15px] font-bold">
+                    <div key={dateKey} className="mb-8 space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-foreground text-body! font-bold">
                             {items[0].startTime
                               ? formatDateHeader(items[0].startTime)
                               : dateKey}
                           </h3>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground !text-[13px] text-[13px]">
-                            {items.length}건
-                          </span>
+
                           {dateKey === toYMD(now) && (
                             <Badge
                               variant="subtle"
-                              className="px-2 py-0.5 text-[11px]"
+                              className="bg-transparent px-2 py-0.5 text-[14px] font-bold!"
                             >
                               오늘
                             </Badge>
                           )}
                         </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground !text-[13px] text-[13px]">
+                            {items.length}건
+                          </span>
+                        </div>
                       </div>
-
-                      <div className="bg-card rounded-3xl shadow-(--shadow-1)">
+                      <div className="bg-card rounded-2xl shadow-(--shadow-1)">
+                        <div className="divide-border/50 divide-y">
+                          {dailyList.map((reservation) => (
+                            <button
+                              key={reservation.id}
+                              type="button"
+                              onClick={() => setActiveReservation(reservation)}
+                              className="w-full rounded-none px-4 py-4 text-left transition hover:bg-neutral-50 active:bg-neutral-100"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="flex min-w-[72px] flex-col items-center justify-center rounded-lg bg-neutral-50 px-3 py-2 text-center">
+                                  <span className="text-foreground font-bold tabular-nums">
+                                    {formatTime(reservation.startTime!)}
+                                  </span>
+                                  <span className="text-muted-foreground mt-1 text-[14px] tabular-nums">
+                                    {formatTime(reservation.endTime!)}
+                                  </span>
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-start gap-3">
+                                    <p className="text-foreground truncate text-[16px] font-bold!">
+                                      {reservation.placeName
+                                        ? `${reservation.floorName} ${reservation.placeName}`
+                                        : '장소 없음'}
+                                    </p>
+                                  </div>
+                                  <p className="text-muted-foreground! mt-2 text-[14px]! leading-snug">
+                                    {reservation.userName
+                                      ? `${reservation.userName} · `
+                                      : ''}
+                                    {reservation.purpose}
+                                  </p>
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      {/* <div className="bg-card rounded-2xl shadow-(--shadow-1)">
                         <div className="divide-border/50 divide-y">
                           {items.map((reservation) => (
                             <button
@@ -426,7 +458,7 @@ export default function ReservationsPage() {
                             </button>
                           ))}
                         </div>
-                      </div>
+                      </div> */}
                     </div>
                   ))}
                 </div>
