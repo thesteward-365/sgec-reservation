@@ -9,7 +9,7 @@ import {
   DrawerFooter,
 } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Chip } from '@/components/ui/chip';
 
 type Floor = { id: number; name: string };
 type Tag = { id: number; name: string };
@@ -26,30 +26,6 @@ type Props = {
   current: FilterState;
   onApply: (state: FilterState) => void;
 };
-
-function Chip({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        'rounded-pill px-3.5 py-1.5 text-[13px] font-semibold transition-colors',
-        active
-          ? 'bg-(--color-fg-strong) text-white'
-          : 'text-foreground bg-(--color-neutral-200)'
-      )}
-    >
-      {label}
-    </button>
-  );
-}
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -100,22 +76,24 @@ export function FilterSheet({ open, onClose, current, onApply }: Props) {
             <SectionLabel>층</SectionLabel>
             <div className="flex flex-wrap gap-2">
               <Chip
-                label="전체"
-                active={draft.floorId === null}
+                variant={draft.floorId === null ? 'active' : 'inactive'}
                 onClick={() => setDraft((d) => ({ ...d, floorId: null }))}
-              />
+              >
+                전체
+              </Chip>
               {floors.map((f) => (
                 <Chip
                   key={f.id}
-                  label={f.name}
-                  active={draft.floorId === f.id}
+                  variant={draft.floorId === f.id ? 'active' : 'inactive'}
                   onClick={() =>
                     setDraft((d) => ({
                       ...d,
                       floorId: d.floorId === f.id ? null : f.id,
                     }))
                   }
-                />
+                >
+                  {f.name}
+                </Chip>
               ))}
             </div>
           </div>
@@ -126,41 +104,44 @@ export function FilterSheet({ open, onClose, current, onApply }: Props) {
               <SectionLabel>태그</SectionLabel>
               <div className="flex flex-wrap gap-2">
                 <Chip
-                  label="전체"
-                  active={draft.tagId === null}
+                  variant={draft.tagId === null ? 'active' : 'inactive'}
                   onClick={() => setDraft((d) => ({ ...d, tagId: null }))}
-                />
+                >
+                  전체
+                </Chip>
                 {tags.map((t) => (
                   <Chip
                     key={t.id}
-                    label={t.name}
-                    active={draft.tagId === t.id}
+                    variant={draft.tagId === t.id ? 'active' : 'inactive'}
                     onClick={() =>
                       setDraft((d) => ({
                         ...d,
                         tagId: d.tagId === t.id ? null : t.id,
                       }))
                     }
-                  />
+                  >
+                    {t.name}
+                  </Chip>
                 ))}
               </div>
             </div>
           )}
 
-          {/* 정렬 */}
           <div className="flex flex-col gap-2.5">
             <SectionLabel>정렬</SectionLabel>
             <div className="flex gap-2">
               <Chip
-                label="오래된순"
-                active={draft.sortOrder === 'asc'}
+                variant={draft.sortOrder === 'asc' ? 'active' : 'inactive'}
                 onClick={() => setDraft((d) => ({ ...d, sortOrder: 'asc' }))}
-              />
+              >
+                오래된순
+              </Chip>
               <Chip
-                label="최신순"
-                active={draft.sortOrder === 'desc'}
+                variant={draft.sortOrder === 'desc' ? 'active' : 'inactive'}
                 onClick={() => setDraft((d) => ({ ...d, sortOrder: 'desc' }))}
-              />
+              >
+                최신순
+              </Chip>
             </div>
           </div>
         </div>

@@ -13,6 +13,7 @@ import {
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Chip } from '@/components/ui/chip';
 
 const TABS = ['장소', '층', '태그'] as const;
 type TabType = (typeof TABS)[number];
@@ -362,7 +363,7 @@ export default function PlacesPage() {
             href="/admin/dashboard"
             className="text-foreground flex size-10 items-center justify-center rounded-xl transition-colors duration-120 ease-(--ease-standard) hover:bg-neutral-200"
           >
-            <ChevronLeftIcon className="text-black size-5" />
+            <ChevronLeftIcon className="size-5 text-black" />
           </Link>
           <p className="text-body text-foreground flex-1 text-center font-bold!">
             장소 관리
@@ -379,18 +380,13 @@ export default function PlacesPage() {
       <main className="flex-1 pt-14 pb-24">
         <div className="scrollbar-none flex gap-1.5 overflow-x-auto px-5 py-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {TABS.map((tab) => (
-            <button
+            <Chip
               key={tab}
+              variant={activeTab === tab ? 'active' : 'inactive'}
               onClick={() => setActiveTab(tab)}
-              className={cn(
-                'rounded-pill text-caption inline-flex cursor-pointer items-center px-4 py-2 leading-none font-semibold whitespace-nowrap transition-colors duration-120 ease-(--ease-standard) select-none',
-                activeTab === tab
-                  ? 'bg-(--color-fg-strong) text-white'
-                  : 'text-muted-foreground! bg-neutral-300!'
-              )}
             >
               {tab}
-            </button>
+            </Chip>
           ))}
         </div>
 
@@ -404,7 +400,7 @@ export default function PlacesPage() {
               onClick={() => setFormOpen(false)}
               className="text-foreground flex size-10 items-center justify-center rounded-xl transition-colors duration-120 ease-(--ease-standard) hover:bg-neutral-200"
             >
-              <ChevronLeftIcon className="text-black size-5" />
+              <ChevronLeftIcon className="size-5 text-black" />
             </button>
             <p className="text-body text-foreground flex-1 text-center font-bold!">
               {editingId ? `${activeTab} 수정` : `${activeTab} 추가`}

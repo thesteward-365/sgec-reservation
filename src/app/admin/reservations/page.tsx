@@ -17,6 +17,7 @@ import {
   AdminReservationSheet,
   type AdminReservation,
 } from '@/components/reservations/admin-reservation-sheet';
+import { Chip } from '@/components/ui/chip';
 
 type PlaceTagMap = Record<number, number[]>;
 
@@ -220,17 +221,14 @@ export default function ReservationsPage() {
         <div className="space-y-4 px-5">
           <div className="flex flex-wrap gap-1.5">
             {VIEW_CHIPS.map((item) => (
-              <button
+              <Chip
                 key={item.value}
-                type="button"
+                variant={view === item.value ? 'active' : 'inactive'}
+                size="md" // 필요에 따라 sm, lg로 변경 가능
                 onClick={() => setView(item.value)}
-                className={cn(
-                  CHIP_BASE,
-                  view === item.value ? CHIP_ACTIVE : CHIP_INACTIVE
-                )}
               >
                 {item.label}
-              </button>
+              </Chip>
             ))}
           </div>
 

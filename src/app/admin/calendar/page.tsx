@@ -416,7 +416,7 @@ function CalendarPageContent() {
                         <ArrowPathIcon
                           className={`mr-1 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`}
                         />
-                        {isSyncing ? '중' : '지금'}
+                        {isSyncing ? '동기화중' : '동가화'}
                       </Button>
                     </div>
                   </Card>

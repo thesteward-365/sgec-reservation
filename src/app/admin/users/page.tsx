@@ -13,6 +13,7 @@ import {
   DrawerClose,
 } from '@/components/ui/drawer';
 import { Switch } from '@/components/ui/switch';
+import { Chip } from '@/components/ui/chip';
 
 interface User {
   id: number;
@@ -231,16 +232,16 @@ export default function UsersPage() {
         {/* 탭 */}
         <div className="flex gap-1.5 px-5 py-4">
           {(['승인 대기', '전체 사용자'] as TabType[]).map((tab) => (
-            <button
+            <Chip
               key={tab}
+              variant={activeTab === tab ? 'active' : 'inactive'}
               onClick={() => setActiveTab(tab)}
-              className={`${CHIP_BASE} ${activeTab === tab ? CHIP_ACTIVE : CHIP_INACTIVE}`}
             >
               {tab}
               {tab === '승인 대기' && pendingUsers.length > 0 && (
                 <span className="ml-1 opacity-80">· {pendingUsers.length}</span>
               )}
-            </button>
+            </Chip>
           ))}
         </div>
 
