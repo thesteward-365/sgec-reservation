@@ -213,8 +213,9 @@ export function SettingsView({
               자주 사용하는 목적
             </p>
             <p className="text-muted-foreground! mt-1 text-[13px] leading-snug">
-              공간 예약 시 빠르게 선택할 수 있는 목적을 최대 3개까지
-              등록해보세요.
+              공간 예약 시 빠르게 선택할 수 있도록, <br />
+              자주 사용하는 목적을 최대 3개까지 등록해보세요.
+              {`(ex: 청년부 모임)`}
             </p>
           </div>
 

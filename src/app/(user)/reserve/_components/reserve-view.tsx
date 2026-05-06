@@ -271,7 +271,7 @@ export function ReserveView({ userName }: ReserveViewProps) {
                   <Link
                     href={`/reserve/${place.id}?date=${formatLocalDate(selectedDate)}`}
                   >
-                    <div className="bg-card flex items-center gap-3 rounded-2xl px-4.5 py-4 shadow-(--shadow-1)">
+                    <div className="bg-card flex items-center gap-3 px-4.5 py-4">
                       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                         <span className="text-body-lg text-foreground font-bold">
                           {place.name}
