@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { BrandHeader } from '@/components/layout/brand-header';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ActivityList } from '@/components/admin/activity-list';
+import { ActivityListSkeleton } from '@/components/admin/activity-list-skeleton';
 import {
   UsersIcon,
   CalendarDaysIcon,
@@ -53,34 +55,6 @@ const QUICK_ACTIONS = [
     description: 'Google Calendar 설정',
   },
 ];
-
-function formatTimeAgo(date: Date): string {
-  const now = new Date();
-  const diffInMinutes = Math.floor(
-    (now.getTime() - date.getTime()) / (1000 * 60)
-  );
-
-  if (diffInMinutes < 60) {
-    return `${diffInMinutes}분 전`;
-  } else if (diffInMinutes < 1440) {
-    return `${Math.floor(diffInMinutes / 60)}시간 전`;
-  } else {
-    return `${Math.floor(diffInMinutes / 1440)}일 전`;
-  }
-}
-
-function getActivityIcon(type: string) {
-  switch (type) {
-    case 'created':
-      return <div className="mt-1.5 h-2.5 w-2.5 rounded-full bg-green-500" />;
-    case 'cancelled':
-      return <div className="mt-1.5 h-2.5 w-2.5 rounded-full bg-red-500" />;
-    case 'updated':
-      return <div className="mt-1.5 h-2.5 w-2.5 rounded-full bg-blue-500" />;
-    default:
-      return <div className="mt-1.5 h-2.5 w-2.5 rounded-full bg-gray-500" />;
-  }
-}
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -189,45 +163,11 @@ export default function DashboardPage() {
             <p className="text-h5 font-bold!">최근 활동</p>
           </div>
 
-          <Card className="overflow-hidden p-0">
-            {loading ? (
-              <div className="space-y-3 p-4">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="animate-pulse space-y-2">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-muted h-5 w-5 rounded" />
-                      <div className="bg-muted h-4 w-3/4 rounded" />
-                    </div>
-                    <div className="bg-muted h-3 w-16 rounded" />
-                  </div>
-                ))}
-              </div>
-            ) : stats?.recentActivities?.length ? (
-              <div className="divide-border/50 divide-y">
-                {stats.recentActivities.map((activity) => (
-                  <div key={activity.id} className="px-5 py-4">
-                    <div className="flex items-start gap-3">
-                      {getActivityIcon(activity.type)}
-                      <div className="min-w-0 flex-1">
-                        <p className="text-body font-medium">
-                          {activity.message}
-                        </p>
-                        <p className="text-caption text-muted-foreground mt-1">
-                          {formatTimeAgo(new Date(activity.timestamp))}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="p-10">
-                <p className="text-body text-muted-foreground text-center">
-                  최근 활동이 없습니다
-                </p>
-              </div>
-            )}
-          </Card>
+          {loading ? (
+            <ActivityListSkeleton />
+          ) : stats?.recentActivities ? (
+            <ActivityList activities={stats.recentActivities} />
+          ) : null}
         </section>
       </main>
     </>
