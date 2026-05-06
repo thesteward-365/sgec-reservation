@@ -8,6 +8,7 @@ const withPWA = withPWAInit({
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  serverExternalPackages: ['better-sqlite3'],
   allowedDevOrigins: ['http://localhost:3000', '192.168.0.100'],
   async headers() {
     return [

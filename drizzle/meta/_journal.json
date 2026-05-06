@@ -15,6 +15,13 @@
       "when": 1777986952028,
       "tag": "0001_unknown_mandroid",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1778060724937,
+      "tag": "0002_colossal_bedlam",
+      "breakpoints": true
     }
   ]
 }

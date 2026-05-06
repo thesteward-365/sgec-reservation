@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1778061490388,
+      "tag": "0000_puzzling_supreme_intelligence",
+      "breakpoints": true
+    }
+  ]
+}
