@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import {
   AdjustmentsHorizontalIcon,
   EllipsisVerticalIcon,
+  PlusIcon,
 } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -262,14 +264,14 @@ export default function ReservationsPage() {
               ) : (
                 <>
                   <div className="mt-8 flex items-center justify-between gap-2">
-                    <h3 className="text-foreground !text-[16px] font-bold">
+                    <h3 className="text-foreground text-[16px]! font-bold">
                       {selectedDate.toLocaleDateString('ko-KR', {
                         month: 'long',
                         day: 'numeric',
                         weekday: 'short',
                       })}
                     </h3>
-                    <span className="text-muted-foreground !text-[14px]">
+                    <span className="text-muted-foreground text-[14px]!">
                       {dailyList.length}건
                     </span>
                   </div>
@@ -283,7 +285,7 @@ export default function ReservationsPage() {
                           className="w-full rounded-none px-4 py-4 text-left transition hover:bg-neutral-50 active:bg-neutral-100"
                         >
                           <div className="flex items-center gap-3">
-                            <div className="flex min-w-[72px] flex-col items-center justify-center rounded-lg bg-neutral-50 px-3 py-2 text-center">
+                            <div className="flex min-w-18 flex-col items-center justify-center rounded-lg bg-neutral-50 px-3 py-2 text-center">
                               <span className="text-foreground font-bold tabular-nums">
                                 {formatTime(reservation.startTime!)}
                               </span>
@@ -293,13 +295,13 @@ export default function ReservationsPage() {
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="flex items-start gap-3">
-                                <p className="text-foreground truncate text-[16px] font-bold!">
+                                <p className="text-foreground truncate text-[16px]! font-bold">
                                   {reservation.placeName
                                     ? `${reservation.floorName} ${reservation.placeName}`
                                     : '장소 없음'}
                                 </p>
                               </div>
-                              <p className="text-muted-foreground! mt-2 text-[14px]! leading-snug">
+                              <p className="text-muted-foreground text-[14px]! mt-2 leading-snug">
                                 {reservation.userName
                                   ? `${reservation.userName} · `
                                   : ''}
@@ -355,14 +357,14 @@ export default function ReservationsPage() {
                           {dateKey === toYMD(now) && (
                             <Badge
                               variant="subtle"
-                              className="bg-transparent px-2 py-0.5 text-[14px] font-bold!"
+                              className="bg-transparent px-2 py-0.5 text-[14px]! font-bold"
                             >
                               오늘
                             </Badge>
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground !text-[13px] text-[13px]">
+                          <span className="text-muted-foreground text-[13px]">
                             {items.length}건
                           </span>
                         </div>
@@ -376,7 +378,7 @@ export default function ReservationsPage() {
                               className="w-full rounded-none px-4 py-4 text-left transition hover:bg-neutral-50 active:bg-neutral-100"
                             >
                               <div className="flex items-center gap-3">
-                                <div className="flex min-w-[72px] flex-col items-center justify-center rounded-lg bg-neutral-50 px-3 py-2 text-center">
+                                <div className="flex min-w-18 flex-col items-center justify-center rounded-lg bg-neutral-50 px-3 py-2 text-center">
                                   <span className="text-foreground font-bold tabular-nums">
                                     {formatTime(reservation.startTime!)}
                                   </span>
@@ -386,13 +388,13 @@ export default function ReservationsPage() {
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-start gap-3">
-                                    <p className="text-foreground truncate text-[16px] font-bold!">
+                                    <p className="text-foreground truncate text-[16px]! font-bold">
                                       {reservation.placeName
                                         ? `${reservation.floorName} ${reservation.placeName}`
                                         : '장소 없음'}
                                     </p>
                                   </div>
-                                  <p className="text-muted-foreground! mt-2 text-[14px]! leading-snug">
+                                  <p className="text-muted-foreground text-[14px]! mt-2 leading-snug">
                                     {reservation.userName
                                       ? `${reservation.userName} · `
                                       : ''}
@@ -415,10 +417,10 @@ export default function ReservationsPage() {
                             >
                               <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0 space-y-1">
-                                  <p className="text-foreground !text-[16px] font-bold">
+                                  <p className="text-foreground text-[16px]! font-bold">
                                     {reservation.placeName ?? '장소 없음'}
                                   </p>
-                                  <p className="text-muted-foreground !text-[13px]">
+                                  <p className="text-muted-foreground text-[13px]">
                                     {reservation.startTime &&
                                     reservation.endTime
                                       ? `${formatTime(reservation.startTime)} – ${formatTime(reservation.endTime)}`
@@ -452,6 +454,14 @@ export default function ReservationsPage() {
           )}
         </div>
       </main>
+
+      <Link
+        href="/reserve"
+        className="fixed right-5 bottom-24 z-50 inline-flex h-14 w-14 items-center justify-center rounded-full bg-(--color-fg-strong) text-white shadow-[0_10px_20px_rgba(0,0,0,0.16)] transition hover:bg-(--color-fg-strong)/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        aria-label="예약하기"
+      >
+        <PlusIcon className="h-6 w-6" aria-hidden="true" />
+      </Link>
 
       <AdminReservationSheet
         reservation={activeReservation}
