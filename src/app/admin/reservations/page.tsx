@@ -252,14 +252,7 @@ export default function ReservationsPage() {
               </div>
 
               {loading ? (
-                <div className="space-y-3 px-1">
-                  {Array.from({ length: 2 }).map((_, index) => (
-                    <div
-                      key={index}
-                      className="bg-card animate-pulse rounded-xl p-4"
-                    />
-                  ))}
-                </div>
+                <ListSkeleton count={2} className="px-1" />
               ) : dailyList.length === 0 ? (
                 <div className="bg-card rounded-xl px-4 py-10 text-center shadow-(--shadow-1)">
                   <p className="text-foreground text-[15px] font-semibold">

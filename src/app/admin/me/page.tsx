@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BrandHeader } from '@/components/layout/brand-header';
 import { Badge } from '@/components/ui/badge';
+import { List, ListItem } from '@/components/ui/list';
+import { ListSkeleton } from '@/components/ui/list-skeleton';
 import { toast } from 'sonner';
 import {
   UserIcon,
@@ -99,84 +101,91 @@ export default function AdminMePage() {
       <main className="flex-1 pb-24">
         <div className="space-y-4 px-5 pt-4 pb-5">
           {/* 프로필 섹션 */}
-          <div className="bg-card overflow-hidden rounded-xl shadow-(--shadow-1)">
-            {loading ? (
-              <div className="animate-pulse space-y-3 p-5">
-                <div className="bg-muted h-6 w-24 rounded-lg" />
-                <div className="bg-muted h-4 w-36 rounded-lg" />
-              </div>
-            ) : me ? (
-              <button
-                onClick={() => {
-                  setAccountForm({
-                    name: me.name,
-                    phoneNumber: formatPhoneNumber(me.phoneNumber),
-                  });
-                  setShowAccountDialog(true);
-                }}
-                className="flex w-full items-center justify-between p-5 text-left transition-colors hover:bg-neutral-50"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-body text-foreground font-bold">
-                      {me.name}
+          {loading ? (
+            <ListSkeleton
+              count={1}
+              className="rounded-xl shadow-(--shadow-1)"
+            />
+          ) : me ? (
+            <List className="rounded-xl shadow-(--shadow-1)">
+              <ListItem className="p-0">
+                <button
+                  onClick={() => {
+                    setAccountForm({
+                      name: me.name,
+                      phoneNumber: formatPhoneNumber(me.phoneNumber),
+                    });
+                    setShowAccountDialog(true);
+                  }}
+                  className="flex w-full items-center justify-between p-5 text-left transition-colors hover:bg-neutral-50"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-body text-foreground font-bold">
+                        {me.name}
+                      </span>
+                      {me.role === 'admin' && (
+                        <Badge
+                          variant="subtle"
+                          color="blue"
+                          className="text-[11px] font-bold"
+                        >
+                          관리자
+                        </Badge>
+                      )}
+                    </div>
+                    <span className="text-muted-foreground block text-[14px] font-medium">
+                      {formatPhoneNumber(me.phoneNumber)}
                     </span>
-                    {me.role === 'admin' && (
-                      <Badge
-                        variant="subtle"
-                        color="blue"
-                        className="text-[11px] font-bold"
-                      >
-                        관리자
-                      </Badge>
-                    )}
                   </div>
-                  <span className="text-muted-foreground block text-[14px] font-medium">
-                    {formatPhoneNumber(me.phoneNumber)}
-                  </span>
-                </div>
-                <ChevronRightIcon className="text-muted-foreground size-5 shrink-0" />
-              </button>
-            ) : null}
-          </div>
+                  <ChevronRightIcon className="text-muted-foreground size-5 shrink-0" />
+                </button>
+              </ListItem>
+            </List>
+          ) : null}
 
           {/* 메뉴 섹션 */}
-          <div className="bg-card overflow-hidden rounded-xl shadow-(--shadow-1)">
-            <Link
-              href="/reserve"
-              className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-neutral-50"
-            >
-              <UserIcon className="text-foreground size-5" />
-              <span className="text-foreground flex-1 text-[15px] font-semibold">
-                사용자 페이지로 이동
-              </span>
-              <ChevronRightIcon className="text-muted-foreground size-4" />
-            </Link>
-
-            <Link
-              href="/admin/calendar"
-              className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-neutral-50"
-            >
-              <CalendarDaysIcon className="text-foreground size-5" />
-              <span className="text-foreground flex-1 text-[15px] font-semibold">
-                Google Calendar 연동
-              </span>
-              <ChevronRightIcon className="text-muted-foreground size-4" />
-            </Link>
-          </div>
+          <List className="rounded-xl shadow-(--shadow-1)">
+            <ListItem className="p-0">
+              <Link
+                href="/reserve"
+                className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-neutral-50"
+              >
+                <UserIcon className="text-foreground size-5" />
+                <span className="text-foreground flex-1 text-[15px] font-semibold">
+                  사용자 페이지로 이동
+                </span>
+                <ChevronRightIcon className="text-muted-foreground size-4" />
+              </Link>
+            </ListItem>
+            <ListItem className="p-0">
+              <Link
+                href="/admin/calendar"
+                className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-neutral-50"
+              >
+                <CalendarDaysIcon className="text-foreground size-5" />
+                <span className="text-foreground flex-1 text-[15px] font-semibold">
+                  Google Calendar 연동
+                </span>
+                <ChevronRightIcon className="text-muted-foreground size-4" />
+              </Link>
+            </ListItem>
+          </List>
 
           {/* 로그아웃 */}
-          <div className="bg-card rounded-xl shadow-(--shadow-1)">
-            <button
-              onClick={handleLogout}
-              className="flex w-full items-center gap-3 rounded-xl px-5 py-4 transition-colors hover:bg-neutral-50"
-            >
-              <ArrowRightStartOnRectangleIcon className="text-destructive size-5" />
-              <span className="text-destructive flex-1 text-left text-[15px] font-semibold">
-                로그아웃
-              </span>
-            </button>
-          </div>
+          <List className="rounded-xl shadow-(--shadow-1)">
+            <ListItem className="p-0">
+              <button
+                onClick={handleLogout}
+                className="flex w-full items-center gap-3 rounded-xl px-5 py-4 transition-colors hover:bg-neutral-50"
+              >
+                <ArrowRightStartOnRectangleIcon className="text-destructive size-5" />
+                <span className="text-destructive flex-1 text-left text-[15px] font-semibold">
+                  로그아웃
+                </span>
+              </button>
+            </ListItem>
+          </List>
 
           {/* 버전 */}
           <div className="pt-2 text-center">
