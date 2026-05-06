@@ -18,9 +18,11 @@ export function BrandHeader({ action, className }: BrandHeaderProps) {
         <Image
           src="/logos/logo-with-text.png"
           alt="샘깊은교회 로고"
-          width={267.14}
-          height={85}
+          width={625}
+          height={200}
           className="h-12 w-auto shrink-0"
+          priority
+          loading="eager"
         />
       </div>
       {action ?? <div className="size-10" aria-hidden="true" />}
