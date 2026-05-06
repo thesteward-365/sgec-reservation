@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowRightStartOnRectangleIcon,
@@ -15,6 +15,9 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { BrandHeader } from '@/components/layout/brand-header';
 import { Badge } from '@/components/ui/badge';
+import { Chip } from '@/components/ui/chip';
+import { List, ListItem } from '@/components/ui/list';
+import { ListSkeleton } from '@/components/ui/list-skeleton';
 import { formatPhoneNumber, normalizePhoneNumber } from '@/lib/utils';
 import { AccountDialog, GuideDialog, PurposeDialog } from './settings-dialogs';
 import { cn } from '@/lib/utils';
@@ -32,10 +35,6 @@ const STORAGE_PURPOSES = 'frequent-purposes';
 const MAX_PURPOSE_COUNT = 3;
 
 function getStoredPurposes() {
-  if (typeof window === 'undefined') {
-    return [];
-  }
-
   try {
     const saved = localStorage.getItem(STORAGE_PURPOSES);
     return saved ? (JSON.parse(saved) as string[]) : [];
@@ -55,7 +54,8 @@ export function SettingsView({
   const [phoneNumber, setPhoneNumber] = useState(
     formatPhoneNumber(initialPhoneNumber)
   );
-  const [purposes, setPurposes] = useState<string[]>(getStoredPurposes);
+  const [purposes, setPurposes] = useState<string[]>([]);
+  const [isLoadingPurposes, setIsLoadingPurposes] = useState(true);
   const [showGuide, setShowGuide] = useState(false);
   const [showPurposeDialog, setShowPurposeDialog] = useState(false);
   const [showAccountDialog, setShowAccountDialog] = useState(false);
@@ -106,6 +106,11 @@ export function SettingsView({
     setIsSavingPurpose(false);
     toast.success('목적을 추가했어요.');
   }
+
+  useEffect(() => {
+    setPurposes(getStoredPurposes());
+    setIsLoadingPurposes(false);
+  }, []);
 
   async function handleSaveAccount() {
     const trimmedName = accountForm.name.trim();
@@ -171,33 +176,35 @@ export function SettingsView({
 
       <div className="flex flex-col gap-4 px-5 pb-32">
         {/* 프로필 섹션 */}
-        <div className="bg-card overflow-hidden rounded-xl shadow-(--shadow-1)">
-          <button
-            onClick={handleOpenAccountDialog}
-            className="flex w-full items-center justify-between p-5 text-left transition-colors hover:bg-neutral-50"
-          >
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="text-body text-foreground font-bold">
-                  {name}
+        <List>
+          <ListItem className="px-0 py-0">
+            <button
+              onClick={handleOpenAccountDialog}
+              className="flex w-full items-center justify-between p-5 text-left transition-colors hover:bg-neutral-50"
+            >
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-body text-foreground font-bold">
+                    {name}
+                  </span>
+                  {role === 'admin' && (
+                    <Badge
+                      variant="subtle"
+                      color="blue"
+                      className="text-[11px] font-bold"
+                    >
+                      관리자
+                    </Badge>
+                  )}
+                </div>
+                <span className="text-muted-foreground block text-[14px] font-medium">
+                  {phoneNumber}
                 </span>
-                {role === 'admin' && (
-                  <Badge
-                    variant="subtle"
-                    color="blue"
-                    className="text-[11px] font-bold"
-                  >
-                    관리자
-                  </Badge>
-                )}
               </div>
-              <span className="text-muted-foreground block text-[14px] font-medium">
-                {phoneNumber}
-              </span>
-            </div>
-            <ChevronRightIcon className="text-muted-foreground size-5 shrink-0" />
-          </button>
-        </div>
+              <ChevronRightIcon className="text-muted-foreground size-5 shrink-0" />
+            </button>
+          </ListItem>
+        </List>
 
         {/* 빠른 목적 섹션 */}
         <div className="bg-card rounded-xl p-5 shadow-(--shadow-1)">
@@ -212,27 +219,26 @@ export function SettingsView({
           </div>
 
           <div className="rounded-2xl bg-neutral-50 px-4 py-4">
-            {purposes.length === 0 ? (
+            {isLoadingPurposes ? (
+              <ListSkeleton count={2} className="bg-transparent shadow-none" />
+            ) : purposes.length === 0 ? (
               <p className="text-muted-foreground text-[13px]">
                 아직 등록된 목적이 없습니다.
               </p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {purposes.map((purpose) => (
-                  <span
+                  <Chip
                     key={purpose}
-                    className="text-foreground bg-background shadow-1 inline-flex items-center gap-2 rounded-full px-3 py-2 text-[13px] font-medium"
+                    size="sm"
+                    variant="inactive"
+                    className="gap-2"
+                    onClick={() => handleRemovePurpose(purpose)}
+                    aria-label={`${purpose} 삭제`}
                   >
                     {purpose}
-                    <button
-                      onClick={() => handleRemovePurpose(purpose)}
-                      className="text-muted-foreground hover:text-foreground transition-colors"
-                      aria-label={`${purpose} 삭제`}
-                      type="button"
-                    >
-                      <TrashIcon className="size-3.5" />
-                    </button>
-                  </span>
+                    <TrashIcon className="size-3.5" />
+                  </Chip>
                 ))}
               </div>
             )}
@@ -253,31 +259,35 @@ export function SettingsView({
         </div>
 
         {/* 메뉴 섹션 */}
-        <div className="bg-card overflow-hidden rounded-xl shadow-(--shadow-1)">
+        <List>
           {role === 'admin' && (
+            <ListItem className="px-0 py-0">
+              <button
+                onClick={() => router.push('/admin')}
+                className="flex w-full items-center gap-3 px-5 py-4 transition-colors hover:bg-neutral-50"
+              >
+                <ShieldCheckIcon className="text-foreground size-5" />
+                <span className="text-foreground flex-1 text-left text-[15px] font-semibold">
+                  관리자 페이지로 이동
+                </span>
+                <ChevronRightIcon className="text-muted-foreground size-4" />
+              </button>
+            </ListItem>
+          )}
+
+          <ListItem className="px-0 py-0">
             <button
-              onClick={() => router.push('/admin')}
+              onClick={() => setShowGuide(true)}
               className="flex w-full items-center gap-3 px-5 py-4 transition-colors hover:bg-neutral-50"
             >
-              <ShieldCheckIcon className="text-foreground size-5" />
+              <InformationCircleIcon className="text-foreground size-5" />
               <span className="text-foreground flex-1 text-left text-[15px] font-semibold">
-                관리자 페이지로 이동
+                이용 안내
               </span>
               <ChevronRightIcon className="text-muted-foreground size-4" />
             </button>
-          )}
-
-          <button
-            onClick={() => setShowGuide(true)}
-            className="flex w-full items-center gap-3 px-5 py-4 transition-colors hover:bg-neutral-50"
-          >
-            <InformationCircleIcon className="text-foreground size-5" />
-            <span className="text-foreground flex-1 text-left text-[15px] font-semibold">
-              이용 안내
-            </span>
-            <ChevronRightIcon className="text-muted-foreground size-4" />
-          </button>
-        </div>
+          </ListItem>
+        </List>
 
         {/* 로그아웃 섹션 */}
         <div className="bg-card rounded-xl shadow-(--shadow-1)">

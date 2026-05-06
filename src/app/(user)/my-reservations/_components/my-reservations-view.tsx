@@ -4,6 +4,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { Chip } from '@/components/ui/chip';
+import { List, ListItem } from '@/components/ui/list';
+import { ListSkeleton } from '@/components/ui/list-skeleton';
 import { BrandHeader } from '@/components/layout/brand-header';
 import { MonthlyCalendar } from '@/components/calendar/monthly-calendar';
 import { ReservationItem, type MyReservation } from './reservation-item';
@@ -163,34 +166,23 @@ export function MyReservationsView() {
       </div>
 
       {/* 탭 */}
-      <div className="flex gap-1.5 px-5 pb-4">
+      <div className="flex gap-2 px-5 pb-4">
         {(['calendar', 'list'] as const).map((t) => (
-          <button
+          <Chip
             key={t}
+            size="md"
+            variant={tab === t ? 'active' : 'inactive'}
             onClick={() => setTab(t)}
-            className={cn(
-              'rounded-pill px-4 py-1.5 text-[13px] font-semibold transition-colors',
-              tab === t
-                ? 'bg-(--color-fg-strong) text-white'
-                : 'text-foreground bg-(--color-neutral-300)'
-            )}
           >
             {t === 'calendar' ? '캘린더' : '전체 목록'}
-          </button>
+          </Chip>
         ))}
       </div>
 
       {/* 콘텐츠 */}
       <div className="flex flex-col gap-4 px-5 pb-32">
         {loading ? (
-          <div className="flex flex-col gap-3">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-20 animate-pulse rounded-2xl bg-neutral-200"
-              />
-            ))}
-          </div>
+          <ListSkeleton count={3} />
         ) : tab === 'calendar' ? (
           <>
             {/* 월 달력 카드 */}
@@ -207,6 +199,21 @@ export function MyReservationsView() {
               />
             </div>
 
+            <div className="mt-4 flex items-center justify-between gap-2">
+              <div>
+                <h3 className="text-foreground text-[16px]! font-bold">
+                  {selectedDate.toLocaleDateString('ko-KR', {
+                    month: 'long',
+                    day: 'numeric',
+                    weekday: 'short',
+                  })}
+                </h3>
+              </div>
+              <span className="text-muted-foreground text-[14px]!">
+                {dailyList.length}건
+              </span>
+            </div>
+
             {dailyList.length === 0 ? (
               <div className="bg-card flex flex-col items-center gap-1.5 rounded-2xl px-4 py-10 shadow-(--shadow-1)">
                 <p className="text-foreground text-[15px] font-semibold">
@@ -214,71 +221,48 @@ export function MyReservationsView() {
                 </p>
               </div>
             ) : (
-              <>
-                <div className="mt-4 flex items-center justify-between gap-2">
-                  <div>
-                    <h3 className="text-foreground !text-[16px] font-bold">
-                      {selectedDate.toLocaleDateString('ko-KR', {
-                        month: 'long',
-                        day: 'numeric',
-                        weekday: 'short',
-                      })}
-                    </h3>
-                  </div>
-                  <span className="text-muted-foreground !text-[14px] text-[13px]">
-                    {dailyList.length}건
-                  </span>
-                </div>
-                <div className="bg-card rounded-xl shadow-(--shadow-1)">
-                  <div className="divide-border/50 divide-y">
-                    {dailyList.map((r) => (
-                      <ReservationItem
-                        key={r.id}
-                        reservation={r}
-                        isPast={new Date(r.endTime) < now}
-                        onTap={() => setActiveRes(r)}
-                        flat
-                      />
-                    ))}
-                  </div>
-                </div>
-              </>
+              <List className="rounded-xl">
+                {dailyList.map((r) => (
+                  <ListItem key={r.id} className="px-0 py-0">
+                    <ReservationItem
+                      reservation={r}
+                      isPast={new Date(r.endTime) < now}
+                      onTap={() => setActiveRes(r)}
+                      flat
+                    />
+                  </ListItem>
+                ))}
+              </List>
             )}
           </>
-        ) : /* 전체 목록 뷰 */
-        grouped.length === 0 ? (
-          <div className="bg-card flex flex-col items-center gap-1.5 rounded-2xl px-4 py-10 shadow-(--shadow-1)">
-            <p className="text-foreground text-[15px] font-semibold">
-              예약 내역이 없어요
-            </p>
-          </div>
+        ) : /* 전체 목록 뷰 */ grouped.length === 0 ? (
+          <List emptyMessage="예약 내역이 없어요" />
         ) : (
           <div className="flex flex-col gap-5">
             {grouped.map(([ymd, items]) => (
               <div key={ymd} className="space-y-3">
                 <div className="flex items-center justify-between gap-2 px-5">
                   <div>
-                    <h3 className="text-foreground !text-[15px] font-bold">
+                    <h3 className="text-foreground text-[15px]! font-bold">
                       {formatGroupHeader(ymd)}
                     </h3>
                   </div>
-                  <span className="text-muted-foreground !text-[13px] text-[13px]">
+                  <span className="text-muted-foreground text-[13px]">
                     {items.length}건
                   </span>
                 </div>
-                <div className="bg-card rounded-3xl shadow-(--shadow-1)">
-                  <div className="divide-border/50 divide-y">
-                    {items.map((r) => (
+                <List>
+                  {items.map((r) => (
+                    <ListItem key={r.id} className="px-0 py-0">
                       <ReservationItem
-                        key={r.id}
                         reservation={r}
                         isPast={new Date(r.endTime) < now}
                         onTap={() => setActiveRes(r)}
                         flat
                       />
-                    ))}
-                  </div>
-                </div>
+                    </ListItem>
+                  ))}
+                </List>
               </div>
             ))}
           </div>
