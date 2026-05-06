@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { places, floors, placeTags, tags } from '@/lib/db/schema';
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, desc, asc, max } from 'drizzle-orm';
 import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
 import { sessionOptions, SessionData } from '@/lib/session';
 
 export async function GET() {
-  // ... (existing GET logic)
   const placeRows = await db
     .select({
       id: places.id,
@@ -15,9 +14,12 @@ export async function GET() {
       description: places.description,
       floorId: places.floorId,
       floorName: floors.name,
+      sortOrder: places.sortOrder,
+      isPinned: places.isPinned,
     })
     .from(places)
-    .leftJoin(floors, eq(places.floorId, floors.id));
+    .leftJoin(floors, eq(places.floorId, floors.id))
+    .orderBy(desc(places.isPinned), asc(places.sortOrder));
 
   if (placeRows.length === 0) return NextResponse.json([]);
 
@@ -39,6 +41,8 @@ export async function GET() {
     description: place.description,
     floorId: place.floorId,
     floorName: place.floorName,
+    sortOrder: place.sortOrder,
+    isPinned: place.isPinned === 1,
     tags: tagRows
       .filter((t) => t.placeId === place.id)
       .map((t) => ({ id: t.tagId, name: t.tagName })),
@@ -57,10 +61,14 @@ export async function POST(req: Request) {
     const { name, description, floorId, tagIds } = await req.json();
     if (!name) return NextResponse.json({ error: 'Name is required' }, { status: 400 });
 
+    const [maxRow] = await db.select({ val: max(places.sortOrder) }).from(places);
+    const nextOrder = (maxRow?.val ?? -1) + 1;
+
     const [newPlace] = await db.insert(places).values({
       name,
       description,
       floorId,
+      sortOrder: nextOrder,
     }).returning();
 
     if (tagIds && tagIds.length > 0) {

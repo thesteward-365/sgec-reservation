@@ -23,6 +23,8 @@ export const places = sqliteTable('places', {
     .notNull()
     .references(() => floors.id, { onDelete: 'cascade' }),
   description: text('description'),
+  sortOrder: integer('sort_order').notNull().default(0),
+  isPinned: integer('is_pinned').notNull().default(0),
 });
 
 export const tags = sqliteTable('tags', {

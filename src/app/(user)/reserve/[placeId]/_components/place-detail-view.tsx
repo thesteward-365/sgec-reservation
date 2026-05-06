@@ -25,6 +25,7 @@ import {
   overlapsExistingRange,
   parseLocalDate,
 } from '@/lib/services/reservation-slots';
+import { Chip } from '@/components/ui/chip';
 
 type PickerPlace = {
   id: number;
@@ -56,9 +57,6 @@ type PlaceDetailViewProps = {
   initialReservation?: EditableReservation;
   backUrl?: string;
 };
-
-const CHIP =
-  'inline-flex items-center font-medium leading-none rounded-pill px-3 py-[6px] text-caption transition-colors duration-120 ease-(--ease-standard) cursor-pointer select-none whitespace-nowrap';
 
 function formatDuration(min: number): string {
   if (min < 60) return `${min}분`;
@@ -122,7 +120,9 @@ export function PlaceDetailView({
     initialReservationDate ?? getInitialDate(initialDate)
   );
   const [reservations, setReservations] = useState<ReservationSchedule[]>([]);
-  const [externalEvents, setExternalEvents] = useState<{ id: number; title: string; startMin: number; endMin: number }[]>([]);
+  const [externalEvents, setExternalEvents] = useState<
+    { id: number; title: string; startMin: number; endMin: number }[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [selection, setSelection] = useState(() =>
     initialReservation
@@ -162,27 +162,36 @@ export function PlaceDetailView({
   useEffect(() => {
     let cancelled = false;
     Promise.all([
-      fetch(`/api/reservations?placeId=${place.id}&date=${selectedDate}`, { cache: 'no-store' }).then((r) => r.json()),
-      fetch(`/api/external-events?date=${selectedDate}`, { cache: 'no-store' }).then((r) => r.json()).catch(() => []),
+      fetch(`/api/reservations?placeId=${place.id}&date=${selectedDate}`, {
+        cache: 'no-store',
+      }).then((r) => r.json()),
+      fetch(`/api/external-events?date=${selectedDate}`, { cache: 'no-store' })
+        .then((r) => r.json())
+        .catch(() => []),
     ])
-      .then(([reservationData, eventsData]: [ReservationSchedule[], { id: number; title: string; startTime: string; endTime: string }[]]) => {
-        if (!cancelled) {
-          setReservations(reservationData);
-          setExternalEvents(
-            (eventsData ?? []).map((ev) => {
-              const s = new Date(ev.startTime);
-              const e = new Date(ev.endTime);
-              return {
-                id: ev.id,
-                title: ev.title,
-                startMin: s.getHours() * 60 + s.getMinutes(),
-                endMin: e.getHours() * 60 + e.getMinutes(),
-              };
-            })
-          );
-          setLoading(false);
+      .then(
+        ([reservationData, eventsData]: [
+          ReservationSchedule[],
+          { id: number; title: string; startTime: string; endTime: string }[],
+        ]) => {
+          if (!cancelled) {
+            setReservations(reservationData);
+            setExternalEvents(
+              (eventsData ?? []).map((ev) => {
+                const s = new Date(ev.startTime);
+                const e = new Date(ev.endTime);
+                return {
+                  id: ev.id,
+                  title: ev.title,
+                  startMin: s.getHours() * 60 + s.getMinutes(),
+                  endMin: e.getHours() * 60 + e.getMinutes(),
+                };
+              })
+            );
+            setLoading(false);
+          }
         }
-      })
+      )
       .catch(() => {
         if (!cancelled) setLoading(false);
       });
@@ -422,18 +431,13 @@ export function PlaceDetailView({
           <div className="bg-card flex flex-col gap-3 rounded-2xl px-4 py-4 shadow-(--shadow-1)">
             <div className="flex flex-wrap gap-2">
               {[...frequentPurposes].map((p) => (
-                <button
+                <Chip
                   key={p}
                   onClick={() => setPurpose(p)}
-                  className={cn(
-                    CHIP,
-                    purpose === p
-                      ? 'bg-(--color-fg-strong) text-white'
-                      : 'text-foreground bg-neutral-300'
-                  )}
+                  variant={purpose === p ? 'active' : 'inactive'}
                 >
                   {p}
-                </button>
+                </Chip>
               ))}
             </div>
             <div className="relative flex items-center">
@@ -525,70 +529,50 @@ export function PlaceDetailView({
       </div>
 
       <Drawer open={placePickerOpen} onOpenChange={setPlacePickerOpen}>
-        <DrawerContent className="bg-(--color-neutral-150)">
+        <DrawerContent className="h-150 bg-(--color-neutral-150)">
           <DrawerHeader>
             <DrawerTitle>장소 선택</DrawerTitle>
           </DrawerHeader>
           <div className="flex flex-col gap-2 px-5 pb-3">
             {pickerFloors.length > 0 && (
               <div className="scrollbar-none flex gap-1.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <button
+                <Chip
                   onClick={() => setPickerFloorId(null)}
-                  className={cn(
-                    CHIP,
-                    pickerFloorId === null
-                      ? 'bg-(--color-fg-strong) text-white'
-                      : 'text-foreground bg-neutral-300'
-                  )}
+                  variant={pickerFloorId === null ? 'active' : 'inactive'}
                 >
                   전체
-                </button>
+                </Chip>
+
                 {pickerFloors.map((f) => (
-                  <button
-                    key={f.id}
+                  <Chip
                     onClick={() =>
                       setPickerFloorId(pickerFloorId === f.id ? null : f.id)
                     }
-                    className={cn(
-                      CHIP,
-                      pickerFloorId === f.id
-                        ? 'bg-(--color-fg-strong) text-white'
-                        : 'text-foreground bg-neutral-300'
-                    )}
+                    variant={pickerFloorId === f.id ? 'active' : 'inactive'}
                   >
                     {f.name}
-                  </button>
+                  </Chip>
                 ))}
               </div>
             )}
             {pickerTags.length > 0 && (
               <div className="scrollbar-none flex gap-1.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <button
+                <Chip
                   onClick={() => setPickerTagId(null)}
-                  className={cn(
-                    CHIP,
-                    pickerTagId === null
-                      ? 'bg-(--color-fg-strong) text-white'
-                      : 'text-foreground bg-neutral-300'
-                  )}
+                  variant={pickerTagId === null ? 'active' : 'inactive'}
                 >
                   전체
-                </button>
+                </Chip>
                 {pickerTags.map((t) => (
-                  <button
+                  <Chip
                     key={t.id}
                     onClick={() =>
                       setPickerTagId(pickerTagId === t.id ? null : t.id)
                     }
-                    className={cn(
-                      CHIP,
-                      pickerTagId === t.id
-                        ? 'bg-(--color-fg-strong) text-white'
-                        : 'text-foreground bg-neutral-300'
-                    )}
+                    variant={pickerTagId === t.id ? 'active' : 'inactive'}
                   >
                     {t.name}
-                  </button>
+                  </Chip>
                 ))}
               </div>
             )}

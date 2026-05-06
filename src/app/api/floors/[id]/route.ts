@@ -29,7 +29,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
@@ -42,10 +42,37 @@ export async function DELETE(
   if (isNaN(floorId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
 
   try {
-    // 층에 속한 장소가 있는지 확인
-    const [linkedPlace] = await db.select().from(places).where(eq(places.floorId, floorId)).limit(1);
-    if (linkedPlace) {
-      return NextResponse.json({ error: '이 층을 사용하는 장소가 있어 삭제할 수 없습니다.' }, { status: 400 });
+    // policy: 'move' | 'cascade' | undefined
+    // move: targetFloorId 로 소속 장소 이동 후 삭제
+    // cascade: 소속 장소도 함께 삭제
+    // undefined: 장소 없을 때만 삭제
+    let policy: string | undefined;
+    let targetFloorId: number | undefined;
+
+    try {
+      const body = await req.json();
+      policy = body?.policy;
+      targetFloorId = body?.targetFloorId;
+    } catch {
+      // body 없는 경우 무시
+    }
+
+    const linkedPlaces = await db.select().from(places).where(eq(places.floorId, floorId));
+
+    if (linkedPlaces.length > 0) {
+      if (policy === 'move' && targetFloorId) {
+        await db
+          .update(places)
+          .set({ floorId: targetFloorId })
+          .where(eq(places.floorId, floorId));
+      } else if (policy === 'cascade') {
+        await db.delete(places).where(eq(places.floorId, floorId));
+      } else {
+        return NextResponse.json(
+          { error: '이 층을 사용하는 장소가 있어 삭제할 수 없습니다.', hasPlaces: true, count: linkedPlaces.length },
+          { status: 400 }
+        );
+      }
     }
 
     await db.delete(floors).where(eq(floors.id, floorId));

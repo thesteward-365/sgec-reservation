@@ -1,0 +1,99 @@
+'use client';
+
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Chip } from '@/components/ui/chip';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import type { FloorRow } from '../types';
+
+type Props = {
+  floor: FloorRow | null;
+  otherFloors: FloorRow[];
+  onClose: () => void;
+  onSuccess: () => void;
+};
+
+export function FloorDeleteDialog({ floor, otherFloors, onClose, onSuccess }: Props) {
+  const [policy, setPolicy] = useState<'move' | 'cascade' | null>(null);
+  const [targetFloorId, setTargetFloorId] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const handleConfirm = async () => {
+    if (!floor) return;
+    if (policy === 'move' && !targetFloorId) { toast.error('이동할 층을 선택해주세요.'); return; }
+    setSaving(true);
+    try {
+      const body = policy === 'move' ? { policy: 'move', targetFloorId } : { policy: 'cascade' };
+      const res = await fetch(`/api/floors/${floor.id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) { const err = await res.json(); throw new Error(err.error || '삭제에 실패했습니다.'); }
+      toast.success('층이 삭제되었습니다.');
+      onClose();
+      onSuccess();
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : '삭제에 실패했습니다.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={!!floor} onOpenChange={(v) => { if (!v) { setPolicy(null); setTargetFloorId(null); onClose(); } }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>층 삭제</DialogTitle>
+          <DialogDescription>
+            <strong>{floor?.name}</strong>에 속한 장소가 있습니다. 어떻게 처리할까요?
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3 py-2">
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border p-3">
+            <input type="radio" name="floorDeletePolicy" value="move" checked={policy === 'move'} onChange={() => setPolicy('move')} className="mt-0.5" />
+            <div>
+              <p className="text-[14px] font-semibold">다른 층으로 이동</p>
+              <p className="text-[12px] text-muted-foreground">소속 장소를 선택한 층으로 옮깁니다</p>
+            </div>
+          </label>
+
+          {policy === 'move' && (
+            <div className="flex flex-wrap gap-2 pl-6">
+              {otherFloors.map((f) => (
+                <Chip
+                  key={f.id}
+                  variant={targetFloorId === f.id ? 'active' : 'inactive'}
+                  onClick={() => setTargetFloorId(f.id)}
+                >
+                  {f.name}
+                </Chip>
+              ))}
+            </div>
+          )}
+
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border p-3">
+            <input type="radio" name="floorDeletePolicy" value="cascade" checked={policy === 'cascade'} onChange={() => setPolicy('cascade')} className="mt-0.5" />
+            <div>
+              <p className="text-[14px] font-semibold text-red-600">소속 장소도 함께 삭제</p>
+              <p className="text-[12px] text-muted-foreground">이 작업은 되돌릴 수 없습니다</p>
+            </div>
+          </label>
+        </div>
+
+        <DialogFooter>
+          <Button variant="secondary" onClick={onClose}>취소</Button>
+          <Button
+            variant="destructive"
+            onClick={handleConfirm}
+            disabled={saving || !policy || (policy === 'move' && !targetFloorId)}
+          >
+            {saving ? '삭제 중...' : '삭제'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

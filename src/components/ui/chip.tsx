@@ -34,7 +34,10 @@ const Chip = React.forwardRef<HTMLButtonElement, ChipProps>(
     return (
       <button
         ref={ref}
-        className={cn(chipVariants({ variant, size, className }))}
+        className={cn(
+          'shrink-0 whitespace-nowrap',
+          chipVariants({ variant, size, className })
+        )}
         {...props}
       />
     );
