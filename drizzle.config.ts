@@ -6,25 +6,20 @@ dotenv.config({ path: '.env' });
 
 const dbType = process.env.DATABASE_TYPE || 'sqlite';
 
-const config = {
-  schema: dbType === 'postgres' ? './src/lib/db/schema.pg.ts' : './src/lib/db/schema.ts',
-  out: dbType === 'postgres' ? './drizzle-pg' : './drizzle',
-};
-
-if (dbType === 'postgres') {
-  Object.assign(config, {
-    dialect: 'postgresql',
-    dbCredentials: {
-      url: process.env.DATABASE_URL || '',
-    },
-  });
-} else {
-  Object.assign(config, {
-    dialect: 'sqlite',
-    dbCredentials: {
-      url: process.env.DATABASE_URL || 'sqlite.db',
-    },
-  });
-}
-
-export default defineConfig(config);
+export default dbType === 'postgres'
+  ? defineConfig({
+      dialect: 'postgresql',
+      schema: './src/lib/db/schema.pg.ts',
+      out: './drizzle-pg',
+      dbCredentials: {
+        url: process.env.DATABASE_URL || '',
+      },
+    })
+  : defineConfig({
+      dialect: 'sqlite',
+      schema: './src/lib/db/schema.ts',
+      out: './drizzle',
+      dbCredentials: {
+        url: process.env.DATABASE_URL || 'sqlite.db',
+      },
+    });
