@@ -8,6 +8,8 @@ import {
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { BrandHeader } from '@/components/layout/brand-header';
+import { List, ListItem } from '@/components/ui/list';
+import { ListSkeleton } from '@/components/ui/list-skeleton';
 import { MonthlyCalendar } from '@/components/calendar/monthly-calendar';
 import {
   FilterSheet,
@@ -338,14 +340,7 @@ export default function ReservationsPage() {
               </div>
 
               {loading ? (
-                <div className="space-y-4 px-1">
-                  {Array.from({ length: 3 }).map((_, index) => (
-                    <div
-                      key={index}
-                      className="bg-card animate-pulse rounded-xl p-4"
-                    />
-                  ))}
-                </div>
+                <ListSkeleton count={3} />
               ) : groupedListView.length === 0 ? (
                 <div className="bg-card rounded-xl px-4 py-10 text-center shadow-(--shadow-1)">
                   <p className="text-foreground text-[15px] font-semibold">
@@ -379,11 +374,10 @@ export default function ReservationsPage() {
                           </span>
                         </div>
                       </div>
-                      <div className="bg-card rounded-xl shadow-(--shadow-1)">
-                        <div className="divide-border/50 divide-y">
-                          {dailyList.map((reservation) => (
+                      <List>
+                        {items.map((reservation) => (
+                          <ListItem key={reservation.id} className="px-0 py-0">
                             <button
-                              key={reservation.id}
                               type="button"
                               onClick={() => setActiveReservation(reservation)}
                               className="w-full rounded-none px-4 py-4 text-left transition hover:bg-neutral-50 active:bg-neutral-100"
@@ -414,9 +408,9 @@ export default function ReservationsPage() {
                                 </div>
                               </div>
                             </button>
-                          ))}
-                        </div>
-                      </div>
+                          </ListItem>
+                        ))}
+                      </List>
                       {/* <div className="bg-card rounded-xl shadow-(--shadow-1)">
                         <div className="divide-border/50 divide-y">
                           {items.map((reservation) => (

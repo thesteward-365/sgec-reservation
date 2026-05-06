@@ -6,30 +6,45 @@ import { cn } from '@/lib/utils';
 
 const List = React.forwardRef<
   HTMLDivElement,
-  React.PropsWithChildren<{
-    emptyMessage?: string;
-  }>
->(({ children, emptyMessage = '데이터가 없습니다' }, ref) => {
-  const hasChildren = React.Children.count(children) > 0;
+  React.PropsWithChildren<
+    React.HTMLAttributes<HTMLDivElement> & {
+      emptyMessage?: string;
+    }
+  >
+>(
+  (
+    { children, emptyMessage = '데이터가 없습니다', className, ...props },
+    ref
+  ) => {
+    const hasChildren = React.Children.count(children) > 0;
 
-  if (!hasChildren) {
+    if (!hasChildren) {
+      return (
+        <Card
+          className={cn('overflow-hidden p-0', className)}
+          ref={ref}
+          {...props}
+        >
+          <div className="p-10">
+            <p className="text-body text-muted-foreground text-center">
+              {emptyMessage}
+            </p>
+          </div>
+        </Card>
+      );
+    }
+
     return (
-      <Card className="overflow-hidden p-0">
-        <div className="p-10">
-          <p className="text-body text-muted-foreground text-center">
-            {emptyMessage}
-          </p>
-        </div>
+      <Card
+        className={cn('overflow-hidden p-0', className)}
+        ref={ref}
+        {...props}
+      >
+        <div className="divide-border/50 divide-y">{children}</div>
       </Card>
     );
   }
-
-  return (
-    <Card className="overflow-hidden p-0" ref={ref}>
-      <div className="divide-border/50 divide-y">{children}</div>
-    </Card>
-  );
-});
+);
 List.displayName = 'List';
 
 const ListItem = React.forwardRef<
