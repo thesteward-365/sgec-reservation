@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react'
-import { Input } from './input'
-import { Label } from './label'
+import type { Meta, StoryObj } from '@storybook/react';
+import { Input } from './input';
+import { Label } from './label';
 
 const meta: Meta<typeof Input> = {
   title: 'Components/UI/Input',
@@ -8,15 +8,15 @@ const meta: Meta<typeof Input> = {
   tags: ['autodocs'],
   decorators: [
     (Story) => (
-      <div className="bg-background p-6" style={{ minHeight: '100vh' }}>
+      <div className="bg-background p-6" style={{ minHeight: '100dvh' }}>
         <Story />
       </div>
     ),
   ],
-}
+};
 
-export default meta
-type Story = StoryObj<typeof Input>
+export default meta;
+type Story = StoryObj<typeof Input>;
 
 export const Default: Story = {
   render: () => (
@@ -34,7 +34,7 @@ export const Default: Story = {
       </div>
     </div>
   ),
-}
+};
 
 export const Error: Story = {
   render: () => (
@@ -51,7 +51,7 @@ export const Error: Story = {
       </div>
     </div>
   ),
-}
+};
 
 export const Disabled: Story = {
   render: () => (
@@ -60,4 +60,4 @@ export const Disabled: Story = {
       <Input id="disabled-input" defaultValue="3층 세미나실" disabled />
     </div>
   ),
-}
+};

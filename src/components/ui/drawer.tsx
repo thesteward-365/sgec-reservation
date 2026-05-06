@@ -1,13 +1,13 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import { Drawer as DrawerPrimitive } from "vaul"
-import { cn } from "@/lib/utils"
+import * as React from 'react';
+import { Drawer as DrawerPrimitive } from 'vaul';
+import { cn } from '@/lib/utils';
 
-const Drawer = DrawerPrimitive.Root
-const DrawerTrigger = DrawerPrimitive.Trigger
-const DrawerPortal = DrawerPrimitive.Portal
-const DrawerClose = DrawerPrimitive.Close
+const Drawer = DrawerPrimitive.Root;
+const DrawerTrigger = DrawerPrimitive.Trigger;
+const DrawerPortal = DrawerPrimitive.Portal;
+const DrawerClose = DrawerPrimitive.Close;
 
 function DrawerOverlay({
   className,
@@ -15,10 +15,10 @@ function DrawerOverlay({
 }: React.ComponentProps<typeof DrawerPrimitive.Overlay>) {
   return (
     <DrawerPrimitive.Overlay
-      className={cn("fixed inset-0 z-50 bg-(--color-bg-overlay)", className)}
+      className={cn('fixed inset-0 z-50 bg-(--color-bg-overlay)', className)}
       {...props}
     />
-  )
+  );
 }
 
 function DrawerContent({
@@ -31,40 +31,40 @@ function DrawerContent({
       <DrawerOverlay />
       <DrawerPrimitive.Content
         className={cn(
-          "fixed inset-x-0 bottom-0 z-50",
-          "flex flex-col",
-          "bg-card rounded-t-3xl shadow-(--shadow-5)",
-          "outline-none",
-          "max-h-[90dvh]",
+          'fixed inset-x-0 bottom-0 z-50 pb-[env(safe-area-inset-bottom)]',
+          'flex flex-col',
+          'bg-card rounded-t-3xl shadow-(--shadow-5)',
+          'outline-none',
+          'max-h-[90dvh]',
           className
         )}
         {...props}
       >
-        <div className="mx-auto mt-3 mb-2 h-1 w-10 rounded-pill bg-border" />
+        <div className="rounded-pill bg-border mx-auto mt-3 mb-2 h-1 w-10" />
         {children}
       </DrawerPrimitive.Content>
     </DrawerPortal>
-  )
+  );
 }
 
-function DrawerHeader({ className, ...props }: React.ComponentProps<"div">) {
+function DrawerHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="drawer-header"
-      className={cn("flex flex-col gap-1.5 px-6 py-4", className)}
+      className={cn('flex flex-col gap-1.5 px-6 py-4', className)}
       {...props}
     />
-  )
+  );
 }
 
-function DrawerFooter({ className, ...props }: React.ComponentProps<"div">) {
+function DrawerFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="drawer-footer"
-      className={cn("flex flex-col gap-2 px-6 py-4 mt-auto", className)}
+      className={cn('mt-auto flex flex-col gap-2 px-6 py-4', className)}
       {...props}
     />
-  )
+  );
 }
 
 function DrawerTitle({
@@ -73,10 +73,13 @@ function DrawerTitle({
 }: React.ComponentProps<typeof DrawerPrimitive.Title>) {
   return (
     <DrawerPrimitive.Title
-      className={cn("text-h5 font-bold text-foreground leading-[1.4]", className)}
+      className={cn(
+        'text-h5 text-foreground leading-[1.4] font-bold',
+        className
+      )}
       {...props}
     />
-  )
+  );
 }
 
 function DrawerDescription({
@@ -85,10 +88,10 @@ function DrawerDescription({
 }: React.ComponentProps<typeof DrawerPrimitive.Description>) {
   return (
     <DrawerPrimitive.Description
-      className={cn("text-body-sm text-muted-foreground", className)}
+      className={cn('text-body-sm text-muted-foreground', className)}
       {...props}
     />
-  )
+  );
 }
 
 export {
@@ -102,4 +105,4 @@ export {
   DrawerFooter,
   DrawerTitle,
   DrawerDescription,
-}
+};

@@ -1,15 +1,13 @@
 import type { NextConfig } from 'next';
-import withPWAInit from 'next-pwa';
-
-const withPWA = withPWAInit({
-  dest: 'public',
-  disable: process.env.NODE_ENV === 'development',
-});
 
 const nextConfig: NextConfig = {
   output: 'standalone',
   serverExternalPackages: ['better-sqlite3'],
-  allowedDevOrigins: ['http://localhost:3000', '192.168.0.100'],
+  allowedDevOrigins: [
+    'http://localhost:3000',
+    '192.168.0.100',
+    '*.ngrok-free.app',
+  ],
   async headers() {
     return [
       {
@@ -33,4 +31,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withPWA(nextConfig);
+export default nextConfig;

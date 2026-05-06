@@ -14,7 +14,7 @@
 - **DB/ORM**: SQLite (WAL), Drizzle ORM
 - **Auth**: iron-session (httpOnly 쿠키, 365일 유지)
 - **Style**: Tailwind CSS, [design-system/](design-system/)
-- **PWA**: next-pwa
+- **PWA**: service worker
 - **UI/Test**: Storybook, Vitest, Playwright
 - **Deploy**: Docker (Standalone 모드)
 

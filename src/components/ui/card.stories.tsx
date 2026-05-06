@@ -1,6 +1,13 @@
-import type { Meta, StoryObj } from '@storybook/react'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './card'
-import { Button } from './button'
+import type { Meta, StoryObj } from '@storybook/react';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from './card';
+import { Button } from './button';
 
 const meta: Meta<typeof Card> = {
   title: 'Components/UI/Card',
@@ -8,7 +15,7 @@ const meta: Meta<typeof Card> = {
   tags: ['autodocs'],
   decorators: [
     (Story) => (
-      <div className="bg-background p-6" style={{ minHeight: '100vh' }}>
+      <div className="bg-background p-6" style={{ minHeight: '100dvh' }}>
         <Story />
       </div>
     ),
@@ -16,10 +23,10 @@ const meta: Meta<typeof Card> = {
   parameters: {
     backgrounds: { default: 'subtle' },
   },
-}
+};
 
-export default meta
-type Story = StoryObj<typeof Card>
+export default meta;
+type Story = StoryObj<typeof Card>;
 
 export const Reservation: Story = {
   render: () => (
@@ -29,15 +36,21 @@ export const Reservation: Story = {
         <CardDescription>2026년 5월 1일 · 14:00 – 16:00</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="text-body-sm text-muted-foreground">소그룹 성경공부 · 홍길동</div>
+        <div className="text-body-sm text-muted-foreground">
+          소그룹 성경공부 · 홍길동
+        </div>
       </CardContent>
       <CardFooter>
-        <Button size="sm" variant="secondary">수정</Button>
-        <Button size="sm" variant="ghost">취소</Button>
+        <Button size="sm" variant="secondary">
+          수정
+        </Button>
+        <Button size="sm" variant="ghost">
+          취소
+        </Button>
       </CardFooter>
     </Card>
   ),
-}
+};
 
 export const Place: Story = {
   render: () => (
@@ -57,4 +70,4 @@ export const Place: Story = {
       </CardContent>
     </Card>
   ),
-}
+};

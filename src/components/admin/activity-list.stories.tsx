@@ -8,7 +8,7 @@ const meta: Meta<typeof ActivityList> = {
   tags: ['autodocs'],
   decorators: [
     (Story) => (
-      <div className="bg-background p-6" style={{ minHeight: '100vh' }}>
+      <div className="bg-background p-6" style={{ minHeight: '100dvh' }}>
         <Story />
       </div>
     ),
