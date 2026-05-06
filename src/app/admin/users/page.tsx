@@ -5,6 +5,7 @@ import { BrandHeader } from '@/components/layout/brand-header';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { List, ListItem } from '@/components/ui/list';
+import { ListSkeleton } from '@/components/ui/list-skeleton';
 import { CheckIcon } from '@heroicons/react/24/solid';
 import { EllipsisHorizontalIcon } from '@heroicons/react/24/outline';
 import {
@@ -90,22 +91,7 @@ export default function UsersPage() {
   // ── 승인 대기 렌더 ─────────────────────────────────
   const renderPending = () => {
     if (loading) {
-      return Array.from({ length: 2 }).map((_, i) => (
-        <div
-          key={i}
-          className="bg-card mb-3 animate-pulse rounded-xl p-5 shadow-(--shadow-1)"
-        >
-          <div className="space-y-2">
-            <div className="bg-muted h-5 w-24 rounded" />
-            <div className="bg-muted h-4 w-36 rounded" />
-            <div className="bg-muted h-3 w-28 rounded" />
-          </div>
-          <div className="mt-5 flex gap-2">
-            <div className="rounded-pill bg-muted h-12 flex-1" />
-            <div className="rounded-pill bg-muted h-12 flex-1" />
-          </div>
-        </div>
-      ));
+      return <ListSkeleton count={4} />;
     }
 
     if (pendingUsers.length === 0) {
@@ -119,12 +105,9 @@ export default function UsersPage() {
     }
 
     return (
-      <div className="space-y-3">
+      <List>
         {pendingUsers.map((user) => (
-          <div
-            key={user.id}
-            className="bg-card rounded-xl p-5 shadow-(--shadow-1)"
-          >
+          <ListItem key={user.id} className="bg-card shadow-(--shadow-1)">
             <div className="space-y-1">
               <p className="text-body text-foreground font-bold">{user.name}</p>
               <p className="text-body-sm text-foreground font-medium">
@@ -149,9 +132,9 @@ export default function UsersPage() {
                 승인
               </button>
             </div>
-          </div>
+          </ListItem>
         ))}
-      </div>
+      </List>
     );
   };
 
@@ -187,38 +170,51 @@ export default function UsersPage() {
 
     return (
       <List>
-        {users.map((user) => (
-          <ListItem
-            key={user.id}
-            className="flex items-center justify-between transition-colors hover:bg-neutral-50"
-          >
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="text-body text-foreground font-bold">
-                  {user.name}
-                </span>
-                {user.role === 'admin' && (
-                  <Badge
-                    variant="subtle"
-                    color="blue"
-                    className="text-[11px] font-bold"
-                  >
-                    관리자
-                  </Badge>
-                )}
-              </div>
-              <span className="text-caption text-muted-foreground mt-1.5 block font-medium">
-                {user.phoneNumber}
-              </span>
-            </div>
-            <button
-              className="text-muted-foreground hover:text-foreground flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-neutral-100 active:bg-neutral-200"
-              onClick={() => setMenuUser(user)}
+        {users.map((user) => {
+          const isDisabled = user.status === 'rejected';
+
+          return (
+            <ListItem
+              key={user.id}
+              className={`flex items-center justify-between transition-colors ${isDisabled ? 'opacity-50 hover:bg-transparent' : 'hover:bg-neutral-50'}`}
             >
-              <EllipsisHorizontalIcon className="h-5 w-5" />
-            </button>
-          </ListItem>
-        ))}
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-body text-foreground font-bold">
+                    {user.name}
+                  </span>
+                  {user.role === 'admin' && (
+                    <Badge
+                      variant="subtle"
+                      color="blue"
+                      className="text-[11px] font-bold"
+                    >
+                      관리자
+                    </Badge>
+                  )}
+                  {isDisabled && (
+                    <Badge
+                      variant="subtle"
+                      color="neutral"
+                      className="text-[11px] font-bold"
+                    >
+                      비활성화
+                    </Badge>
+                  )}
+                </div>
+                <span className="text-caption text-muted-foreground mt-1.5 block font-medium">
+                  {user.phoneNumber}
+                </span>
+              </div>
+              <button
+                className="text-muted-foreground hover:text-foreground flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-neutral-100 active:bg-neutral-200"
+                onClick={() => setMenuUser(user)}
+              >
+                <EllipsisHorizontalIcon className="h-5 w-5" />
+              </button>
+            </ListItem>
+          );
+        })}
       </List>
     );
   };
