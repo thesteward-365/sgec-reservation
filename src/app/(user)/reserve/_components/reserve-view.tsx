@@ -17,6 +17,7 @@ import {
   DrawerTitle,
   DrawerFooter,
 } from '@/components/ui/drawer';
+import { Chip } from '@/components/ui/chip';
 import { List, ListItem } from '@/components/ui/list';
 import { ListSkeleton } from '@/components/ui/list-skeleton';
 import { BrandHeader } from '@/components/layout/brand-header';
@@ -54,9 +55,6 @@ function getWeekStartStr(date: Date): string {
   d.setHours(0, 0, 0, 0);
   return formatLocalDate(d);
 }
-
-const CHIP =
-  'inline-flex items-center font-medium leading-none rounded-pill px-3 py-[6px] text-caption transition-colors duration-120 ease-(--ease-standard) cursor-pointer select-none whitespace-nowrap';
 
 type ReserveViewProps = {
   userName?: string;
@@ -233,30 +231,24 @@ export function ReserveView({ userName }: ReserveViewProps) {
         {/* 층 칩 스트립 */}
         {floors.length > 0 && (
           <div className="scrollbar-none mb-3 flex gap-1.5 overflow-x-auto px-5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <button
+            <Chip
+              size="sm"
+              variant={selectedFloorId === null ? 'active' : 'inactive'}
               onClick={() => handleFloorChipClick(null)}
-              className={cn(
-                CHIP,
-                selectedFloorId === null
-                  ? 'bg-(--color-fg-strong) text-white'
-                  : 'text-foreground bg-neutral-300'
-              )}
+              className="whitespace-nowrap"
             >
               전체
-            </button>
+            </Chip>
             {floors.map((floor) => (
-              <button
+              <Chip
                 key={floor.id}
+                size="sm"
+                variant={selectedFloorId === floor.id ? 'active' : 'inactive'}
                 onClick={() => handleFloorChipClick(floor.id)}
-                className={cn(
-                  CHIP,
-                  selectedFloorId === floor.id
-                    ? 'bg-(--color-fg-strong) text-white'
-                    : 'text-foreground bg-neutral-300'
-                )}
+                className="whitespace-nowrap"
               >
                 {floor.name}
-              </button>
+              </Chip>
             ))}
           </div>
         )}
@@ -338,22 +330,20 @@ export function ReserveView({ userName }: ReserveViewProps) {
                 <h3 className="text-h5 text-foreground font-bold">층</h3>
                 <div className="flex flex-wrap gap-2">
                   {floors.map((floor) => (
-                    <button
+                    <Chip
                       key={floor.id}
+                      size="sm"
+                      variant={
+                        draftFloorId === floor.id ? 'active' : 'inactive'
+                      }
                       onClick={() =>
                         setDraftFloorId(
                           draftFloorId === floor.id ? null : floor.id
                         )
                       }
-                      className={cn(
-                        CHIP,
-                        draftFloorId === floor.id
-                          ? 'bg-(--color-fg-strong) text-white'
-                          : 'text-foreground bg-neutral-300'
-                      )}
                     >
                       {floor.name}
-                    </button>
+                    </Chip>
                   ))}
                 </div>
               </div>
@@ -364,20 +354,16 @@ export function ReserveView({ userName }: ReserveViewProps) {
                 <h3 className="text-h5 text-foreground font-bold">유형</h3>
                 <div className="flex flex-wrap gap-2">
                   {tags.map((tag) => (
-                    <button
+                    <Chip
                       key={tag.id}
+                      size="sm"
+                      variant={draftTagId === tag.id ? 'active' : 'inactive'}
                       onClick={() =>
                         setDraftTagId(draftTagId === tag.id ? null : tag.id)
                       }
-                      className={cn(
-                        CHIP,
-                        draftTagId === tag.id
-                          ? 'bg-(--color-fg-strong) text-white'
-                          : 'text-foreground bg-neutral-300'
-                      )}
                     >
                       {tag.name}
-                    </button>
+                    </Chip>
                   ))}
                 </div>
               </div>
