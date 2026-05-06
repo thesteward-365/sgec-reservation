@@ -17,6 +17,8 @@ import {
   DrawerTitle,
   DrawerFooter,
 } from '@/components/ui/drawer';
+import { List, ListItem } from '@/components/ui/list';
+import { ListSkeleton } from '@/components/ui/list-skeleton';
 import { BrandHeader } from '@/components/layout/brand-header';
 import { cn } from '@/lib/utils';
 
@@ -264,63 +266,62 @@ export function ReserveView({ userName }: ReserveViewProps) {
       {/* 장소 목록 */}
       <div className="flex flex-col gap-2 px-5 pt-2 pb-8">
         {loadingPlaces ? (
-          Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="bg-muted h-20 animate-pulse rounded-2xl" />
-          ))
+          <ListSkeleton count={4} />
         ) : filteredPlaces.length === 0 ? (
-          <p className="text-body-sm text-muted-foreground py-16 text-center">
-            등록된 장소가 없습니다.
-          </p>
+          <List emptyMessage="등록된 장소가 없습니다." />
         ) : (
-          filteredPlaces.map((place) => {
-            const count =
-              countsMap[place.id]?.[formatLocalDate(selectedDate)] ?? 0;
-            return (
-              <Link
-                key={place.id}
-                href={`/reserve/${place.id}?date=${formatLocalDate(selectedDate)}`}
-              >
-                <div className="bg-card flex items-center gap-3 rounded-2xl px-4.5 py-4 shadow-(--shadow-1)">
-                  <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                    <span className="text-body-lg text-foreground font-bold">
-                      {place.name}
-                    </span>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      {place.floorName && (
-                        <span className="text-caption text-muted-foreground">
-                          {place.floorName}
+          <List>
+            {filteredPlaces.map((place) => {
+              const count =
+                countsMap[place.id]?.[formatLocalDate(selectedDate)] ?? 0;
+              return (
+                <ListItem key={place.id} className="px-0 py-0">
+                  <Link
+                    href={`/reserve/${place.id}?date=${formatLocalDate(selectedDate)}`}
+                  >
+                    <div className="bg-card flex items-center gap-3 rounded-2xl px-4.5 py-4 shadow-(--shadow-1)">
+                      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                        <span className="text-body-lg text-foreground font-bold">
+                          {place.name}
                         </span>
-                      )}
-                      {place.tags
-                        .filter((t) => t.name)
-                        .map((tag, idx) => (
-                          <span
-                            key={idx}
-                            className="text-muted-foreground rounded-full bg-neutral-200 px-2 py-0.5 font-medium"
-                            style={{ fontSize: 11 }}
-                          >
-                            #{tag.name}
-                          </span>
-                        ))}
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {place.floorName && (
+                            <span className="text-caption text-muted-foreground">
+                              {place.floorName}
+                            </span>
+                          )}
+                          {place.tags
+                            .filter((t) => t.name)
+                            .map((tag, idx) => (
+                              <span
+                                key={idx}
+                                className="text-muted-foreground rounded-full bg-neutral-200 px-2 py-0.5 font-medium"
+                                style={{ fontSize: 11 }}
+                              >
+                                #{tag.name}
+                              </span>
+                            ))}
+                        </div>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p
+                          className="text-muted-foreground mb-0.5 leading-none font-medium"
+                          style={{ fontSize: 11 }}
+                        >
+                          예약
+                        </p>
+                        <p
+                          className={`text-body text-${count > 0 ? 'primary' : 'muted-foreground'} font-bold tabular-nums`}
+                        >
+                          {count}건
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p
-                      className="text-muted-foreground mb-0.5 leading-none font-medium"
-                      style={{ fontSize: 11 }}
-                    >
-                      예약
-                    </p>
-                    <p
-                      className={`text-body text-${count > 0 ? 'primary' : 'muted-foreground'} font-bold tabular-nums`}
-                    >
-                      {count}건
-                    </p>
-                  </div>
-                </div>
-              </Link>
-            );
-          })
+                  </Link>
+                </ListItem>
+              );
+            })}
+          </List>
         )}
       </div>
 
