@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { BrandHeader } from '@/components/layout/brand-header';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { List, ListItem } from '@/components/ui/list';
 import { CheckIcon } from '@heroicons/react/24/solid';
 import { EllipsisHorizontalIcon } from '@heroicons/react/24/outline';
 import {
@@ -185,42 +186,40 @@ export default function UsersPage() {
     }
 
     return (
-      <Card className="overflow-hidden p-0">
-        <div className="divide-border/50 divide-y">
-          {users.map((user) => (
-            <div
-              key={user.id}
-              className="flex items-center justify-between px-5 py-4 transition-colors hover:bg-neutral-50"
-            >
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-body text-foreground font-bold">
-                    {user.name}
-                  </span>
-                  {user.role === 'admin' && (
-                    <Badge
-                      variant="subtle"
-                      color="blue"
-                      className="text-[11px] font-bold"
-                    >
-                      관리자
-                    </Badge>
-                  )}
-                </div>
-                <span className="text-caption text-muted-foreground mt-1.5 block font-medium">
-                  {user.phoneNumber}
+      <List>
+        {users.map((user) => (
+          <ListItem
+            key={user.id}
+            className="flex items-center justify-between transition-colors hover:bg-neutral-50"
+          >
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-body text-foreground font-bold">
+                  {user.name}
                 </span>
+                {user.role === 'admin' && (
+                  <Badge
+                    variant="subtle"
+                    color="blue"
+                    className="text-[11px] font-bold"
+                  >
+                    관리자
+                  </Badge>
+                )}
               </div>
-              <button
-                className="text-muted-foreground hover:text-foreground flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-neutral-100 active:bg-neutral-200"
-                onClick={() => setMenuUser(user)}
-              >
-                <EllipsisHorizontalIcon className="h-5 w-5" />
-              </button>
+              <span className="text-caption text-muted-foreground mt-1.5 block font-medium">
+                {user.phoneNumber}
+              </span>
             </div>
-          ))}
-        </div>
-      </Card>
+            <button
+              className="text-muted-foreground hover:text-foreground flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-neutral-100 active:bg-neutral-200"
+              onClick={() => setMenuUser(user)}
+            >
+              <EllipsisHorizontalIcon className="h-5 w-5" />
+            </button>
+          </ListItem>
+        ))}
+      </List>
     );
   };
 
