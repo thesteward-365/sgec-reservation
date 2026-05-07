@@ -19,6 +19,7 @@ export function CompleteActions({
   returnUrl,
 }: Props) {
   async function handleShare() {
+    console.log(navigator, navigator.share, navigator.clipboard);
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
         await navigator.share({ text: shareText });
