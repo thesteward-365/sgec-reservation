@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { places, floors, placeTags, tags } from '@/lib/db/schema';
-import { eq, inArray, desc, asc, max } from 'drizzle-orm';
+import { eq, inArray, desc, asc } from 'drizzle-orm';
 import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';
 import { sessionOptions, SessionData } from '@/lib/session';
+import { PlaceService } from '@/lib/services/place-service';
 
 export async function GET() {
   const placeRows = await db
@@ -52,36 +53,25 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  if (session.user?.role !== 'admin') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   try {
+    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+    if (session.user?.role !== 'admin') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { name, description, floorId, tagIds } = await req.json();
     if (!name) return NextResponse.json({ error: 'Name is required' }, { status: 400 });
 
-    const [maxRow] = await db.select({ val: max(places.sortOrder) }).from(places);
-    const nextOrder = (maxRow?.val ?? -1) + 1;
-
-    const [newPlace] = await db.insert(places).values({
+    const newPlace = await PlaceService.createPlace({
       name,
       description,
       floorId,
-      sortOrder: nextOrder,
-    }).returning();
-
-    if (tagIds && tagIds.length > 0) {
-      await db.insert(placeTags).values(
-        tagIds.map((tagId: number) => ({
-          placeId: newPlace.id,
-          tagId,
-        }))
-      );
-    }
+      tagIds,
+    });
 
     return NextResponse.json(newPlace);
-  } catch (error) {
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  } catch (error: any) {
+    console.error('POST /api/places error:', error);
+    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
   }
 }
