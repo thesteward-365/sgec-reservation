@@ -345,8 +345,61 @@
 - [ ] 관리자: 예약 단위 설정
   - 현재는 30분 단위로만 예약을 할 수 있음.
   - 관리자페이지에서 예약 단위 설정 시 해당 시간 단위로 예약을 진행할 수 있어야 함.
+- [ ] 예약 관리 시트에서 예약 내용 복사하는 기능 추가
+
+## PWA 환경 이슈
+
 - [ ] PWA를 고려해 safe-area 설정
 - [ ] keyboard avoid 유의
+- [ ] PWA에서 로그아웃 시 API 호출 오류
+      POST /api/auth/logout 307 in 9ms (next.js: 3ms, application-code: 6ms) [browser] ⨯ unhandledRejection: TypeError: Load failed
+- [ ] 공유하기 시 에러 발생
+      [browser] ⨯ unhandledRejection: TypeError: undefined is not an object (evaluating 'navigator.clipboard.writeText')
+      at <unknown> (src/app/(user)/reserve/[placeId]/complete/complete-actions.tsx:29:32)
+      at handleShare (src/app/(user)/reserve/[placeId]/complete/complete-actions.tsx:21:18)
+      27 | }
+      28 | } else { > 29 | await navigator.clipboard.writeText(shareText);
+      | ^
+      30 | toast.success('예약 정보가 복사되었어요');
+      31 | }
+      32 | }
+- [ ] 예약 수정 시 아래 에러 발생 -> 브라우저도 동일
+      ⨯ TypeError: object is not iterable (cannot read property Symbol(Symbol.iterator))
+      at PATCH (src/app/api/reservations/[id]/route.ts:173:21)
+      171 | }
+      172 | > 173 | const [updated] = db.transaction((tx) => {
+      | ^
+      174 | const [nextReservation] = tx
+      175 | .update(reservations)
+      176 | .set({
+      PATCH /api/reservations/1 500 in 2.0s (next.js: 1450ms, application-code: 571ms)
+      TypeError: tx.update.set.where.returning.all is not a function or its return value is not iterable
+      at <unknown> (src/app/api/reservations/[id]/route.ts:188:8)
+      at new Promise (<anonymous>)
+      186 | )
+      187 | .returning() > 188 | .all();
+      | ^
+      189 |
+      190 | tx
+      191 | .insert(reservationHistories)
+      ⨯ unhandledRejection: TypeError: tx.update.set.where.returning.all is not a function or its return value is not iterable
+      at <unknown> (src/app/api/reservations/[id]/route.ts:188:8)
+      at new Promise (<anonymous>)
+      186 | )
+      187 | .returning() > 188 | .all();
+      | ^
+      189 |
+      190 | tx
+      191 | .insert(reservationHistories)
+      ⨯ unhandledRejection: TypeError: tx.update.set.where.returning.all is not a function or its return value is not iterable
+      at <unknown> (src/app/api/reservations/[id]/route.ts:188:8)
+      at new Promise (<anonymous>)
+      186 | )
+      187 | .returning() > 188 | .all();
+      | ^
+      189 |
+      190 | tx
+      191 | .insert(reservationHistories)
 
 ---
 
