@@ -4,7 +4,17 @@ import * as React from 'react';
 import { Drawer as DrawerPrimitive } from 'vaul';
 import { cn } from '@/lib/utils';
 
-const Drawer = DrawerPrimitive.Root;
+const Drawer = ({
+  shouldScaleBackground = false,
+  ...props
+}: React.ComponentProps<typeof DrawerPrimitive.Root>) => (
+  <DrawerPrimitive.Root
+    shouldScaleBackground={shouldScaleBackground}
+    {...props}
+  />
+);
+Drawer.displayName = 'Drawer';
+
 const DrawerTrigger = DrawerPrimitive.Trigger;
 const DrawerPortal = DrawerPrimitive.Portal;
 const DrawerClose = DrawerPrimitive.Close;
@@ -31,16 +41,16 @@ function DrawerContent({
       <DrawerOverlay />
       <DrawerPrimitive.Content
         className={cn(
-          'fixed inset-x-0 bottom-0 z-50 pb-[env(safe-area-inset-bottom)]',
+          'fixed inset-x-0 bottom-0 z-50',
           'flex flex-col',
           'bg-card rounded-t-3xl shadow-(--shadow-5)',
           'outline-none',
-          'max-h-[90dvh]',
+          'max-h-[96dvh]',
           className
         )}
         {...props}
       >
-        <div className="rounded-pill bg-border mx-auto mt-3 mb-2 h-1 w-10" />
+        <div className="mx-auto mt-4 h-1.5 w-12 shrink-0 rounded-full bg-neutral-300" />
         {children}
       </DrawerPrimitive.Content>
     </DrawerPortal>
@@ -51,7 +61,7 @@ function DrawerHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="drawer-header"
-      className={cn('flex flex-col gap-1.5 px-6 py-4', className)}
+      className={cn('flex flex-col gap-1.5 px-6 pb-2 pt-4 shrink-0', className)}
       {...props}
     />
   );
@@ -61,7 +71,13 @@ function DrawerFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="drawer-footer"
-      className={cn('mt-auto flex flex-col gap-2 px-6 py-4', className)}
+      className={cn(
+        'mt-auto flex flex-col gap-2 px-6 pt-4 pb-12 shrink-0',
+        className
+      )}
+      style={{
+        paddingBottom: 'max(3rem, calc(env(safe-area-inset-bottom) + 1.5rem))',
+      }}
       {...props}
     />
   );
