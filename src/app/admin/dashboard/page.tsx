@@ -87,7 +87,7 @@ export default function DashboardPage() {
     <>
       <BrandHeader />
 
-      <main className="flex-1 pb-24">
+      <main className="flex-1 pb-10">
         <section className="space-y-3 px-5 pb-6">
           {!loading && stats && stats.pendingUsersCount > 0 && (
             <Link href="/admin/users">

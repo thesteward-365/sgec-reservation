@@ -53,11 +53,11 @@ function AdminBottomNav() {
 
   return (
     <nav
-      className="bg-background fixed inset-x-0 bottom-0 z-40"
+      className="bg-card sticky bottom-0 z-40 w-full mt-auto"
       style={{ boxShadow: '0 -1px 0 var(--color-border-subtle)' }}
     >
       <div
-        className="mx-auto grid max-w-107.5 grid-cols-4"
+        className="mx-auto grid grid-cols-4"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         {NAV_ITEMS.map(({ href, OutlineIcon, SolidIcon, label }) => {

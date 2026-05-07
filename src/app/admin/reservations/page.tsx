@@ -221,7 +221,7 @@ export default function ReservationsPage() {
           )}
         </button>
       </div>
-      <main className="flex-1 pb-24">
+      <main className="flex-1 pb-10">
         <div className="space-y-4 px-5">
           <div className="flex flex-wrap gap-1.5">
             {VIEW_CHIPS.map((item) => (

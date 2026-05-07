@@ -174,7 +174,7 @@ export function SettingsView({
         <h2 className="text-h2 text-foreground font-bold">설정</h2>
       </div>
 
-      <div className="flex flex-col gap-4 px-5 pb-32">
+      <div className="flex flex-col gap-4 px-5 pb-10">
         {/* 프로필 섹션 */}
         <List>
           <ListItem className="px-0 py-0">

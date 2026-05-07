@@ -201,7 +201,7 @@ function CalendarPageContent() {
         </div>
       </div>
 
-      <main className="flex-1 pt-14 pb-24">
+      <main className="flex-1 pt-14 pb-10">
         <div className="space-y-4 px-5 py-6">
           {loading ? (
             <div className="flex items-center justify-center py-20">

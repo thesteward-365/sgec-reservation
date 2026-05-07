@@ -98,7 +98,7 @@ export default function AdminMePage() {
     <>
       <BrandHeader />
 
-      <main className="flex-1 pb-24">
+      <main className="flex-1 pb-10">
         <div className="space-y-4 px-5 pt-4 pb-5">
           {/* 프로필 섹션 */}
           {loading ? (

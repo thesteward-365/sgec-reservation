@@ -223,7 +223,7 @@ export default function UsersPage() {
     <>
       <BrandHeader />
 
-      <main className="flex-1 pb-24">
+      <main className="flex-1 pb-10">
         {/* 탭 */}
         <div className="flex gap-1.5 px-5 py-4">
           {(['승인 대기', '전체 사용자'] as TabType[]).map((tab) => (

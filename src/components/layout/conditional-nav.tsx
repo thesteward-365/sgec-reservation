@@ -9,9 +9,6 @@ export function ConditionalNav() {
   const pathname = usePathname()
   if (NO_NAV_RE.test(pathname ?? '')) return null
   return (
-    <>
-      <div style={{ height: 'calc(4.5rem + env(safe-area-inset-bottom))' }} aria-hidden />
-      <BottomNav />
-    </>
+    <BottomNav />
   )
 }

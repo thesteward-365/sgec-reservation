@@ -180,7 +180,7 @@ export function MyReservationsView() {
       </div>
 
       {/* 콘텐츠 */}
-      <div className="flex flex-col gap-4 px-5 pb-32">
+      <div className="flex flex-col gap-4 px-5 pb-10">
         {loading ? (
           <ListSkeleton count={3} />
         ) : tab === 'calendar' ? (

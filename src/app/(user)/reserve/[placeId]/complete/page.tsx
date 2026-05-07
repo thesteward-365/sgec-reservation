@@ -117,7 +117,7 @@ export default async function ReservationCompletePage({
       </div>
 
       {/* 고정 하단 CTA */}
-      <div className="fixed inset-x-0 bottom-0 z-50 bg-(--color-neutral-150)">
+      <div className="sticky bottom-0 z-50 bg-(--color-neutral-150) w-full mt-auto">
         <CompleteActions
           placeId={placeId}
           shareText={`장소: ${placeLabel}\n날짜: ${dateLabel}\n시간: ${timeLabel}\n목적: ${purpose || '–'}`}

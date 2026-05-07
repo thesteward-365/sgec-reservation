@@ -84,7 +84,7 @@ export function PlaceSheet({ open, onOpenChange, config, data, onSuccess }: Prop
           <DrawerTitle>{config.editingId ? `${config.mode} 수정` : `${config.mode} 추가`}</DrawerTitle>
         </DrawerHeader>
 
-        <div className="space-y-5 overflow-y-auto px-5 py-2">
+        <div className="flex-1 space-y-5 overflow-y-auto px-5 pt-2 pb-10">
           <div className="space-y-1.5">
             <Label htmlFor="sheet-name">이름 *</Label>
             <Input id="sheet-name" value={name} onChange={(e) => setName(e.target.value)} placeholder={`${config.mode} 이름을 입력하세요`} autoFocus />
@@ -128,18 +128,18 @@ export function PlaceSheet({ open, onOpenChange, config, data, onSuccess }: Prop
               </div>
             </>
           )}
-        </div>
 
-        <DrawerFooter>
-          <Button onClick={handleSave} disabled={saving} className="w-full py-4">
-            {saving ? '저장 중...' : '저장하기'}
-          </Button>
-          {config.editingId && (
-            <Button variant="ghost" onClick={handleDelete} disabled={saving} className="w-full text-destructive">
-              {config.mode} 삭제하기
+          <div className="pt-4 space-y-2">
+            <Button onClick={handleSave} disabled={saving} className="w-full py-6 text-body-lg font-bold">
+              {saving ? '저장 중...' : '저장하기'}
             </Button>
-          )}
-        </DrawerFooter>
+            {config.editingId && (
+              <Button variant="ghost" onClick={handleDelete} disabled={saving} className="w-full text-destructive">
+                {config.mode} 삭제하기
+              </Button>
+            )}
+          </div>
+        </div>
       </DrawerContent>
     </Drawer>
   );

@@ -12,7 +12,7 @@ type Props = {
 export function SortActionBar({ saving, hasChanges, onCancel, onSave }: Props) {
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-20 bg-(--color-neutral-150)"
+      className="sticky bottom-0 z-20 bg-(--color-neutral-150) mt-auto"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="mx-auto flex max-w-107.5 gap-3 px-5 py-4">

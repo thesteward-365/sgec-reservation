@@ -462,7 +462,7 @@ export function PlaceDetailView({
         </div>
       </div>
 
-      <div className="bg-background fixed inset-x-0 bottom-0 z-50 border-t border-(--color-border-subtle)">
+      <div className="bg-background sticky bottom-0 z-50 border-t border-(--color-border-subtle) w-full mt-auto">
         <div
           className="mx-auto max-w-107.5 px-5 pt-3"
           style={{

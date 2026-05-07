@@ -207,7 +207,7 @@ export default function PlacesPage() {
         </div>
       </div>
 
-      <main className={cn('flex-1 pt-14', sortMode ? 'pb-32' : 'pb-10')}>
+      <main className={cn('flex-1 pt-14', sortMode ? 'pb-10' : 'pb-10')}>
         <div className="scrollbar-none flex gap-1.5 overflow-x-auto px-5 py-4">
           {TABS.map((tab) => (
             <Chip key={tab} variant={activeTab === tab ? 'active' : 'inactive'} onClick={() => switchTab(tab)}>
