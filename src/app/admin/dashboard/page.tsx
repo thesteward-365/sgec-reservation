@@ -159,8 +159,14 @@ export default function DashboardPage() {
         </section>
 
         <section className="px-5 pb-10">
-          <div className="mb-4">
+          <div className="mb-4 flex items-center justify-between">
             <p className="text-h5 font-bold!">최근 활동</p>
+            <Link
+              href="/admin/activities"
+              className="text-caption text-muted-foreground font-medium"
+            >
+              전체보기
+            </Link>
           </div>
 
           {loading ? (

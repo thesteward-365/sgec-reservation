@@ -8,6 +8,8 @@ export interface Activity {
   id: number;
   type: string;
   message: string;
+  actor?: string;
+  place?: string | null;
   timestamp: string;
 }
 
@@ -16,7 +18,7 @@ interface ActivityListProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const getActivityIcon = (type: string) => {
-  const baseClasses = 'mt-1.5 h-2.5 w-2.5 rounded-full';
+  const baseClasses = 'mt-1.5 h-2 w-2 rounded-full shrink-0';
 
   switch (type) {
     case 'created':
@@ -38,9 +40,14 @@ const ActivityList = React.forwardRef<HTMLDivElement, ActivityListProps>(
           <div className="flex items-start gap-3">
             {getActivityIcon(activity.type)}
             <div className="min-w-0 flex-1">
-              <p className="text-body font-medium">{activity.message}</p>
-              <p className="text-caption text-muted-foreground mt-1">
-                {formatTimeAgo(new Date(activity.timestamp))}
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-body font-semibold truncate">{activity.message}</p>
+                <p className="text-caption text-muted-foreground shrink-0">
+                  {formatTimeAgo(new Date(activity.timestamp))}
+                </p>
+              </div>
+              <p className="text-caption text-muted-foreground mt-0.5 truncate">
+                {activity.actor}{activity.place ? ` · ${activity.place}` : ''}
               </p>
             </div>
           </div>

@@ -11,21 +11,12 @@ import {
 } from '@/lib/db/schema';
 import { eq, count, desc } from 'drizzle-orm';
 
-function buildActivityMessage(
-  actionType: string,
-  actorUserName: string,
-  placeName?: string | null
-) {
-  const place = placeName ? `${placeName} ` : '';
+function getActionLabel(actionType: string) {
   switch (actionType) {
-    case 'created':
-      return `${actorUserName}님이 ${place}예약을 생성했습니다`;
-    case 'updated':
-      return `${actorUserName}님이 ${place}예약을 수정했습니다`;
-    case 'cancelled':
-      return `${actorUserName}님이 ${place}예약을 취소했습니다`;
-    default:
-      return `${actorUserName}님이 작업을 수행하였습니다`;
+    case 'created': return '예약 생성';
+    case 'updated': return '예약 수정';
+    case 'cancelled': return '예약 취소';
+    default: return '작업';
   }
 }
 
@@ -74,7 +65,9 @@ export async function GET(_request: NextRequest) {
     const recentActivities = recentHistory.map((item) => ({
       id: item.id,
       type: item.actionType,
-      message: buildActivityMessage(item.actionType, item.actorUserName, item.placeName),
+      message: getActionLabel(item.actionType),
+      actor: item.actorUserName,
+      place: item.placeName,
       timestamp: new Date(item.createdAt).toISOString(),
     }));
 

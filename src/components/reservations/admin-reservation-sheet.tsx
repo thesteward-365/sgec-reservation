@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import {
@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ReservationDetailsCard } from '@/components/reservations/reservation-details-card';
+import { formatTimeAgo } from '@/lib/utils';
 
 export type AdminReservation = {
   id: number;
@@ -30,6 +31,14 @@ export type AdminReservation = {
   startTime: string | null;
   endTime: string | null;
 };
+
+interface HistoryItem {
+  id: number;
+  actionType: 'created' | 'updated' | 'cancelled';
+  actorUserName: string;
+  changes: any;
+  createdAt: number;
+}
 
 type Props = {
   reservation: AdminReservation | null;
@@ -65,6 +74,34 @@ export function AdminReservationSheet({
   const router = useRouter();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [expandedHistoryId, setExpandedHistoryId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (open && reservation) {
+      fetchHistory();
+    } else {
+      setHistory([]);
+      setExpandedHistoryId(null);
+    }
+  }, [open, reservation]);
+
+  async function fetchHistory() {
+    if (!reservation) return;
+    setLoadingHistory(true);
+    try {
+      const res = await fetch(`/api/admin/reservations/${reservation.id}/history`);
+      if (res.ok) {
+        const data = await res.json();
+        setHistory(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch history:', error);
+    } finally {
+      setLoadingHistory(false);
+    }
+  }
 
   async function handleConfirmCancel() {
     if (!reservation) return;
@@ -127,20 +164,65 @@ export function AdminReservationSheet({
       ]
     : [];
 
+  const getActionLabel = (type: string) => {
+    switch (type) {
+      case 'created': return '생성';
+      case 'updated': return '수정';
+      case 'cancelled': return '취소';
+      default: return '작업';
+    }
+  };
+
+  const formatChangeValue = (key: string, value: any) => {
+    if (key === 'startTime' || key === 'endTime') {
+      try {
+        return new Date(value).toLocaleTimeString('ko-KR', {
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+      } catch {
+        return value;
+      }
+    }
+    return value;
+  };
+
+  const renderChanges = (changes: any) => {
+    return (
+      <div className="mt-2 space-y-2 border-t border-neutral-100 pt-2">
+        {Object.entries(changes).map(([key, value]: [string, any]) => {
+          if (key === 'cancelled') return null;
+          return (
+            <div key={key} className="flex flex-col gap-0.5">
+              <span className="text-[10px] text-muted-foreground font-medium uppercase">
+                {key === 'startTime' ? '시작 시간' : key === 'endTime' ? '종료 시간' : key === 'purpose' ? '사용 목적' : key}
+              </span>
+              <div className="text-caption flex items-center gap-1.5">
+                <span className="line-through opacity-40">{formatChangeValue(key, value.from)}</span>
+                <span className="opacity-40">→</span>
+                <span className="font-semibold text-blue-600">{formatChangeValue(key, value.to)}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <>
       <Drawer open={open} onOpenChange={(v) => !v && onClose()}>
-        <DrawerContent>
+        <DrawerContent className="max-h-[90vh]">
           <DrawerHeader>
             <DrawerTitle>예약 관리</DrawerTitle>
           </DrawerHeader>
 
-          <div className="flex flex-col gap-4 px-6 pb-8">
+          <div className="flex flex-col gap-6 overflow-y-auto px-6 pb-8">
             {reservation && (
               <ReservationDetailsCard rows={rows} tone="subtle" />
             )}
 
-            <div className="flex gap-2 pt-1">
+            <div className="flex gap-2">
               <Button
                 variant="secondary"
                 className="h-12 flex-1 rounded-xl"
@@ -155,6 +237,51 @@ export function AdminReservationSheet({
               >
                 예약 취소
               </Button>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-body font-bold">변경 이력</p>
+              {loadingHistory ? (
+                <div className="space-y-3">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="h-12 w-full animate-pulse rounded-xl bg-neutral-100" />
+                  ))}
+                </div>
+              ) : history.length > 0 ? (
+                <div className="divide-y divide-neutral-100 overflow-hidden rounded-xl border border-neutral-100 bg-white">
+                  {history.map((item) => (
+                    <div key={item.id} className="p-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold text-white ${
+                              item.actionType === 'created' ? 'bg-green-500' :
+                              item.actionType === 'cancelled' ? 'bg-red-500' : 'bg-blue-500'
+                            }`}>
+                              {getActionLabel(item.actionType)}
+                            </span>
+                            <span className="text-body-sm font-medium">{item.actorUserName}</span>
+                          </div>
+                          <p className="text-caption text-muted-foreground mt-1">
+                            {formatTimeAgo(new Date(item.createdAt))}
+                          </p>
+                        </div>
+                        {item.actionType === 'updated' && (
+                          <button
+                            onClick={() => setExpandedHistoryId(expandedHistoryId === item.id ? null : item.id)}
+                            className="text-caption text-accent font-medium"
+                          >
+                            {expandedHistoryId === item.id ? '닫기' : '상세보기'}
+                          </button>
+                        )}
+                      </div>
+                      {expandedHistoryId === item.id && item.actionType === 'updated' && renderChanges(item.changes)}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-caption text-muted-foreground py-4 text-center">변경 이력이 없습니다.</p>
+              )}
             </div>
           </div>
         </DrawerContent>
