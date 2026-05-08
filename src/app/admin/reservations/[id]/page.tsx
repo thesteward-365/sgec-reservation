@@ -10,9 +10,9 @@ import {
   TrashIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/button';
-import {
-  ReservationDetailView,
-  type Reservation,
+import { 
+  ReservationDetailView, 
+  type Reservation as BaseReservation, 
 } from '@/components/reservations/reservation-detail-view';
 import { type HistoryItem } from '@/components/reservations/history-list-item';
 import {
@@ -22,9 +22,15 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 
+interface Reservation extends BaseReservation {
+  isCancelled?: boolean;
+}
+
 function formatKoreanDate(iso: string): string {
+  if (!iso) return '-';
   return new Intl.DateTimeFormat('ko-KR', {
     month: 'long',
     day: 'numeric',
@@ -33,6 +39,7 @@ function formatKoreanDate(iso: string): string {
 }
 
 function formatTime(iso: string): string {
+  if (!iso) return '-';
   const d = new Date(iso);
   const hours = String(d.getHours()).padStart(2, '0');
   const minutes = String(d.getMinutes()).padStart(2, '0');
@@ -40,6 +47,7 @@ function formatTime(iso: string): string {
 }
 
 function toYMD(iso: string): string {
+  if (!iso) return '';
   const d = new Date(iso);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
@@ -97,7 +105,7 @@ export default function ReservationDetailPage({
   const handleShare = async () => {
     if (!reservation || !reservation.startTime || !reservation.endTime) return;
     const text = `[예약 정보]\n장소: ${reservation.placeName}\n날짜: ${formatKoreanDate(reservation.startTime)}\n시간: ${formatTime(reservation.startTime)} ~ ${formatTime(reservation.endTime)}\n예약자: ${reservation.userName}\n목적: ${reservation.purpose}`;
-
+    
     try {
       if (navigator.share) {
         await navigator.share({
@@ -156,8 +164,8 @@ export default function ReservationDetailPage({
 
   if (loading) {
     return (
-      <div className="bg-neutral-150 flex min-h-screen items-center justify-center">
-        <div className="border-primary h-8 w-8 animate-spin rounded-full border-4 border-t-transparent" />
+      <div className="flex min-h-screen items-center justify-center bg-neutral-150">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
@@ -165,21 +173,30 @@ export default function ReservationDetailPage({
   if (!reservation) return null;
 
   return (
-    <div className="bg-neutral-150 flex min-h-screen flex-col">
-      <header className="bg-neutral-150 sticky top-0 z-10 flex h-14 items-center justify-between px-4">
+    <div className="flex flex-col min-h-screen bg-neutral-150">
+      <header className="sticky top-0 z-10 flex h-14 items-center justify-between bg-neutral-150 px-4">
         <button
           onClick={() => router.back()}
           className="flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-neutral-200"
         >
           <ChevronLeftIcon className="h-6 w-6" />
         </button>
-        <h1 className="text-lg font-bold">예약 상세</h1>
-        <button
-          onClick={handleShare}
-          className="flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-neutral-200"
-        >
-          <ShareIcon className="h-6 w-6" />
-        </button>
+        <div className="flex items-center gap-2">
+          <h1 className="text-lg font-bold">예약 상세</h1>
+          {reservation.isCancelled && (
+            <Badge variant="destructive" className="h-5 px-1.5 text-[10px] font-bold">취소됨</Badge>
+          )}
+        </div>
+        {!reservation.isCancelled ? (
+          <button
+            onClick={handleShare}
+            className="flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-neutral-200"
+          >
+            <ShareIcon className="h-6 w-6" />
+          </button>
+        ) : (
+          <div className="w-10" />
+        )}
       </header>
 
       <main className="flex-1 p-5 pb-32">
@@ -189,32 +206,43 @@ export default function ReservationDetailPage({
           loadingHistory={loadingHistory}
           onTabChange={(tab) => tab === 'history' && fetchHistory()}
           actions={
-            <div className="mt-4 flex w-full flex-col gap-3">
-              <Button className="h-14 w-full" onClick={handleReReserve}>
-                <ArrowPathIcon className="h-5 w-5" />
-                동일 장소 예약하기
-              </Button>
-
-              <Button
-                variant="secondary"
-                className="h-14 flex-1"
-                onClick={handleEdit}
-              >
-                <PencilIcon className="h-4 w-4" />
-                예약 수정
-              </Button>
-
-              <Button
-                variant="ghost"
-                className="h-14 flex-1 text-red-600"
-                onClick={() => setConfirmOpen(true)}
-              >
-                <TrashIcon className="h-4 w-4 text-red-600" />
-                예약 취소
-              </Button>
-            </div>
+            !reservation.isCancelled && (
+              <div className="flex flex-col w-full gap-3 mt-4">
+                <Button
+                  className="w-full h-14 bg-(--color-fg-strong) text-white shadow-(--shadow-1)"
+                  onClick={handleReReserve}
+                >
+                  <ArrowPathIcon className="h-5 w-5" />
+                  동일 장소 예약하기
+                </Button>
+                
+                <div className="flex gap-2">
+                  <Button
+                    variant="secondary"
+                    className="flex-1 h-12"
+                    onClick={handleEdit}
+                  >
+                    <PencilIcon className="h-4 w-4" />
+                    예약 수정
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="flex-1 h-12 text-red-500"
+                    onClick={() => setConfirmOpen(true)}
+                  >
+                    <TrashIcon className="h-4 w-4" />
+                    예약 취소
+                  </Button>
+                </div>
+              </div>
+            )
           }
         />
+        {reservation.isCancelled && (
+          <div className="mt-8 rounded-2xl bg-red-50 p-6 text-center">
+            <p className="text-body-sm font-medium text-red-600">이 예약은 취소되어 상세 정보를 수정하거나 공유할 수 없습니다.</p>
+          </div>
+        )}
       </main>
 
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>

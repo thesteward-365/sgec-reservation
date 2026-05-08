@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
       startTime: reservations.startTime,
       endTime: reservations.endTime,
       purpose: reservations.purpose,
+      status: reservations.status,
     })
     .from(reservations)
     .leftJoin(users, eq(reservations.userId, users.id))
@@ -35,7 +36,8 @@ export async function GET(request: NextRequest) {
       and(
         eq(reservations.placeId, parseInt(placeId)),
         lt(reservations.startTime, toDbDate(dayEnd) as any),
-        gt(reservations.endTime, toDbDate(dayStart) as any)
+        gt(reservations.endTime, toDbDate(dayStart) as any),
+        eq(reservations.status, 'active')
       )
     )
     .orderBy(asc(reservations.startTime));

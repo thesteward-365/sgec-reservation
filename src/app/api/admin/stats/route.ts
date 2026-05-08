@@ -10,6 +10,7 @@ import {
   users,
 } from '@/lib/db/schema';
 import { eq, count, desc } from 'drizzle-orm';
+import { fromDbDate } from '@/lib/db/db-utils';
 
 function getActionLabel(actionType: string) {
   switch (actionType) {
@@ -72,7 +73,7 @@ export async function GET(_request: NextRequest) {
       actor: item.actorUserName,
       place: item.placeName,
       changes: item.changes,
-      timestamp: new Date(item.createdAt).toISOString(),
+      timestamp: fromDbDate(item.createdAt).toISOString(),
     }));
 
     return NextResponse.json({

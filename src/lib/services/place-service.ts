@@ -1,4 +1,4 @@
-import { db } from '@/lib/db';
+import { db, isPostgres } from '@/lib/db';
 import { PlaceRepository } from '../repositories/place-repository';
 
 export class PlaceService {
@@ -11,22 +11,42 @@ export class PlaceService {
     const floor = await PlaceRepository.findFloorById(data.floorId);
     if (!floor) throw new Error('Floor not found');
 
-    return await db.transaction(async (tx) => {
-      const maxOrder = await PlaceRepository.getMaxSortOrder(tx);
+    const performTransaction = (tx: any) => {
+      const maxOrderResult = PlaceRepository.getMaxSortOrder(tx);
       
-      const place = await PlaceRepository.create({
-        name: data.name,
-        floorId: data.floorId,
-        description: data.description,
-        sortOrder: maxOrder + 1,
-      }, tx);
+      const setupPlace = (maxOrder: number) => {
+        const place = PlaceRepository.create({
+          name: data.name,
+          floorId: data.floorId,
+          description: data.description,
+          sortOrder: maxOrder + 1,
+        }, tx);
 
-      if (data.tagIds && data.tagIds.length > 0) {
-        await PlaceRepository.syncTags(place.id, data.tagIds, tx);
+        if (isPostgres) {
+          return (place as Promise<any>).then(async (p) => {
+            if (data.tagIds && data.tagIds.length > 0) {
+              await PlaceRepository.syncTags(p.id, data.tagIds, tx);
+            }
+            return p;
+          });
+        } else {
+          if (data.tagIds && data.tagIds.length > 0) {
+            PlaceRepository.syncTags(place.id, data.tagIds, tx);
+          }
+          return place;
+        }
+      };
+
+      if (isPostgres) {
+        return (maxOrderResult as Promise<number>).then(setupPlace);
+      } else {
+        return setupPlace(maxOrderResult as number);
       }
+    };
 
-      return place;
-    });
+    return isPostgres
+      ? await db.transaction(async (tx) => await performTransaction(tx))
+      : db.transaction((tx) => performTransaction(tx));
   }
 
   static async updatePlace(id: number, data: {
@@ -44,20 +64,32 @@ export class PlaceService {
       if (!floor) throw new Error('Floor not found');
     }
 
-    return await db.transaction(async (tx) => {
-      const updated = await PlaceRepository.update(id, {
+    const performTransaction = (tx: any) => {
+      const updated = PlaceRepository.update(id, {
         name: data.name,
         floorId: data.floorId,
         description: data.description,
         isPinned: data.isPinned,
       }, tx);
 
-      if (data.tagIds) {
-        await PlaceRepository.syncTags(id, data.tagIds, tx);
+      if (isPostgres) {
+        return (updated as Promise<any>).then(async (res) => {
+          if (data.tagIds) {
+            await PlaceRepository.syncTags(id, data.tagIds, tx);
+          }
+          return res;
+        });
+      } else {
+        if (data.tagIds) {
+          PlaceRepository.syncTags(id, data.tagIds, tx);
+        }
+        return updated;
       }
+    };
 
-      return updated;
-    });
+    return isPostgres
+      ? await db.transaction(async (tx) => await performTransaction(tx))
+      : db.transaction((tx) => performTransaction(tx));
   }
 
   static async deletePlace(id: number) {

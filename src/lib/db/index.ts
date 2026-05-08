@@ -3,6 +3,7 @@ import { drizzle as drizzlePostgres } from 'drizzle-orm/postgres-js';
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import * as sqliteSchema from './schema';
 import * as pgSchema from './schema.pg';
+import { toDbDate, fromDbDate } from './db-utils';
 
 const dbType = process.env.DATABASE_TYPE || 'sqlite';
 
@@ -34,21 +35,5 @@ export const {
   syncLogs,
 } = isPostgres ? pgSchema : (sqliteSchema as any);
 
-/**
- * DB 환경(SQLite vs PostgreSQL)에 따라 Date 타입을 적절히 변환합니다.
- */
-export function toDbDate(date: Date) {
-  return isPostgres ? Math.floor(date.getTime() / 1000) : date;
-}
-
-/**
- * DB에서 가져온 값을 Date 객체로 변환합니다.
- */
-export function fromDbDate(value: any): Date {
-  if (value instanceof Date) return value;
-  if (typeof value === 'number') return new Date(value * 1000);
-  return new Date(value);
-}
-
-export { db };
+export { db, toDbDate, fromDbDate };
 export { pgSchema, sqliteSchema };

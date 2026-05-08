@@ -15,13 +15,22 @@ vi.mock('../lib/db', () => ({
         set: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnThis(),
         delete: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        from: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockReturnThis(),
       })
     ),
   },
   fromDbDate: vi.fn((d) => new Date(d)),
+  isPostgres: false,
 }));
 
 vi.mock('../lib/repositories/reservation-repository');
+vi.mock('../lib/repositories/place-repository', () => ({
+  PlaceRepository: {
+    findById: vi.fn().mockResolvedValue({ id: 1, name: 'Test Place' }),
+  },
+}));
 vi.mock('../lib/calendar/calendar-service', () => ({
   updateGoogleEvent: vi.fn().mockResolvedValue(undefined),
   deleteGoogleEvent: vi.fn().mockResolvedValue(undefined),
@@ -83,7 +92,7 @@ describe('ReservationService', () => {
 
   describe('updateReservation', () => {
     it('should update a reservation successfully', async () => {
-      const mockCurrent = { id: 1, ...mockData, userId: 1 };
+      const mockCurrent = { id: 1, ...mockData, userId: 1, status: 'active' };
       vi.mocked(ReservationRepository.findByIdAndUser).mockResolvedValue(
         mockCurrent
       );
@@ -111,7 +120,7 @@ describe('ReservationService', () => {
     });
 
     it('should allow admin to update any reservation', async () => {
-      const mockCurrent = { id: 1, ...mockData, userId: 10 }; // owned by another user
+      const mockCurrent = { id: 1, ...mockData, userId: 10, status: 'active' }; // owned by another user
       vi.mocked(ReservationRepository.findById).mockResolvedValue(mockCurrent);
       vi.mocked(ReservationRepository.findConflicts).mockResolvedValue([]);
       vi.mocked(ReservationRepository.update).mockResolvedValue({
@@ -136,6 +145,7 @@ describe('ReservationService', () => {
         userId: 1,
         startTime: pastDate,
         endTime: pastDate,
+        status: 'active',
       };
       vi.mocked(ReservationRepository.findByIdAndUser).mockResolvedValue(
         mockCurrent
@@ -147,7 +157,7 @@ describe('ReservationService', () => {
     });
 
     it('should throw error if update conflicts with another reservation', async () => {
-      const mockCurrent = { id: 1, ...mockData, userId: 1 };
+      const mockCurrent = { id: 1, ...mockData, userId: 1, status: 'active' };
       vi.mocked(ReservationRepository.findByIdAndUser).mockResolvedValue(
         mockCurrent
       );
@@ -162,7 +172,7 @@ describe('ReservationService', () => {
     });
 
     it('should return current reservation if no changes are made', async () => {
-      const mockCurrent = { id: 1, ...mockData, userId: 1 };
+      const mockCurrent = { id: 1, ...mockData, userId: 1, status: 'active' };
       vi.mocked(ReservationRepository.findByIdAndUser).mockResolvedValue(
         mockCurrent
       );
@@ -186,28 +196,50 @@ describe('ReservationService', () => {
         ...mockData,
         userId: 1,
         googleEventId: 'abc',
+        status: 'active',
       };
       vi.mocked(ReservationRepository.findByIdAndUser).mockResolvedValue(
         mockCurrent
       );
-      vi.mocked(ReservationRepository.delete).mockResolvedValue(mockCurrent);
+      vi.mocked(ReservationRepository.update).mockResolvedValue({
+        ...mockCurrent,
+        status: 'cancelled',
+      });
 
       const result = await ReservationService.cancelReservation(1, mockActor);
 
-      expect(result.id).toBe(1);
-      expect(ReservationRepository.delete).toHaveBeenCalled();
+      expect(result.status).toBe('cancelled');
+      expect(ReservationRepository.update).toHaveBeenCalledWith(
+        1,
+        { status: 'cancelled' },
+        expect.anything()
+      );
     });
 
     it('should allow admin to cancel any reservation', async () => {
-      const mockCurrent = { id: 1, ...mockData, userId: 10 };
+      const mockCurrent = { id: 1, ...mockData, userId: 10, status: 'active' };
       vi.mocked(ReservationRepository.findById).mockResolvedValue(mockCurrent);
-      vi.mocked(ReservationRepository.delete).mockResolvedValue(mockCurrent);
+      vi.mocked(ReservationRepository.update).mockResolvedValue({
+        ...mockCurrent,
+        status: 'cancelled',
+      });
 
       const result = await ReservationService.cancelReservation(1, mockAdmin);
 
-      expect(result.id).toBe(1);
+      expect(result.status).toBe('cancelled');
       expect(ReservationRepository.findById).toHaveBeenCalled();
-      expect(ReservationRepository.delete).toHaveBeenCalled();
+      expect(ReservationRepository.update).toHaveBeenCalled();
+    });
+
+    it('should throw error if reservation is already cancelled', async () => {
+      const mockCurrent = { id: 1, ...mockData, userId: 1, status: 'cancelled' };
+      vi.mocked(ReservationRepository.findByIdAndUser).mockResolvedValue(
+        mockCurrent
+      );
+
+      await expect(
+        ReservationService.cancelReservation(1, mockActor)
+      ).rejects.toThrow('이미 취소된 예약입니다.');
     });
 
     it('should throw error if cancelling unauthorized reservation', async () => {

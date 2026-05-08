@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getIronSession } from 'iron-session';
 import { sessionOptions, SessionData } from '@/lib/session';
 import { cookies } from 'next/headers';
-import { db } from '@/lib/db';
+import { db, toDbDate } from '@/lib/db';
 import { reservationHistories, places, reservations } from '@/lib/db/schema';
 import { desc, eq, and, gte, lte } from 'drizzle-orm';
 
@@ -24,15 +24,15 @@ export async function GET(request: NextRequest) {
 
     const conditions = [];
     if (startDateStr) {
-      conditions.push(gte(reservationHistories.createdAt, new Date(startDateStr)));
+      conditions.push(gte(reservationHistories.createdAt, toDbDate(new Date(startDateStr)) as any));
     }
     if (endDateStr) {
       const endDate = new Date(endDateStr);
       endDate.setHours(23, 59, 59, 999);
-      conditions.push(lte(reservationHistories.createdAt, endDate));
+      conditions.push(lte(reservationHistories.createdAt, toDbDate(endDate) as any));
     }
 
-    const query = db
+    let query: any = db
       .select({
         id: reservationHistories.id,
         actionType: reservationHistories.actionType,
@@ -45,16 +45,16 @@ export async function GET(request: NextRequest) {
       })
       .from(reservationHistories)
       .leftJoin(reservations, eq(reservationHistories.reservationId, reservations.id))
-      .leftJoin(places, eq(reservations.placeId, places.id))
+      .leftJoin(places, eq(reservations.placeId, places.id));
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    const history = await query
       .orderBy(desc(reservationHistories.createdAt))
       .limit(limit)
       .offset(offset);
-
-    if (conditions.length > 0) {
-      query.where(and(...conditions));
-    }
-
-    const history = await query;
 
     return NextResponse.json(history);
   } catch (error) {

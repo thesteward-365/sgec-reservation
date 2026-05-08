@@ -22,6 +22,7 @@ export async function GET() {
       startTime: reservations.startTime,
       endTime: reservations.endTime,
       purpose: reservations.purpose,
+      status: reservations.status,
     })
     .from(reservations)
     .leftJoin(places, eq(reservations.placeId, places.id))

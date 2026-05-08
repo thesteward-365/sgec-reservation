@@ -1,6 +1,7 @@
 'use client';
 
 import { cn, formatTimeAgo } from '@/lib/utils';
+import { fromDbDate } from '@/lib/db/db-utils';
 
 export interface HistoryItem {
   id: number;
@@ -20,27 +21,27 @@ interface Props {
 
 function formatTime(iso: string | number | Date): string {
   try {
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return '--:--';
+    const d = fromDbDate(iso);
+    if (isNaN(d.getTime())) return '-';
     const hours = String(d.getHours()).padStart(2, '0');
     const minutes = String(d.getMinutes()).padStart(2, '0');
     return `${hours}:${minutes}`;
   } catch {
-    return '--:--';
+    return '-';
   }
 }
 
 function formatDate(iso: string | number | Date): string {
   try {
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return '-월 -일';
+    const d = fromDbDate(iso);
+    if (isNaN(d.getTime())) return '-';
     return new Intl.DateTimeFormat('ko-KR', {
       month: 'long',
       day: 'numeric',
       weekday: 'short',
     }).format(d);
   } catch {
-    return '-월 -일';
+    return '-';
   }
 }
 
@@ -60,24 +61,16 @@ const getActionLabel = (type: string) => {
   }
 };
 
-export function HistoryListItem({ item, onClick, showPlaceName }: Props) {
+export function HistoryListItem({ item, onClick }: Props) {
   const changes = typeof item.changes === 'string' ? (item.changes ? JSON.parse(item.changes) : {}) : item.changes;
   
-  // Handle potentially incorrect timestamps (seconds vs ms)
-  let createdAtDate: Date;
-  if (item.createdAt instanceof Date) {
-    createdAtDate = item.createdAt;
-  } else {
-    const raw = Number(item.createdAt);
-    const ms = raw < 10000000000 ? raw * 1000 : raw;
-    createdAtDate = new Date(ms);
-  }
+  const createdAtDate = fromDbDate(item.createdAt);
 
   const formatValue = (key: string, value: any) => {
     if (key === 'startTime' || key === 'endTime') {
       return formatTime(value);
     }
-    return value;
+    return value || '-';
   };
 
   const labels: Record<string, string> = {
@@ -85,8 +78,19 @@ export function HistoryListItem({ item, onClick, showPlaceName }: Props) {
     endTime: '종료 시간',
     purpose: '사용 목적',
     placeName: '장소',
-    date: '날짜'
+    date: '날짜',
+    userName: '예약자'
   };
+
+  // Extract snapshot if available (for created/cancelled)
+  const snapshot = actionTypeToSnapshot(item.actionType, changes);
+  const displayPlaceName = item.placeName || snapshot?.placeName || '-';
+
+  function actionTypeToSnapshot(type: string, changes: any) {
+    if (type === 'created') return changes.created?.to || changes.snapshot;
+    if (type === 'cancelled') return changes.snapshot;
+    return null;
+  }
 
   return (
     <div 
@@ -96,68 +100,71 @@ export function HistoryListItem({ item, onClick, showPlaceName }: Props) {
         onClick && "cursor-pointer active:bg-neutral-50"
       )}
     >
+      {/* Header: [Type] [Actor]-[Place] [Time] */}
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 overflow-hidden text-body">
           <span className={cn(
-            "text-[10px] px-1.5 py-0.5 rounded-md font-bold text-white",
+            "text-[10px] px-1.5 py-0.5 rounded-md font-bold text-white shrink-0",
             getActionStyles(item.actionType)
           )}>
             {getActionLabel(item.actionType)}
           </span>
-          <span className="text-body font-bold">{item.actorUserName}</span>
-          {showPlaceName && item.placeName && (
-            <span className="text-caption text-muted-foreground truncate max-w-[120px]">
-              · {item.placeName}
-            </span>
-          )}
+          <span className="font-bold truncate">
+            {item.actorUserName}-{displayPlaceName}
+          </span>
         </div>
-        <span className="text-caption text-muted-foreground">
+        <span className="text-caption text-muted-foreground shrink-0 ml-2">
           {formatTimeAgo(createdAtDate)}
         </span>
       </div>
 
       <div className="space-y-2 border-t border-neutral-50 pt-3">
         {item.actionType === 'updated' && changes && Object.keys(changes).length > 0 ? (
-          Object.entries(changes).map(([key, value]: [string, any]) => {
-            if (key === 'cancelled') return null;
-            return (
-              <div key={key} className="flex items-center gap-3 text-sm">
-                <span className="text-muted-foreground font-medium w-16 shrink-0">{labels[key] || key}</span>
-                <div className="flex flex-1 items-center gap-2 overflow-hidden">
-                  <span className="line-through opacity-40 truncate">{formatValue(key, value.from)}</span>
-                  <span className="opacity-30">→</span>
-                  <span className="font-semibold text-blue-600 truncate">{formatValue(key, value.to)}</span>
-                </div>
-              </div>
-            );
-          })
-        ) : item.actionType === 'created' ? (
+          /* Updated: show only modified fields */
           <div className="space-y-1.5">
-            <div className="flex items-center gap-3 text-sm">
-              <span className="text-muted-foreground font-medium w-16 shrink-0">장소</span>
-              <span className="font-semibold truncate">{item.placeName || '알 수 없음'}</span>
-            </div>
-            {changes?.startTime && (
-              <>
-                <div className="flex items-center gap-3 text-sm">
-                  <span className="text-muted-foreground font-medium w-16 shrink-0">날짜</span>
-                  <span className="font-semibold">{formatDate(changes.startTime)}</span>
+            {Object.entries(changes).map(([key, value]: [string, any]) => {
+              if (key === 'cancelled') return null;
+              return (
+                <div key={key} className="flex items-center gap-3 text-sm">
+                  <span className="text-muted-foreground font-medium w-16 shrink-0">{labels[key] || key}</span>
+                  <div className="flex flex-1 items-center gap-2 overflow-hidden text-[13px]">
+                    <span className="line-through opacity-40 truncate">{formatValue(key, value.from)}</span>
+                    <span className="opacity-30">→</span>
+                    <span className="font-semibold text-blue-600 truncate">{formatValue(key, value.to)}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <span className="text-muted-foreground font-medium w-16 shrink-0">시간</span>
-                  <span className="font-semibold">{formatTime(changes.startTime)} ~ {formatTime(changes.endTime)}</span>
-                </div>
-              </>
-            )}
-            {changes?.purpose && (
-              <div className="flex items-center gap-3 text-sm">
-                <span className="text-muted-foreground font-medium w-16 shrink-0">목적</span>
-                <span className="font-semibold truncate">{changes.purpose}</span>
-              </div>
-            )}
+              );
+            })}
           </div>
         ) : (
-          <p className="text-sm font-medium text-red-600">예약을 취소했습니다.</p>
+          /* Created/Cancelled/Fallback: show fields or '-' */
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-3 text-sm">
+              <span className="text-muted-foreground font-medium w-16 shrink-0">예약자</span>
+              <span className="font-semibold">{item.actorUserName || '-'}</span>
+            </div>
+            <div className="flex items-center gap-3 text-sm">
+              <span className="text-muted-foreground font-medium w-16 shrink-0">장소</span>
+              <span className="font-semibold truncate">{displayPlaceName}</span>
+            </div>
+            <div className="flex items-center gap-3 text-sm">
+              <span className="text-muted-foreground font-medium w-16 shrink-0">날짜</span>
+              <span className="font-semibold">{snapshot?.startTime ? formatDate(snapshot.startTime) : '-'}</span>
+            </div>
+            <div className="flex items-center gap-3 text-sm">
+              <span className="text-muted-foreground font-medium w-16 shrink-0">시간</span>
+              <span className="font-semibold">
+                {snapshot?.startTime ? formatTime(snapshot.startTime) : '-'} ~ {snapshot?.endTime ? formatTime(snapshot.endTime) : '-'}
+              </span>
+            </div>
+            <div className="flex items-center gap-3 text-sm">
+              <span className="text-muted-foreground font-medium w-16 shrink-0">사용 목적</span>
+              <span className="font-semibold truncate">{snapshot?.purpose || '-'}</span>
+            </div>
+            {item.actionType === 'cancelled' && (
+              <p className="text-caption font-bold text-red-500 mt-2">이 예약은 취소되었습니다.</p>
+            )}
+          </div>
         )}
       </div>
     </div>

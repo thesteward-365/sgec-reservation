@@ -7,7 +7,7 @@ export const users = sqliteTable('users', {
   phoneNumber: text('phone_number').notNull().unique(),
   role: text('role', { enum: ['user', 'admin'] }).notNull().default('user'),
   status: text('status', { enum: ['pending', 'approved', 'rejected'] }).notNull().default('pending'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`((strftime('%s', 'now') * 1000))`),
+  createdAt: integer('created_at').notNull().default(sql`(strftime('%s', 'now'))`),
 });
 
 export const floors = sqliteTable('floors', {
@@ -51,11 +51,12 @@ export const reservations = sqliteTable('reservations', {
   placeId: integer('place_id')
     .notNull()
     .references(() => places.id, { onDelete: 'cascade' }),
-  startTime: integer('start_time', { mode: 'timestamp' }).notNull(),
-  endTime: integer('end_time', { mode: 'timestamp' }).notNull(),
+  startTime: integer('start_time').notNull(),
+  endTime: integer('end_time').notNull(),
   purpose: text('purpose').notNull(),
+  status: text('status', { enum: ['active', 'cancelled'] }).notNull().default('active'),
   googleEventId: text('google_event_id'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`((strftime('%s', 'now') * 1000))`),
+  createdAt: integer('created_at').notNull().default(sql`(strftime('%s', 'now'))`),
 });
 
 export const reservationHistories = sqliteTable('reservation_histories', {
@@ -70,9 +71,7 @@ export const reservationHistories = sqliteTable('reservation_histories', {
     .default('updated'),
   changes: text('changes').notNull(),
   googleEventId: text('google_event_id'),
-  createdAt: integer('created_at', { mode: 'timestamp' })
-    .notNull()
-    .default(sql`((strftime('%s', 'now') * 1000))`),
+  createdAt: integer('created_at').notNull().default(sql`(strftime('%s', 'now'))`),
 });
 
 export const calendarSettings = sqliteTable('calendar_settings', {
@@ -89,15 +88,15 @@ export const externalEvents = sqliteTable('external_events', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   googleEventId: text('google_event_id').notNull().unique(),
   title: text('title').notNull(),
-  startTime: integer('start_time', { mode: 'timestamp' }).notNull(),
-  endTime: integer('end_time', { mode: 'timestamp' }).notNull(),
+  startTime: integer('start_time').notNull(),
+  endTime: integer('end_time').notNull(),
   description: text('description'),
-  syncedAt: integer('synced_at', { mode: 'timestamp' }).notNull().default(sql`((strftime('%s', 'now') * 1000))`),
+  syncedAt: integer('synced_at').notNull().default(sql`(strftime('%s', 'now'))`),
 });
 
 export const syncLogs = sqliteTable('sync_logs', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   level: text('level', { enum: ['info', 'error'] }).notNull().default('info'),
   message: text('message').notNull(),
-  timestamp: integer('timestamp', { mode: 'timestamp' }).notNull().default(sql`((strftime('%s', 'now') * 1000))`),
+  timestamp: integer('timestamp').notNull().default(sql`(strftime('%s', 'now'))`),
 });

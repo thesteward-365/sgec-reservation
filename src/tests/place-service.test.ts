@@ -7,6 +7,7 @@ vi.mock('../lib/db', () => ({
   db: {
     transaction: vi.fn((cb) => cb({})),
   },
+  isPostgres: false,
 }));
 
 vi.mock('../lib/repositories/place-repository');
@@ -14,12 +15,16 @@ vi.mock('../lib/repositories/place-repository');
 describe('PlaceService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(db.transaction).mockImplementation((cb) => {
+      return cb({});
+    });
+    vi.mocked(PlaceRepository.getMaxSortOrder).mockReturnValue(0);
   });
 
   describe('createPlace', () => {
     it('should create a place and sync tags', async () => {
       vi.mocked(PlaceRepository.findFloorById).mockResolvedValue({ id: 1 } as any);
-      vi.mocked(PlaceRepository.create).mockResolvedValue({ id: 100, name: 'New Place' } as any);
+      vi.mocked(PlaceRepository.create).mockReturnValue({ id: 100, name: 'New Place' } as any);
 
       const result = await PlaceService.createPlace({
         name: 'New Place',

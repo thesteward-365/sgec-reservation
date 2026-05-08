@@ -17,6 +17,7 @@ import {
   DrawerFooter
 } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
+import { fromDbDate } from '@/lib/db/db-utils';
 
 export default function ActivitiesPage() {
   const router = useRouter();
@@ -49,7 +50,7 @@ export default function ActivitiesPage() {
         // Standardize data format for HistoryListItem
         const mapped = (data as any[]).map(item => ({
           ...item,
-          createdAt: new Date(item.createdAt),
+          createdAt: fromDbDate(item.createdAt),
           changes: typeof item.changes === 'string' ? JSON.parse(item.changes) : item.changes
         }));
         setActivities(mapped);
