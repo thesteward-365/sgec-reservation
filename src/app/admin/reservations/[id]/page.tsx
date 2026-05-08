@@ -24,32 +24,11 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { shareReservation } from '@/lib/share-utils';
+import { formatKoreanDate, formatTime, toYMD } from '@/lib/date-utils';
 
 interface Reservation extends BaseReservation {
   isCancelled?: boolean;
-}
-
-function formatKoreanDate(iso: string): string {
-  if (!iso) return '-';
-  return new Intl.DateTimeFormat('ko-KR', {
-    month: 'long',
-    day: 'numeric',
-    weekday: 'short',
-  }).format(new Date(iso));
-}
-
-function formatTime(iso: string): string {
-  if (!iso) return '-';
-  const d = new Date(iso);
-  const hours = String(d.getHours()).padStart(2, '0');
-  const minutes = String(d.getMinutes()).padStart(2, '0');
-  return `${hours}:${minutes}`;
-}
-
-function toYMD(iso: string): string {
-  if (!iso) return '';
-  const d = new Date(iso);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 export default function ReservationDetailPage({
@@ -104,28 +83,13 @@ export default function ReservationDetailPage({
 
   const handleShare = async () => {
     if (!reservation || !reservation.startTime || !reservation.endTime) return;
-    const text = `[예약 정보]\n장소: ${reservation.placeName}\n날짜: ${formatKoreanDate(reservation.startTime)}\n시간: ${formatTime(reservation.startTime)} ~ ${formatTime(reservation.endTime)}\n예약자: ${reservation.userName}\n목적: ${reservation.purpose}`;
-    
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: '예약 정보 공유',
-          text,
-        });
-      } else {
-        await navigator.clipboard.writeText(text);
-        toast.success('예약 정보가 클립보드에 복사되었습니다.');
-      }
-    } catch (err) {
-      if (err instanceof Error && err.name !== 'AbortError') {
-        try {
-          await navigator.clipboard.writeText(text);
-          toast.success('예약 정보가 클립보드에 복사되었습니다.');
-        } catch {
-          toast.error('정보 공유에 실패했습니다.');
-        }
-      }
-    }
+    await shareReservation({
+      placeName: reservation.placeName,
+      startTime: reservation.startTime,
+      endTime: reservation.endTime,
+      userName: reservation.userName,
+      purpose: reservation.purpose,
+    });
   };
 
   const handleEdit = () => {

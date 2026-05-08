@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { ShareIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+import { shareText } from '@/lib/share-utils';
 
 type Props = {
   placeId: string;
@@ -14,22 +14,12 @@ type Props = {
 
 export function CompleteActions({
   placeId,
-  shareText,
+  shareText: text,
   backUrl,
   returnUrl,
 }: Props) {
   async function handleShare() {
-    console.log(navigator, navigator.share, navigator.clipboard);
-    if (typeof navigator !== 'undefined' && navigator.share) {
-      try {
-        await navigator.share({ text: shareText });
-      } catch {
-        // 취소 시 무시
-      }
-    } else {
-      await navigator.clipboard.writeText(shareText);
-      toast.success('예약 정보가 복사되었어요');
-    }
+    await shareText(text, '예약 완료');
   }
 
   return (

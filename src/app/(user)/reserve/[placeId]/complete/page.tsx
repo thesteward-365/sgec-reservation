@@ -113,11 +113,11 @@ export default async function ReservationCompletePage({
         </div>
 
         {/* 상세 정보 카드 */}
-        <ReservationDetailsCard rows={rows} tone="surface" />
+        <ReservationDetailsCard rows={rows} tone="white" />
       </div>
 
       {/* 고정 하단 CTA */}
-      <div className="sticky bottom-0 z-50 bg-(--color-neutral-150) w-full mt-auto">
+      <div className="sticky bottom-0 z-50 mt-auto w-full bg-(--color-neutral-150)">
         <CompleteActions
           placeId={placeId}
           shareText={`장소: ${placeLabel}\n날짜: ${dateLabel}\n시간: ${timeLabel}\n목적: ${purpose || '–'}`}

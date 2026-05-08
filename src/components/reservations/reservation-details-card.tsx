@@ -17,7 +17,7 @@ export function ReservationDetailsCard({ rows, tone = 'surface' }: Props) {
         'flex flex-col gap-4 rounded-3xl p-8',
         tone === 'surface' && 'bg-gray-50',
         tone === 'subtle' && 'bg-neutral-50',
-        tone === 'white' && 'bg-white shadow-(--shadow-1)'
+        tone === 'white' && 'bg-white! shadow-(--shadow-1)'
       )}
     >
       {rows.map(({ label, value }) => (

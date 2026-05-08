@@ -1,4 +1,11 @@
-import { db, reservations, reservationHistories, places, toDbDate, isPostgres } from '@/lib/db';
+import {
+  db,
+  reservations,
+  reservationHistories,
+  places,
+  toDbDate,
+  isPostgres,
+} from '@/lib/db';
 import { eq, and, ne, lt, gt } from 'drizzle-orm';
 
 export class ReservationRepository {
@@ -11,7 +18,7 @@ export class ReservationRepository {
       .from(reservations)
       .where(eq(reservations.id, id))
       .limit(1);
-    
+
     const rows = isPostgres ? await query : query.all();
     return rows[0] || null;
   }
@@ -25,7 +32,7 @@ export class ReservationRepository {
       .from(reservations)
       .where(and(eq(reservations.id, id), eq(reservations.userId, userId)))
       .limit(1);
-    
+
     const rows = isPostgres ? await query : query.all();
     return rows[0] || null;
   }
@@ -33,7 +40,13 @@ export class ReservationRepository {
   /**
    * 특정 장소와 시간대에 겹치는 예약이 있는지 확인합니다.
    */
-  static async findConflicts(placeId: number, start: Date, end: Date, excludeId?: number, tx: any = db) {
+  static async findConflicts(
+    placeId: number,
+    start: Date,
+    end: Date,
+    excludeId?: number,
+    tx: any = db
+  ) {
     const startVal = toDbDate(start);
     const endVal = toDbDate(end);
 
@@ -52,21 +65,24 @@ export class ReservationRepository {
       .select({ id: reservations.id })
       .from(reservations)
       .where(and(...conditions));
-    
+
     return isPostgres ? await query : query.all();
   }
 
   /**
    * 새로운 예약을 생성합니다.
    */
-  static create(data: {
-    userId: number;
-    placeId: number;
-    startTime: Date;
-    endTime: Date;
-    purpose: string;
-    googleEventId?: string | null;
-  }, tx: any = db) {
+  static create(
+    data: {
+      userId: number;
+      placeId: number;
+      startTime: Date;
+      endTime: Date;
+      purpose: string;
+      googleEventId?: string | null;
+    },
+    tx: any = db
+  ) {
     const dbData = {
       ...data,
       startTime: toDbDate(data.startTime),
@@ -84,13 +100,18 @@ export class ReservationRepository {
   /**
    * 예약 정보를 업데이트합니다.
    */
-  static update(id: number, data: {
-    placeId?: number;
-    startTime?: Date;
-    endTime?: Date;
-    purpose?: string;
-    googleEventId?: string | null;
-  }, tx: any = db) {
+  static update(
+    id: number,
+    data: {
+      placeId?: number;
+      startTime?: Date;
+      endTime?: Date;
+      purpose?: string;
+      googleEventId?: string | null;
+      status?: 'active' | 'cancelled';
+    },
+    tx: any = db
+  ) {
     const dbData: any = { ...data };
     if (data.startTime) dbData.startTime = toDbDate(data.startTime);
     if (data.endTime) dbData.endTime = toDbDate(data.endTime);
@@ -100,7 +121,7 @@ export class ReservationRepository {
       .set(dbData)
       .where(eq(reservations.id, id))
       .returning();
-    
+
     if (isPostgres) {
       return query.then((rows: any[]) => rows[0]);
     } else {
@@ -116,7 +137,7 @@ export class ReservationRepository {
       .delete(reservations)
       .where(eq(reservations.id, id))
       .returning();
-    
+
     if (isPostgres) {
       return query.then((rows: any[]) => rows[0]);
     } else {
@@ -127,16 +148,19 @@ export class ReservationRepository {
   /**
    * 변경 이력을 생성합니다.
    */
-  static createHistory(data: {
-    reservationId: number;
-    actorUserId: number;
-    actorUserName: string;
-    actionType: 'created' | 'updated' | 'cancelled';
-    changes: string;
-    googleEventId?: string | null;
-  }, tx: any = db) {
+  static createHistory(
+    data: {
+      reservationId: number;
+      actorUserId: number;
+      actorUserName: string;
+      actionType: 'created' | 'updated' | 'cancelled';
+      changes: string;
+      googleEventId?: string | null;
+    },
+    tx: any = db
+  ) {
     const query = tx.insert(reservationHistories).values(data).returning();
-    
+
     if (isPostgres) {
       return query.then((rows: any[]) => rows[0]);
     } else {
@@ -148,7 +172,11 @@ export class ReservationRepository {
    * 장소 존재 여부를 확인합니다.
    */
   static async findPlaceById(id: number, tx: any = db) {
-    const query = tx.select({ id: places.id }).from(places).where(eq(places.id, id)).limit(1);
+    const query = tx
+      .select({ id: places.id })
+      .from(places)
+      .where(eq(places.id, id))
+      .limit(1);
     const rows = isPostgres ? await query : query.all();
     return rows[0] || null;
   }

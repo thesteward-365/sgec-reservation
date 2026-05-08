@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { ShareIcon } from '@heroicons/react/24/outline';
 import {
   Drawer,
   DrawerContent,
@@ -18,32 +19,9 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ReservationDetailsCard } from '@/components/reservations/reservation-details-card';
+import { shareReservation } from '@/lib/share-utils';
+import { formatKoreanDate, formatTime, toYMD } from '@/lib/date-utils';
 import type { MyReservation } from './reservation-item';
-
-function fmtMin(min: number): string {
-  const h = Math.floor(min / 60);
-  const m = min % 60;
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-}
-
-function formatTime(dt: Date | string): string {
-  const d = typeof dt === 'string' ? new Date(dt) : dt;
-  return fmtMin(d.getHours() * 60 + d.getMinutes());
-}
-
-function formatKoreanDate(dt: Date | string): string {
-  const d = typeof dt === 'string' ? new Date(dt) : dt;
-  return new Intl.DateTimeFormat('ko-KR', {
-    month: 'long',
-    day: 'numeric',
-    weekday: 'short',
-  }).format(d);
-}
-
-function toYMD(dt: Date | string): string {
-  const d = typeof dt === 'string' ? new Date(dt) : dt;
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
 
 type Props = {
   reservation: MyReservation | null;
@@ -61,6 +39,10 @@ export function ReservationSheet({
   const router = useRouter();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const isCancelled = useMemo(
+    () => reservation?.status === 'cancelled',
+    [reservation?.status]
+  );
 
   async function handleConfirmCancel() {
     if (!reservation) return;
@@ -89,6 +71,19 @@ export function ReservationSheet({
     );
   }
 
+  const handleShare = async () => {
+    if (!reservation) return;
+    await shareReservation({
+      placeName: reservation.floorName
+        ? `${reservation.placeName ?? '–'} · ${reservation.floorName}`
+        : (reservation.placeName ?? '–'),
+      startTime: reservation.startTime,
+      endTime: reservation.endTime,
+      userName: reservation.userName ?? '–',
+      purpose: reservation.purpose,
+    });
+  };
+
   const isPast = reservation
     ? new Date(reservation.endTime) < new Date()
     : false;
@@ -115,8 +110,16 @@ export function ReservationSheet({
     <>
       <Drawer open={open} onOpenChange={(v) => !v && onClose()}>
         <DrawerContent>
-          <DrawerHeader>
+          <DrawerHeader className="relative">
             <DrawerTitle>예약 관리</DrawerTitle>
+            <button
+              onClick={handleShare}
+              className="absolute top-1/2 right-6 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full transition-colors hover:bg-neutral-100"
+              title="공유하기"
+              disabled={isCancelled}
+            >
+              <ShareIcon className="h-4 w-4" />
+            </button>
           </DrawerHeader>
 
           <div className="flex flex-col gap-4 px-6 pb-8">
@@ -138,16 +141,23 @@ export function ReservationSheet({
               </Button>
               <Button
                 variant="destructive"
+                disabled={isPast || cancelling || isCancelled}
                 className="h-12 flex-1 rounded-2xl"
                 onClick={() => setConfirmOpen(true)}
               >
                 예약 취소
               </Button>
             </div>
-            {isPast && (
+            {isPast ? (
               <p className="text-caption! text-muted-foreground!">
                 이미 지난 예약은 수정할 수 없습니다.
               </p>
+            ) : isCancelled ? (
+              <p className="text-caption! text-muted-foreground!">
+                이미 취소된 예약입니다.
+              </p>
+            ) : (
+              <></>
             )}
           </div>
         </DrawerContent>
