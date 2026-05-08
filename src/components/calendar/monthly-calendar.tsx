@@ -3,12 +3,22 @@
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 
+export type CalendarEvent = {
+  id: string | number;
+  title: string;
+  startDate: string; // YYYY-MM-DD
+  endDate: string;   // YYYY-MM-DD
+  variant?: 'primary' | 'secondary' | 'accent' | 'info';
+};
+
 type Props = {
   selectedDate: Date;
   viewMonth: Date;
   onSelectDate: (date: Date) => void;
   onChangeMonth: (date: Date) => void;
   indicators?: Set<string>; // Set of 'YYYY-MM-DD' strings
+  events?: CalendarEvent[];
+  showEvents?: boolean;
 };
 
 const DOW_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -25,12 +35,21 @@ function isSameDay(a: Date, b: Date): boolean {
   );
 }
 
+const EVENT_VARIANTS = {
+  primary: 'bg-primary/10 text-primary-foreground',
+  secondary: 'bg-amber-100/50 text-amber-900',
+  accent: 'bg-indigo-50 text-indigo-900',
+  info: 'bg-emerald-50 text-emerald-900',
+};
+
 export function MonthlyCalendar({
   selectedDate,
   viewMonth,
   onSelectDate,
   onChangeMonth,
   indicators,
+  events = [],
+  showEvents = true,
 }: Props) {
   const today = new Date();
 
@@ -66,9 +85,9 @@ export function MonthlyCalendar({
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="bg-white rounded-xl shadow-(--shadow-1) flex flex-col gap-3 p-4">
       {/* 월 네비게이션 */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-2">
         <button
           onClick={prevMonth}
           className="flex items-center justify-center rounded-full p-1.5 transition-colors hover:bg-neutral-100"
@@ -89,7 +108,7 @@ export function MonthlyCalendar({
       </div>
 
       {/* 요일 헤더 + 날짜 셀 */}
-      <div className="grid grid-cols-7 gap-x-0.5 gap-y-1">
+      <div className="grid grid-cols-7 gap-x-0 gap-y-1">
         {DOW_LABELS.map((label, i) => (
           <div
             key={label}
@@ -114,34 +133,70 @@ export function MonthlyCalendar({
           const hasIndicator = inMonth && indicators?.has(ymd) && !isSel;
           const dow = day.getDay();
 
+          // 해당 날짜의 이벤트들
+          const dayEvents = showEvents
+            ? events.filter((e) => ymd >= e.startDate && ymd <= e.endDate)
+            : [];
+
           return (
             <button
               key={i}
               onClick={() => onSelectDate(day)}
               className={cn(
-                'group relative flex aspect-square items-center justify-center rounded-lg transition-colors',
+                'group relative flex aspect-square flex-col items-center justify-center rounded-lg transition-colors',
                 !inMonth && 'opacity-30',
                 !isSel && 'hover:bg-neutral-100'
               )}
             >
+              {/* 이벤트 파스텔 배경 레이어 (필/원 형태) */}
+              <div className="absolute inset-x-0 flex flex-col gap-0.5 px-0 items-center justify-center">
+                {dayEvents.map((event) => {
+                  const isStart = ymd === event.startDate || dow === 0;
+                  const isEnd = ymd === event.endDate || dow === 6;
+                  const isSingleDay = event.startDate === event.endDate;
+
+                  return (
+                    <div
+                      key={event.id}
+                      className={cn(
+                        'h-8 flex items-center justify-center transition-all',
+                        EVENT_VARIANTS[event.variant || 'primary'],
+                        isSingleDay 
+                          ? 'aspect-square rounded-full' // 단일 일정: 원형
+                          : [
+                              'w-full',
+                              isStart && 'rounded-l-full ml-1', // 시작: 왼쪽 둥글게 + 여백
+                              isEnd && 'rounded-r-full mr-1',   // 종료: 오른쪽 둥글게 + 여백
+                              !isStart && !isEnd && 'mx-0'      // 중간: 꽉 찬 사각형
+                            ]
+                      )}
+                    />
+                  );
+                })}
+              </div>
+
               <span
                 className={cn(
-                  'relative flex size-9 items-center justify-center rounded-xl text-[14px] font-medium transition-colors',
+                  'relative z-10 flex size-8 items-center justify-center text-[14px] font-medium transition-colors',
                   isSel
-                    ? 'bg-(--color-fg-strong) font-bold text-white'
+                    ? 'bg-(--color-fg-strong) font-bold text-white shadow-sm rounded-full' // 선택 시 원형
                     : [
                         inMonth && dow === 0 && 'text-destructive',
                         inMonth && dow === 6 && 'text-primary',
                         !inMonth && 'text-muted-foreground',
                         inMonth && dow !== 0 && dow !== 6 && 'text-foreground',
                         isToday && !isSel && 'font-bold',
+                        dayEvents.length > 0 && 'font-bold'
                       ]
                 )}
               >
                 {day.getDate()}
               </span>
+
               {hasIndicator && (
-                <span className="bg-primary absolute bottom-1.5 size-1 rounded-full" />
+                <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 z-20">
+                  <span className="bg-primary block size-1 rounded-full shadow-[0_0_2px_white]" />
+                </div>
               )}
             </button>
           );
