@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 import { db } from '@/lib/db';
 import {
   reservationHistories,
-} from '@/lib/db/schema';
+} from '@/lib/db';
 import { eq, desc } from 'drizzle-orm';
 
 type Params = { params: Promise<{ id: string }> };

@@ -7,7 +7,7 @@ type ReservationDetailRow = {
 
 type Props = {
   rows: ReservationDetailRow[];
-  tone?: 'surface' | 'subtle';
+  tone?: 'surface' | 'subtle' | 'white';
 };
 
 export function ReservationDetailsCard({ rows, tone = 'surface' }: Props) {
@@ -15,7 +15,9 @@ export function ReservationDetailsCard({ rows, tone = 'surface' }: Props) {
     <div
       className={cn(
         'flex flex-col gap-4 rounded-3xl p-8',
-        tone === 'surface' ? 'bg-gray-50' : 'bg-neutral-50'
+        tone === 'surface' && 'bg-gray-50',
+        tone === 'subtle' && 'bg-neutral-50',
+        tone === 'white' && 'bg-white shadow-(--shadow-1)'
       )}
     >
       {rows.map(({ label, value }) => (

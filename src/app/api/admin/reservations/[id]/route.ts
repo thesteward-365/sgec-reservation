@@ -3,11 +3,56 @@ import { getIronSession } from 'iron-session';
 import { sessionOptions, SessionData } from '@/lib/session';
 import { cookies } from 'next/headers';
 import { db } from '@/lib/db';
-import { reservations, reservationHistories } from '@/lib/db';
+import { reservations, reservationHistories, places, users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { deleteGoogleEvent } from '@/lib/calendar/calendar-service';
 
 type Params = { params: Promise<{ id: string }> };
+
+export async function GET(_req: NextRequest, { params }: Params) {
+  try {
+    const session = await getIronSession<SessionData>(
+      await cookies(),
+      sessionOptions
+    );
+    if (!session.user || session.user.role !== 'admin') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const reservationId = parseInt(id);
+    if (isNaN(reservationId)) {
+      return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
+    }
+
+    const [reservation] = await db
+      .select({
+        id: reservations.id,
+        placeId: reservations.placeId,
+        placeName: places.name,
+        userName: users.name,
+        purpose: reservations.purpose,
+        startTime: reservations.startTime,
+        endTime: reservations.endTime,
+      })
+      .from(reservations)
+      .leftJoin(places, eq(reservations.placeId, places.id))
+      .leftJoin(users, eq(reservations.userId, users.id))
+      .where(eq(reservations.id, reservationId));
+
+    if (!reservation) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(reservation);
+  } catch (error) {
+    console.error('Fetch reservation error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
 
 export async function DELETE(_req: NextRequest, { params }: Params) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);

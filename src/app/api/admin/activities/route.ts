@@ -4,7 +4,7 @@ import { sessionOptions, SessionData } from '@/lib/session';
 import { cookies } from 'next/headers';
 import { db } from '@/lib/db';
 import { reservationHistories, places, reservations } from '@/lib/db/schema';
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, and, gte, lte } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,8 +19,20 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
+    const startDateStr = searchParams.get('startDate');
+    const endDateStr = searchParams.get('endDate');
 
-    const history = await db
+    const conditions = [];
+    if (startDateStr) {
+      conditions.push(gte(reservationHistories.createdAt, new Date(startDateStr)));
+    }
+    if (endDateStr) {
+      const endDate = new Date(endDateStr);
+      endDate.setHours(23, 59, 59, 999);
+      conditions.push(lte(reservationHistories.createdAt, endDate));
+    }
+
+    const query = db
       .select({
         id: reservationHistories.id,
         actionType: reservationHistories.actionType,
@@ -37,6 +49,12 @@ export async function GET(request: NextRequest) {
       .orderBy(desc(reservationHistories.createdAt))
       .limit(limit)
       .offset(offset);
+
+    if (conditions.length > 0) {
+      query.where(and(...conditions));
+    }
+
+    const history = await query;
 
     return NextResponse.json(history);
   } catch (error) {

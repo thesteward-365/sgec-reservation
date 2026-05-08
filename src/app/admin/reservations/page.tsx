@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   AdjustmentsHorizontalIcon,
-  EllipsisVerticalIcon,
   PlusIcon,
 } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
@@ -17,11 +17,19 @@ import {
   FilterSheet,
   type FilterState,
 } from '@/components/reservations/filter-sheet';
-import {
-  AdminReservationSheet,
-  type AdminReservation,
-} from '@/components/reservations/admin-reservation-sheet';
 import { Chip } from '@/components/ui/chip';
+
+type AdminReservation = {
+  id: number;
+  placeId: number;
+  placeName: string | null;
+  floorId: number | null;
+  floorName: string | null;
+  userName: string | null;
+  purpose: string;
+  startTime: string | null;
+  endTime: string | null;
+};
 
 type PlaceTagMap = Record<number, number[]>;
 
@@ -44,8 +52,6 @@ function isSameDay(a: Date | string, b: Date): boolean {
 
 function formatDateHeader(isoString: string): string {
   const d = new Date(isoString);
-  const today = new Date();
-
   return d.toLocaleDateString('ko-KR', {
     month: 'long',
     day: 'numeric',
@@ -80,6 +86,7 @@ const CHIP_ACTIVE = 'bg-(--color-fg-strong) text-white';
 const CHIP_INACTIVE = 'bg-(--color-neutral-300) text-foreground';
 
 export default function ReservationsPage() {
+  const router = useRouter();
   const [view, setView] = useState<MainView>('calendar');
   const [listTab, setListTab] = useState<ListTab>('예정');
   const [selectedDate, setSelectedDate] = useState(() => new Date());
@@ -95,8 +102,6 @@ export default function ReservationsPage() {
     sortOrder: 'asc',
   });
   const [showFilter, setShowFilter] = useState(false);
-  const [activeReservation, setActiveReservation] =
-    useState<AdminReservation | null>(null);
   const [loading, setLoading] = useState(true);
   const [now] = useState(() => new Date());
 
@@ -119,20 +124,6 @@ export default function ReservationsPage() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
-
-  function refreshReservations() {
-    setLoading(true);
-    fetch('/api/admin/reservations')
-      .then((r) => r.json())
-      .then((data: AdminReservation[]) => setReservations(data))
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }
-
-  function handleCancelled() {
-    setActiveReservation(null);
-    refreshReservations();
-  }
 
   const filteredReservations = useMemo(() => {
     let list = reservations;
@@ -228,7 +219,7 @@ export default function ReservationsPage() {
               <Chip
                 key={item.value}
                 variant={view === item.value ? 'active' : 'inactive'}
-                size="md" // 필요에 따라 sm, lg로 변경 가능
+                size="md"
                 onClick={() => setView(item.value)}
               >
                 {item.label}
@@ -281,7 +272,7 @@ export default function ReservationsPage() {
                         <button
                           key={reservation.id}
                           type="button"
-                          onClick={() => setActiveReservation(reservation)}
+                          onClick={() => router.push(`/admin/reservations/${reservation.id}`)}
                           className="w-full rounded-none px-4 py-4 text-left transition hover:bg-neutral-50 active:bg-neutral-100"
                         >
                           <div className="flex items-center gap-3">
@@ -374,7 +365,7 @@ export default function ReservationsPage() {
                           <ListItem key={reservation.id} className="px-0 py-0">
                             <button
                               type="button"
-                              onClick={() => setActiveReservation(reservation)}
+                              onClick={() => router.push(`/admin/reservations/${reservation.id}`)}
                               className="w-full rounded-none px-4 py-4 text-left transition hover:bg-neutral-50 active:bg-neutral-100"
                             >
                               <div className="flex items-center gap-3">
@@ -406,46 +397,6 @@ export default function ReservationsPage() {
                           </ListItem>
                         ))}
                       </List>
-                      {/* <div className="bg-card rounded-xl shadow-(--shadow-1)">
-                        <div className="divide-border/50 divide-y">
-                          {items.map((reservation) => (
-                            <button
-                              key={reservation.id}
-                              type="button"
-                              onClick={() => setActiveReservation(reservation)}
-                              className="w-full rounded-none px-4 py-4 text-left transition hover:bg-neutral-50 active:bg-neutral-100"
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0 space-y-1">
-                                  <p className="text-foreground text-[16px]! font-bold">
-                                    {reservation.placeName ?? '장소 없음'}
-                                  </p>
-                                  <p className="text-muted-foreground text-[13px]">
-                                    {reservation.startTime &&
-                                    reservation.endTime
-                                      ? `${formatTime(reservation.startTime)} – ${formatTime(reservation.endTime)}`
-                                      : '-'}
-                                  </p>
-                                </div>
-                                {reservation.floorName && (
-                                  <Badge
-                                    variant="subtle"
-                                    className="text-[11px]"
-                                  >
-                                    {reservation.floorName}
-                                  </Badge>
-                                )}
-                              </div>
-                              <div className="text-caption text-muted-foreground mt-3">
-                                {reservation.purpose}
-                              </div>
-                              <div className="text-caption text-foreground mt-1">
-                                {reservation.userName ?? '예약자 미정'}
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      </div> */}
                     </div>
                   ))}
                 </div>
@@ -462,13 +413,6 @@ export default function ReservationsPage() {
       >
         <PlusIcon className="h-6 w-6" aria-hidden="true" />
       </Link>
-
-      <AdminReservationSheet
-        reservation={activeReservation}
-        open={!!activeReservation}
-        onClose={() => setActiveReservation(null)}
-        onCancelled={handleCancelled}
-      />
 
       <FilterSheet
         open={showFilter}

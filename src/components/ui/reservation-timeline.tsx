@@ -200,7 +200,7 @@ export function ReservationTimeline({
               }}
             >
               <p
-                className="truncate text-[11px] font-semibold leading-tight"
+                className="truncate text-[11px] leading-tight font-semibold"
                 style={{ color: 'var(--color-accent)' }}
               >
                 {ev.title}

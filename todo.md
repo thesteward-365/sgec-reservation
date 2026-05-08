@@ -320,16 +320,17 @@
 ## Phase 9. UI/UX 개선
 
 - [x] 커스텀 리스트 컴포넌트 추출 -> 적용
-- [x] 관리자: 예약별 변경이력 조회 기능 추가
-  - 예약별 변경이력 조회(최신순) -> 예약상세 정보에서 변경이력 조회 클릭 시
-  - 전체 예약의 변경이력 조회(최신순) -> 대시보드페이지에서 최근 활동의 전체보기 클릭 시 이동
+- [x] 관리자: 활동 내역 및 예약 상세 페이지 개편
+  - [x] 활동 내역 리스트 인라인화 (수정 전/후 변경사항 즉시 표시)
+  - [x] 활동 내역 클릭 시 예약 상세 페이지(`/admin/reservations/[id]`)로 이동
+  - [x] 전체 활동 내역 페이지(`app/admin/activities`) 기간 필터 추가 (기본 최근 1주일 ~ 오늘)
+  - [x] 예약 상세 페이지 신규 구현 (정보/변경이력 탭 구조)
+  - [x] 예약 상세 액션: 동일 장소 예약하기, 공유하기 버튼 추가
+  - [x] 사용자/관리자 예약 상세 로직 공통화 및 권한별 액션 분리
+  - [x] 활동 내역 조회 API(`GET /api/admin/activities`) 기간 필터링 지원
 - [x] 사용자/관리자: 예약페이지 하단의 FAB 버튼 추가(예약 생성하기 버튼).
       단, 맨 마지막 리스트 요소가 가리지 않도록 주의 & 하단 탭도 가리지 않도록
       문구 없이 + 아이콘으로 표시
-- [x] 관리자: 최근활동 탭을 문장형이 아닌 요약형으로 표기.
-      oo님이 예약을 생성했습니다. -> 예약 생성/수정/삭제
-      리스트에는 최종 예약 정보 표시
-      클릭 시 예약 변경이력 표시하면 좋을듯. (예약자, 장소, 날짜, 시간, 변경일시) - 수정된 요소는 전후 데이터 모두 출력
 - [x] 사용자/관리자: 장소 고정 기능 추가
       관리자-특정 장소를 상단에 고정할 수 있음.(사용자는 수정 불가) -> 장소 목록 조회 시 최 상단에 뜸(단, 필터는 그대로 적용)
       관리자: 장소 나열 시 순서 조정할 수 있는 기능 구현 -> 사용자에게도 반영이 되어야 함.(드래그로 장소의 순서 바꿀 수 있어야 함.)
@@ -364,7 +365,7 @@
       POST /api/auth/logout 307 in 9ms (next.js: 3ms, application-code: 6ms) [browser] ⨯ unhandledRejection: TypeError: Load failed
 - [x] 공유하기 시 에러 발생 -> http 환경에서 발생하는 문제
       [browser] ⨯ unhandledRejection: TypeError: undefined is not an object (evaluating 'navigator.clipboard.writeText')
-- [ ] 예약 수정 시 아래 에러 발생 -> 브라우저도 동일
+- [x] 예약 수정 시 아래 에러 발생 -> 브라우저도 동일
       ⨯ TypeError: object is not iterable (cannot read property Symbol(Symbol.iterator))
       at PATCH (src/app/api/reservations/[id]/route.ts:173:21)
       171 | }

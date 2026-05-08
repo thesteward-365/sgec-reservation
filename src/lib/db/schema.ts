@@ -7,7 +7,7 @@ export const users = sqliteTable('users', {
   phoneNumber: text('phone_number').notNull().unique(),
   role: text('role', { enum: ['user', 'admin'] }).notNull().default('user'),
   status: text('status', { enum: ['pending', 'approved', 'rejected'] }).notNull().default('pending'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`((strftime('%s', 'now') * 1000))`),
 });
 
 export const floors = sqliteTable('floors', {
@@ -55,7 +55,7 @@ export const reservations = sqliteTable('reservations', {
   endTime: integer('end_time', { mode: 'timestamp' }).notNull(),
   purpose: text('purpose').notNull(),
   googleEventId: text('google_event_id'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`((strftime('%s', 'now') * 1000))`),
 });
 
 export const reservationHistories = sqliteTable('reservation_histories', {
@@ -72,7 +72,7 @@ export const reservationHistories = sqliteTable('reservation_histories', {
   googleEventId: text('google_event_id'),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .notNull()
-    .default(sql`(unixepoch())`),
+    .default(sql`((strftime('%s', 'now') * 1000))`),
 });
 
 export const calendarSettings = sqliteTable('calendar_settings', {
@@ -92,12 +92,12 @@ export const externalEvents = sqliteTable('external_events', {
   startTime: integer('start_time', { mode: 'timestamp' }).notNull(),
   endTime: integer('end_time', { mode: 'timestamp' }).notNull(),
   description: text('description'),
-  syncedAt: integer('synced_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  syncedAt: integer('synced_at', { mode: 'timestamp' }).notNull().default(sql`((strftime('%s', 'now') * 1000))`),
 });
 
 export const syncLogs = sqliteTable('sync_logs', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   level: text('level', { enum: ['info', 'error'] }).notNull().default('info'),
   message: text('message').notNull(),
-  timestamp: integer('timestamp', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  timestamp: integer('timestamp', { mode: 'timestamp' }).notNull().default(sql`((strftime('%s', 'now') * 1000))`),
 });

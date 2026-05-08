@@ -22,8 +22,11 @@ interface DashboardStats {
   totalPlacesCount: number;
   recentActivities: Array<{
     id: number;
-    type: string;
+    reservationId: number;
+    type: 'created' | 'updated' | 'cancelled';
     message: string;
+    actor: string;
+    place?: string | null;
     timestamp: string;
   }>;
 }

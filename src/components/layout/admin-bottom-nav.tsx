@@ -46,8 +46,11 @@ const NAV_ITEMS = [
 function AdminBottomNav() {
   const pathname = usePathname();
 
-  // 장소 관리 및 캘린더 연동 페이지에서는 내비게이션을 숨김
-  if (pathname === '/admin/places' || pathname === '/admin/calendar') {
+  // 하단 탭을 숨길 경로들
+  const hideNavPaths = ['/admin/places', '/admin/calendar', '/admin/activities'];
+  const isReservationDetail = /^\/admin\/reservations\/\d+$/.test(pathname || '');
+
+  if (hideNavPaths.includes(pathname || '') || isReservationDetail) {
     return null;
   }
 

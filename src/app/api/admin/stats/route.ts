@@ -51,8 +51,10 @@ export async function GET(_request: NextRequest) {
     const recentHistory = await db
       .select({
         id: reservationHistories.id,
+        reservationId: reservationHistories.reservationId,
         actionType: reservationHistories.actionType,
         actorUserName: reservationHistories.actorUserName,
+        changes: reservationHistories.changes,
         createdAt: reservationHistories.createdAt,
         placeName: places.name,
       })
@@ -64,10 +66,12 @@ export async function GET(_request: NextRequest) {
 
     const recentActivities = recentHistory.map((item) => ({
       id: item.id,
+      reservationId: item.reservationId,
       type: item.actionType,
       message: getActionLabel(item.actionType),
       actor: item.actorUserName,
       place: item.placeName,
+      changes: item.changes,
       timestamp: new Date(item.createdAt).toISOString(),
     }));
 

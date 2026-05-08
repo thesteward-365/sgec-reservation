@@ -1,118 +1,78 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronLeftIcon } from '@heroicons/react/24/outline';
-import { List, ListItem } from '@/components/ui/list';
-import { formatTimeAgo } from '@/lib/utils';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
+import { 
+  ChevronLeftIcon, 
+  AdjustmentsHorizontalIcon,
+} from '@heroicons/react/24/outline';
+import { ActivityListSkeleton } from '@/components/admin/activity-list-skeleton';
+import { HistoryListItem, type HistoryItem } from '@/components/reservations/history-list-item';
+import { Input } from '@/components/ui/input';
+import { 
+  Drawer, 
+  DrawerContent, 
+  DrawerHeader, 
   DrawerTitle,
+  DrawerFooter
 } from '@/components/ui/drawer';
-
-interface Activity {
-  id: number;
-  actionType: 'created' | 'updated' | 'cancelled';
-  actorUserId: number;
-  actorUserName: string;
-  changes: string;
-  createdAt: number;
-  reservationId: number;
-  placeName: string | null;
-}
-
-function buildActivityMessage(activity: Activity) {
-  const place = activity.placeName ? `${activity.placeName} ` : '';
-  switch (activity.actionType) {
-    case 'created':
-      return `${activity.actorUserName}님이 ${place}예약을 생성했습니다`;
-    case 'updated':
-      return `${activity.actorUserName}님이 ${place}예약을 수정했습니다`;
-    case 'cancelled':
-      return `${activity.actorUserName}님이 ${place}예약을 취소했습니다`;
-    default:
-      return `${activity.actorUserName}님이 작업을 수행하였습니다`;
-  }
-}
-
-const getActivityIcon = (type: string) => {
-  const baseClasses = 'mt-1.5 h-2.5 w-2.5 rounded-full';
-  switch (type) {
-    case 'created':
-      return <div className={`${baseClasses} bg-green-500`} />;
-    case 'cancelled':
-      return <div className={`${baseClasses} bg-red-500`} />;
-    case 'updated':
-      return <div className={`${baseClasses} bg-blue-500`} />;
-    default:
-      return <div className={`${baseClasses} bg-gray-500`} />;
-  }
-};
+import { Button } from '@/components/ui/button';
 
 export default function ActivitiesPage() {
   const router = useRouter();
-  const [activities, setActivities] = useState<Activity[]>([]);
+  const [activities, setActivities] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+  const [showFilter, setShowFilter] = useState(false);
+  
+  const [startDate, setStartDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 7);
+    return d.toISOString().split('T')[0];
+  });
+  const [endDate, setEndDate] = useState(() => {
+    return new Date().toISOString().split('T')[0];
+  });
+
+  const [tempStartDate, setTempStartDate] = useState(startDate);
+  const [tempEndDate, setTempEndDate] = useState(endDate);
+
+  const fetchActivities = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        startDate,
+        endDate,
+      });
+      const response = await fetch(`/api/admin/activities?${params}`);
+      if (response.ok) {
+        const data = await response.json();
+        // Standardize data format for HistoryListItem
+        const mapped = (data as any[]).map(item => ({
+          ...item,
+          createdAt: new Date(item.createdAt),
+          changes: typeof item.changes === 'string' ? JSON.parse(item.changes) : item.changes
+        }));
+        setActivities(mapped);
+      }
+    } catch (error) {
+      console.error('Failed to fetch activities:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [startDate, endDate]);
 
   useEffect(() => {
-    async function fetchActivities() {
-      try {
-        const response = await fetch('/api/admin/activities');
-        if (response.ok) {
-          const data = await response.json();
-          setActivities(data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch activities:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
     fetchActivities();
-  }, []);
+  }, [fetchActivities]);
 
-  const formatChangeValue = (key: string, value: any) => {
-    if (key === 'startTime' || key === 'endTime') {
-      return new Date(value).toLocaleTimeString('ko-KR', {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    }
-    return value;
-  };
-
-  const renderChanges = (changesJson: string) => {
-    try {
-      const changes = JSON.parse(changesJson);
-      return (
-        <div className="space-y-3">
-          {Object.entries(changes).map(([key, value]: [string, any]) => {
-            if (key === 'cancelled') return null;
-            return (
-              <div key={key} className="flex flex-col gap-1">
-                <span className="text-caption text-muted-foreground font-medium uppercase">
-                  {key === 'startTime' ? '시작 시간' : key === 'endTime' ? '종료 시간' : key === 'purpose' ? '사용 목적' : key}
-                </span>
-                <div className="text-body flex items-center gap-2">
-                  <span className="line-through opacity-50">{formatChangeValue(key, value.from)}</span>
-                  <span>→</span>
-                  <span className="font-semibold text-blue-600">{formatChangeValue(key, value.to)}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      );
-    } catch {
-      return <p className="text-body">상세 내역을 불러올 수 없습니다.</p>;
-    }
+  const handleApplyFilter = () => {
+    setStartDate(tempStartDate);
+    setEndDate(tempEndDate);
+    setShowFilter(false);
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-neutral-150">
       <header className="sticky top-0 z-10 flex h-14 items-center justify-between bg-neutral-150 px-4">
         <button
           onClick={() => router.back()}
@@ -121,72 +81,120 @@ export default function ActivitiesPage() {
           <ChevronLeftIcon className="h-6 w-6" />
         </button>
         <h1 className="text-lg font-bold">활동 내역</h1>
-        <div className="w-10" />
+        <button
+          onClick={() => {
+            setTempStartDate(startDate);
+            setTempEndDate(endDate);
+            setShowFilter(true);
+          }}
+          className="flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-neutral-200"
+        >
+          <AdjustmentsHorizontalIcon className="h-6 w-6" />
+        </button>
       </header>
 
-      <main className="flex-1 p-5">
+      <main className="flex-1 p-5 pb-20">
+        <button
+          onClick={() => {
+            setTempStartDate(startDate);
+            setTempEndDate(endDate);
+            setShowFilter(true);
+          }}
+          className="mb-4 flex w-full items-center justify-between px-1 text-left active:opacity-70"
+        >
+          <p className="text-caption text-muted-foreground font-medium">
+            {new Date(startDate).toLocaleDateString('ko-KR')} ~ {new Date(endDate).toLocaleDateString('ko-KR')}
+          </p>
+          <p className="text-caption text-muted-foreground">{activities.length}건</p>
+        </button>
+
         {loading ? (
-          <div className="space-y-4">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-20 w-full animate-pulse rounded-2xl bg-white shadow-1" />
-            ))}
+          <ActivityListSkeleton count={5} />
+        ) : activities.length === 0 ? (
+          <div className="py-20 text-center text-muted-foreground">
+            활동 내역이 없습니다.
           </div>
         ) : (
-          <List emptyMessage="활동 내역이 없습니다.">
+          <div className="flex flex-col gap-3">
             {activities.map((activity) => (
-              <ListItem
+              <HistoryListItem
                 key={activity.id}
-                onClick={() => setSelectedActivity(activity)}
-                className="cursor-pointer active:bg-neutral-50"
-              >
-                <div className="flex items-start gap-3">
-                  {getActivityIcon(activity.actionType)}
-                  <div className="min-w-0 flex-1">
-                    <p className="text-body font-medium">{buildActivityMessage(activity)}</p>
-                    <p className="text-caption text-muted-foreground mt-1">
-                      {formatTimeAgo(new Date(activity.createdAt))}
-                    </p>
-                  </div>
-                </div>
-              </ListItem>
+                item={activity}
+                showPlaceName
+                onClick={() => router.push(`/admin/reservations/${activity.reservationId}`)}
+              />
             ))}
-          </List>
+          </div>
         )}
       </main>
 
-      <Drawer open={!!selectedActivity} onOpenChange={(open) => !open && setSelectedActivity(null)}>
+      <Drawer open={showFilter} onOpenChange={setShowFilter}>
         <DrawerContent>
           <DrawerHeader>
-            <DrawerTitle>활동 상세</DrawerTitle>
+            <DrawerTitle>기간 설정</DrawerTitle>
           </DrawerHeader>
-          <div className="px-6 pb-10">
-            {selectedActivity && (
-              <div className="space-y-6">
-                <div>
-                  <p className="text-caption text-muted-foreground">일시</p>
-                  <p className="text-body font-medium">
-                    {new Date(selectedActivity.createdAt).toLocaleString('ko-KR')}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-caption text-muted-foreground">작업자</p>
-                  <p className="text-body font-medium">{selectedActivity.actorUserName}</p>
-                </div>
-                <div>
-                  <p className="text-caption text-muted-foreground mb-2">변경 내용</p>
-                  <div className="rounded-xl bg-neutral-100 p-4">
-                    {selectedActivity.actionType === 'created' ? (
-                      <p className="text-body text-green-600 font-semibold">새로운 예약을 생성했습니다.</p>
-                    ) : selectedActivity.actionType === 'cancelled' ? (
-                      <p className="text-body text-red-600 font-semibold">예약을 취소했습니다.</p>
-                    ) : (
-                      renderChanges(selectedActivity.changes)
-                    )}
-                  </div>
+          <div className="px-6 py-4 space-y-6">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-caption text-muted-foreground font-medium uppercase">시작일</label>
+                <div className="relative">
+                  <Input
+                    type="date"
+                    value={tempStartDate}
+                    onChange={(e) => setTempStartDate(e.target.value)}
+                    className="h-12 rounded-xl bg-neutral-100 border-none px-4"
+                  />
                 </div>
               </div>
-            )}
+              <div className="space-y-2">
+                <label className="text-caption text-muted-foreground font-medium uppercase">종료일</label>
+                <div className="relative">
+                  <Input
+                    type="date"
+                    value={tempEndDate}
+                    onChange={(e) => setTempEndDate(e.target.value)}
+                    className="h-12 rounded-xl bg-neutral-100 border-none px-4"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="secondary"
+                className="h-12 rounded-xl"
+                onClick={() => {
+                  const d = new Date();
+                  const end = d.toISOString().split('T')[0];
+                  d.setDate(d.getDate() - 7);
+                  const start = d.toISOString().split('T')[0];
+                  setTempStartDate(start);
+                  setTempEndDate(end);
+                }}
+              >
+                최근 1주일
+              </Button>
+              <Button
+                variant="secondary"
+                className="h-12 rounded-xl"
+                onClick={() => {
+                  const d = new Date();
+                  const end = d.toISOString().split('T')[0];
+                  d.setMonth(d.getMonth() - 1);
+                  const start = d.toISOString().split('T')[0];
+                  setTempStartDate(start);
+                  setTempEndDate(end);
+                }}
+              >
+                최근 1개월
+              </Button>
+            </div>
           </div>
+          <DrawerFooter className="px-6 pb-10 pt-2">
+            <Button className="h-14 rounded-2xl text-body font-bold" onClick={handleApplyFilter}>
+              적용하기
+            </Button>
+          </DrawerFooter>
         </DrawerContent>
       </Drawer>
     </div>
