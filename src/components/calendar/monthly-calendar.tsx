@@ -7,7 +7,7 @@ export type CalendarEvent = {
   id: string | number;
   title: string;
   startDate: string; // YYYY-MM-DD
-  endDate: string;   // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
   variant?: 'primary' | 'secondary' | 'accent' | 'info';
 };
 
@@ -85,9 +85,9 @@ export function MonthlyCalendar({
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-(--shadow-1) flex flex-col gap-3 p-4">
+    <div className="flex flex-col gap-3 rounded-xl bg-white p-4">
       {/* 월 네비게이션 */}
-      <div className="flex items-center justify-between mb-2">
+      <div className="mb-2 flex items-center justify-between">
         <button
           onClick={prevMonth}
           className="flex items-center justify-center rounded-full p-1.5 transition-colors hover:bg-neutral-100"
@@ -149,7 +149,7 @@ export function MonthlyCalendar({
               )}
             >
               {/* 이벤트 파스텔 배경 레이어 (필/원 형태) */}
-              <div className="absolute inset-x-0 flex flex-col gap-0.5 px-0 items-center justify-center">
+              <div className="absolute inset-x-0 flex flex-col items-center justify-center gap-0.5 px-0">
                 {dayEvents.map((event) => {
                   const isStart = ymd === event.startDate || dow === 0;
                   const isEnd = ymd === event.endDate || dow === 6;
@@ -159,15 +159,15 @@ export function MonthlyCalendar({
                     <div
                       key={event.id}
                       className={cn(
-                        'h-8 flex items-center justify-center transition-all',
+                        'flex h-8 items-center justify-center transition-all',
                         EVENT_VARIANTS[event.variant || 'primary'],
-                        isSingleDay 
+                        isSingleDay
                           ? 'aspect-square rounded-full' // 단일 일정: 원형
                           : [
                               'w-full',
-                              isStart && 'rounded-l-full ml-1', // 시작: 왼쪽 둥글게 + 여백
-                              isEnd && 'rounded-r-full mr-1',   // 종료: 오른쪽 둥글게 + 여백
-                              !isStart && !isEnd && 'mx-0'      // 중간: 꽉 찬 사각형
+                              isStart && 'ml-1 rounded-l-full', // 시작: 왼쪽 둥글게 + 여백
+                              isEnd && 'mr-1 rounded-r-full', // 종료: 오른쪽 둥글게 + 여백
+                              !isStart && !isEnd && 'mx-0', // 중간: 꽉 찬 사각형
                             ]
                       )}
                     />
@@ -179,14 +179,14 @@ export function MonthlyCalendar({
                 className={cn(
                   'relative z-10 flex size-8 items-center justify-center text-[14px] font-medium transition-colors',
                   isSel
-                    ? 'bg-(--color-fg-strong) font-bold text-white shadow-sm rounded-full' // 선택 시 원형
+                    ? 'rounded-full bg-(--color-fg-strong) font-bold text-white shadow-sm' // 선택 시 원형
                     : [
                         inMonth && dow === 0 && 'text-destructive',
                         inMonth && dow === 6 && 'text-primary',
                         !inMonth && 'text-muted-foreground',
                         inMonth && dow !== 0 && dow !== 6 && 'text-foreground',
                         isToday && !isSel && 'font-bold',
-                        dayEvents.length > 0 && 'font-bold'
+                        dayEvents.length > 0 && 'font-bold',
                       ]
                 )}
               >
@@ -194,7 +194,7 @@ export function MonthlyCalendar({
               </span>
 
               {hasIndicator && (
-                <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 z-20">
+                <div className="absolute bottom-1.5 left-1/2 z-20 -translate-x-1/2">
                   <span className="bg-primary block size-1 rounded-full shadow-[0_0_2px_white]" />
                 </div>
               )}
