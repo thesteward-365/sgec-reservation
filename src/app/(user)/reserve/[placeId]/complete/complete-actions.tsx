@@ -32,7 +32,7 @@ export function CompleteActions({
         공유하기
       </Button>
       <Button variant="secondary" className="w-full" asChild>
-        <Link href={backUrl}>동일 장소 재예약하기</Link>
+        <Link href={backUrl}>동일 장소 예약하기</Link>
       </Button>
       <Link
         href={returnUrl}

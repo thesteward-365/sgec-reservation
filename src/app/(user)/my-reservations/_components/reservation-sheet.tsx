@@ -116,9 +116,12 @@ export function ReservationSheet({
               onClick={handleShare}
               className="absolute top-1/2 right-6 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full transition-colors hover:bg-neutral-100"
               title="공유하기"
-              disabled={isCancelled}
+              disabled={isCancelled || isPast}
             >
-              <ShareIcon className="h-4 w-4" />
+              <ShareIcon
+                className="h-4 w-4"
+                color={isCancelled ? 'grey' : ''}
+              />
             </button>
           </DrawerHeader>
 
@@ -150,7 +153,7 @@ export function ReservationSheet({
             </div>
             {isPast ? (
               <p className="text-caption! text-muted-foreground!">
-                이미 지난 예약은 수정할 수 없습니다.
+                이미 지난 예약입니다.
               </p>
             ) : isCancelled ? (
               <p className="text-caption! text-muted-foreground!">
