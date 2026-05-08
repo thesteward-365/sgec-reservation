@@ -27,7 +27,7 @@ export type MinuteRange = {
 export function toDate(value: Date | string | number): Date {
   if (value instanceof Date) return value;
   if (typeof value === 'number') {
-    // Unix epoch in seconds (Postgres) vs milliseconds
+    // Numeric timestamps may be provided in seconds or milliseconds.
     if (value < 10000000000) return new Date(value * 1000);
     return new Date(value);
   }

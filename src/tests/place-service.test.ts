@@ -7,7 +7,6 @@ vi.mock('../lib/db', () => ({
   db: {
     transaction: vi.fn((cb) => cb({})),
   },
-  isPostgres: false,
 }));
 
 vi.mock('../lib/repositories/place-repository');

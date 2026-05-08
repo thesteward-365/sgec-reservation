@@ -37,14 +37,16 @@ export async function getCalendarClient() {
   oauth2Client.setCredentials({
     access_token: settings.googleAccessToken,
     refresh_token: settings.googleRefreshToken,
-    expiry_date: settings.googleTokenExpiry ? settings.googleTokenExpiry * 1000 : undefined,
+    expiry_date: settings.googleTokenExpiry?.getTime(),
   });
 
   // 토큰 자동 갱신 처리
   oauth2Client.on('tokens', async (tokens) => {
     const update: Record<string, unknown> = {};
     if (tokens.access_token) update.googleAccessToken = tokens.access_token;
-    if (tokens.expiry_date) update.googleTokenExpiry = Math.floor(tokens.expiry_date / 1000);
+    if (tokens.expiry_date) {
+      update.googleTokenExpiry = new Date(tokens.expiry_date);
+    }
     if (tokens.refresh_token) update.googleRefreshToken = tokens.refresh_token;
 
     if (Object.keys(update).length > 0) {
@@ -54,7 +56,7 @@ export async function getCalendarClient() {
 
   // 만료 10분 이내면 미리 갱신
   if (settings.googleTokenExpiry) {
-    const expiryMs = settings.googleTokenExpiry * 1000;
+    const expiryMs = settings.googleTokenExpiry.getTime();
     if (Date.now() > expiryMs - 10 * 60 * 1000) {
       try {
         const { credentials } = await oauth2Client.refreshAccessToken();
@@ -62,7 +64,7 @@ export async function getCalendarClient() {
         await db.update(calendarSettings).set({
           googleAccessToken: credentials.access_token ?? settings.googleAccessToken,
           googleTokenExpiry: credentials.expiry_date
-            ? Math.floor(credentials.expiry_date / 1000)
+            ? new Date(credentials.expiry_date)
             : settings.googleTokenExpiry,
         }).where(eq(calendarSettings.id, settings.id));
       } catch {

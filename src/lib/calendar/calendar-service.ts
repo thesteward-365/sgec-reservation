@@ -1,10 +1,20 @@
 import { getCalendarClient, getCalendarSettings } from './google-client';
 import { db } from '@/lib/db';
-import { reservations, externalEvents, syncLogs, calendarSettings, reservationHistories } from '@/lib/db';
+import {
+  reservations,
+  externalEvents,
+  syncLogs,
+  calendarSettings,
+  reservationHistories,
+  places,
+  users,
+} from '@/lib/db';
 import { eq, and, gte, sql, isNotNull } from 'drizzle-orm';
-import { places, users } from '@/lib/db';
 
-type ReservationEvent = {
+/**
+ * PostgreSQL timestamp 컬럼을 그대로 사용하는 예약 행 타입입니다.
+ */
+type ReservationRow = {
   id: number;
   startTime: Date;
   endTime: Date;
@@ -14,30 +24,41 @@ type ReservationEvent = {
   googleEventId: string | null;
 };
 
-function toRfc3339(date: Date): string {
-  return date.toISOString();
-}
-
-function buildEventBody(reservation: ReservationEvent, placeName: string, userName: string) {
+/**
+ * DB의 Date 객체를 기반으로 Google Event Body 생성
+ */
+function buildEventBody(
+  reservation: ReservationRow,
+  placeName: string,
+  userName: string
+) {
   return {
     summary: `[예약] ${placeName}`,
     description: `예약자: ${userName}\n목적: ${reservation.purpose}`,
-    start: { dateTime: toRfc3339(reservation.startTime), timeZone: 'Asia/Seoul' },
-    end: { dateTime: toRfc3339(reservation.endTime), timeZone: 'Asia/Seoul' },
+    start: {
+      dateTime: reservation.startTime.toISOString(),
+      timeZone: 'Asia/Seoul',
+    },
+    end: {
+      dateTime: reservation.endTime.toISOString(),
+      timeZone: 'Asia/Seoul',
+    },
   };
 }
 
 async function logSync(level: 'info' | 'error', message: string) {
+  // 스키마의 defaultNow()가 적용되므로 timestamp는 생략 가능합니다.
   await db.insert(syncLogs).values({ level, message });
 }
 
-// 단일 예약을 Google Calendar에 생성
-export async function createGoogleEvent(reservationId: number): Promise<string | null> {
+export async function createGoogleEvent(
+  reservationId: number
+): Promise<string | null> {
   const calendar = await getCalendarClient();
   const settings = await getCalendarSettings();
   if (!calendar || !settings?.calendarId) return null;
 
-  const row = await db
+  const [row] = await db
     .select({
       id: reservations.id,
       startTime: reservations.startTime,
@@ -51,8 +72,7 @@ export async function createGoogleEvent(reservationId: number): Promise<string |
     .innerJoin(places, eq(reservations.placeId, places.id))
     .innerJoin(users, eq(reservations.userId, users.id))
     .where(eq(reservations.id, reservationId))
-    .limit(1)
-    .then((rows) => rows[0]);
+    .limit(1);
 
   if (!row) return null;
 
@@ -68,21 +88,26 @@ export async function createGoogleEvent(reservationId: number): Promise<string |
       .set({ googleEventId: eventId })
       .where(eq(reservations.id, reservationId));
 
-    await logSync('info', `예약 #${reservationId} Google 이벤트 생성: ${eventId}`);
+    await logSync(
+      'info',
+      `예약 #${reservationId} Google 이벤트 생성: ${eventId}`
+    );
     return eventId;
   } catch (e) {
-    await logSync('error', `예약 #${reservationId} Google 이벤트 생성 실패: ${String(e)}`);
+    await logSync(
+      'error',
+      `예약 #${reservationId} Google 이벤트 생성 실패: ${String(e)}`
+    );
     return null;
   }
 }
 
-// 단일 예약을 Google Calendar에서 업데이트
 export async function updateGoogleEvent(reservationId: number): Promise<void> {
   const calendar = await getCalendarClient();
   const settings = await getCalendarSettings();
   if (!calendar || !settings?.calendarId) return;
 
-  const row = await db
+  const [row] = await db
     .select({
       id: reservations.id,
       startTime: reservations.startTime,
@@ -96,11 +121,9 @@ export async function updateGoogleEvent(reservationId: number): Promise<void> {
     .innerJoin(places, eq(reservations.placeId, places.id))
     .innerJoin(users, eq(reservations.userId, users.id))
     .where(eq(reservations.id, reservationId))
-    .limit(1)
-    .then((rows) => rows[0]);
+    .limit(1);
 
   if (!row?.googleEventId) {
-    // eventId 없으면 새로 생성
     await createGoogleEvent(reservationId);
     return;
   }
@@ -111,13 +134,18 @@ export async function updateGoogleEvent(reservationId: number): Promise<void> {
       eventId: row.googleEventId,
       requestBody: buildEventBody(row, row.placeName, row.userName),
     });
-    await logSync('info', `예약 #${reservationId} Google 이벤트 업데이트: ${row.googleEventId}`);
+    await logSync(
+      'info',
+      `예약 #${reservationId} Google 이벤트 업데이트: ${row.googleEventId}`
+    );
   } catch (e) {
-    await logSync('error', `예약 #${reservationId} Google 이벤트 업데이트 실패: ${String(e)}`);
+    await logSync(
+      'error',
+      `예약 #${reservationId} Google 이벤트 업데이트 실패: ${String(e)}`
+    );
   }
 }
 
-// 단일 예약을 Google Calendar에서 삭제
 export async function deleteGoogleEvent(googleEventId: string): Promise<void> {
   const calendar = await getCalendarClient();
   const settings = await getCalendarSettings();
@@ -130,11 +158,13 @@ export async function deleteGoogleEvent(googleEventId: string): Promise<void> {
     });
     await logSync('info', `Google 이벤트 삭제: ${googleEventId}`);
   } catch (e) {
-    await logSync('error', `Google 이벤트 삭제 실패 (${googleEventId}): ${String(e)}`);
+    await logSync(
+      'error',
+      `Google 이벤트 삭제 실패 (${googleEventId}): ${String(e)}`
+    );
   }
 }
 
-// 행사 일정 캘린더 → local DB pull (external_events upsert)
 export async function pullExternalEvents(): Promise<number> {
   const calendar = await getCalendarClient();
   const settings = await getCalendarSettings();
@@ -142,7 +172,11 @@ export async function pullExternalEvents(): Promise<number> {
 
   try {
     const now = new Date();
-    const oneYearLater = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
+    const oneYearLater = new Date(
+      now.getFullYear() + 1,
+      now.getMonth(),
+      now.getDate()
+    );
 
     const res = await calendar.events.list({
       calendarId: settings.eventCalendarId,
@@ -163,6 +197,7 @@ export async function pullExternalEvents(): Promise<number> {
       const endStr = item.end?.dateTime ?? item.end?.date;
       if (!startStr || !endStr) continue;
 
+      // 이제 DB에 직접 Date 객체를 전달할 수 있습니다.
       const startTime = new Date(startStr);
       const endTime = new Date(endStr);
 
@@ -174,6 +209,7 @@ export async function pullExternalEvents(): Promise<number> {
           startTime,
           endTime,
           description: item.description ?? null,
+          syncedAt: new Date(), // 현재 시간
         })
         .onConflictDoUpdate({
           target: externalEvents.googleEventId,
@@ -189,15 +225,11 @@ export async function pullExternalEvents(): Promise<number> {
       count++;
     }
 
-    // 더 이상 Google에 없는 이벤트는 삭제
     const googleIds = items.map((i) => i.id).filter(Boolean) as string[];
     if (googleIds.length > 0) {
-      const local = await db.select({ googleEventId: externalEvents.googleEventId }).from(externalEvents);
-      for (const { googleEventId } of local) {
-        if (!googleIds.includes(googleEventId)) {
-          await db.delete(externalEvents).where(eq(externalEvents.googleEventId, googleEventId));
-        }
-      }
+      await db
+        .delete(externalEvents)
+        .where(sql`${externalEvents.googleEventId} NOT IN ${googleIds}`);
     }
 
     await logSync('info', `행사 일정 pull 완료: ${count}건`);
@@ -208,7 +240,6 @@ export async function pullExternalEvents(): Promise<number> {
   }
 }
 
-// DB 예약 → Google push (googleEventId 없는 것 + 미래 예약 보정)
 export async function pushReservations(): Promise<number> {
   const calendar = await getCalendarClient();
   const settings = await getCalendarSettings();
@@ -227,26 +258,32 @@ export async function pushReservations(): Promise<number> {
     .from(reservations)
     .innerJoin(places, eq(reservations.placeId, places.id))
     .innerJoin(users, eq(reservations.userId, users.id))
-    .where(gte(reservations.endTime, sql`(unixepoch())`));
+    .where(
+      and(
+        eq(reservations.status, 'active'),
+        gte(reservations.endTime, sql`now()`)
+      )
+    );
 
   let count = 0;
   for (const row of pending) {
     try {
       if (row.googleEventId) {
-        // 이미 연동된 이벤트 → update
         await calendar.events.update({
           calendarId: settings.calendarId,
           eventId: row.googleEventId,
           requestBody: buildEventBody(row, row.placeName, row.userName),
         });
       } else {
-        // 미연동 이벤트 → create + googleEventId 저장
         const event = await calendar.events.insert({
           calendarId: settings.calendarId,
           requestBody: buildEventBody(row, row.placeName, row.userName),
         });
         const eventId = event.data.id!;
-        await db.update(reservations).set({ googleEventId: eventId }).where(eq(reservations.id, row.id));
+        await db
+          .update(reservations)
+          .set({ googleEventId: eventId })
+          .where(eq(reservations.id, row.id));
       }
       count++;
     } catch (e) {
@@ -258,14 +295,16 @@ export async function pushReservations(): Promise<number> {
   return count;
 }
 
-// 취소된 예약의 Google 이벤트 삭제 (이력에 googleEventId가 남아있는 것)
 export async function syncCancellations(): Promise<number> {
   const calendar = await getCalendarClient();
   const settings = await getCalendarSettings();
   if (!calendar || !settings?.calendarId) return 0;
 
   const pending = await db
-    .select({ id: reservationHistories.id, googleEventId: reservationHistories.googleEventId })
+    .select({
+      id: reservationHistories.id,
+      googleEventId: reservationHistories.googleEventId,
+    })
     .from(reservationHistories)
     .where(
       and(
@@ -281,30 +320,40 @@ export async function syncCancellations(): Promise<number> {
         calendarId: settings.calendarId,
         eventId: row.googleEventId!,
       });
-      // 삭제 완료 후 googleEventId 초기화 (재시도 방지)
+
       await db
         .update(reservationHistories)
         .set({ googleEventId: null })
         .where(eq(reservationHistories.id, row.id));
       count++;
-    } catch (e: unknown) {
-      const status = (e as { code?: number }).code;
+    } catch (e: any) {
+      const status = e.code;
       if (status === 404 || status === 410) {
-        // 이미 Google에 없는 이벤트 → 그냥 초기화
-        await db.update(reservationHistories).set({ googleEventId: null }).where(eq(reservationHistories.id, row.id));
+        await db
+          .update(reservationHistories)
+          .set({ googleEventId: null })
+          .where(eq(reservationHistories.id, row.id));
         count++;
       } else {
-        await logSync('error', `취소 이벤트 삭제 실패 (${row.googleEventId}): ${String(e)}`);
+        await logSync(
+          'error',
+          `취소 이벤트 삭제 실패 (${row.googleEventId}): ${String(e)}`
+        );
       }
     }
   }
 
-  if (count > 0) await logSync('info', `취소 이벤트 Google 삭제 완료: ${count}건`);
+  if (count > 0)
+    await logSync('info', `취소 이벤트 Google 삭제 완료: ${count}건`);
   return count;
 }
+// syncAll, listCalendars, saveCalendarIds 함수 등은 이전과 동일하게 유지...
 
-// 양방향 보정 동기화
-export async function syncAll(): Promise<{ pushed: number; pulled: number; deleted: number }> {
+export async function syncAll(): Promise<{
+  pushed: number;
+  pulled: number;
+  deleted: number;
+}> {
   const [pushed, pulled, deleted] = await Promise.all([
     pushReservations(),
     pullExternalEvents(),
@@ -313,8 +362,9 @@ export async function syncAll(): Promise<{ pushed: number; pulled: number; delet
   return { pushed, pulled, deleted };
 }
 
-// 연결된 계정의 캘린더 목록 조회
-export async function listCalendars(): Promise<{ id: string; summary: string }[]> {
+export async function listCalendars(): Promise<
+  { id: string; summary: string }[]
+> {
   const calendar = await getCalendarClient();
   if (!calendar) return [];
 
@@ -328,9 +378,14 @@ export async function listCalendars(): Promise<{ id: string; summary: string }[]
   }
 }
 
-// 캘린더 ID 저장
-export async function saveCalendarIds(calendarId: string, eventCalendarId: string): Promise<void> {
+export async function saveCalendarIds(
+  calendarId: string,
+  eventCalendarId: string
+): Promise<void> {
   const settings = await getCalendarSettings();
   if (!settings) return;
-  await db.update(calendarSettings).set({ calendarId, eventCalendarId }).where(eq(calendarSettings.id, settings.id));
+  await db
+    .update(calendarSettings)
+    .set({ calendarId, eventCalendarId })
+    .where(eq(calendarSettings.id, settings.id));
 }

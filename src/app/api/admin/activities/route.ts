@@ -24,12 +24,16 @@ export async function GET(request: NextRequest) {
 
     const conditions = [];
     if (startDateStr) {
-      conditions.push(gte(reservationHistories.createdAt, toDbDate(new Date(startDateStr)) as any));
+      conditions.push(
+        gte(reservationHistories.createdAt, toDbDate(new Date(startDateStr)) as any)
+      );
     }
     if (endDateStr) {
       const endDate = new Date(endDateStr);
       endDate.setHours(23, 59, 59, 999);
-      conditions.push(lte(reservationHistories.createdAt, toDbDate(endDate) as any));
+      conditions.push(
+        lte(reservationHistories.createdAt, toDbDate(endDate) as any)
+      );
     }
 
     let query: any = db

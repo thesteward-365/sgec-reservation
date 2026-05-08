@@ -1,3 +1,6 @@
+CREATE TYPE "public"."reservation_status" AS ENUM('active', 'cancelled');--> statement-breakpoint
+CREATE TYPE "public"."user_role" AS ENUM('user', 'admin');--> statement-breakpoint
+CREATE TYPE "public"."user_status" AS ENUM('pending', 'approved', 'rejected');--> statement-breakpoint
 CREATE TABLE "calendar_settings" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"google_access_token" text,
@@ -58,6 +61,7 @@ CREATE TABLE "reservations" (
 	"start_time" integer NOT NULL,
 	"end_time" integer NOT NULL,
 	"purpose" text NOT NULL,
+	"status" "reservation_status" DEFAULT 'active' NOT NULL,
 	"google_event_id" text,
 	"created_at" integer DEFAULT extract(epoch from now())::integer NOT NULL
 );
@@ -79,8 +83,8 @@ CREATE TABLE "users" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"phone_number" text NOT NULL,
-	"role" text DEFAULT 'user' NOT NULL,
-	"status" text DEFAULT 'pending' NOT NULL,
+	"role" "user_role" DEFAULT 'user' NOT NULL,
+	"status" "user_status" DEFAULT 'pending' NOT NULL,
 	"created_at" integer DEFAULT extract(epoch from now())::integer NOT NULL,
 	CONSTRAINT "users_phone_number_unique" UNIQUE("phone_number")
 );

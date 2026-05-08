@@ -6,9 +6,7 @@
       "Bash(unzip -o \"Wanted Design System-handoff.zip\" -d wanted-styles-extracted/)",
       "Bash(npm install *)",
       "Bash(npx tsc *)",
-      "Bash(xargs sed *)",
-      "Bash(sqlite3 sqlite.db \"SELECT id, name, floor_id, description FROM places ORDER BY id;\")",
-      "Bash(sqlite3 sqlite.db \".tables\")"
+      "Bash(xargs sed *)"
     ]
   },
   "hooks": {

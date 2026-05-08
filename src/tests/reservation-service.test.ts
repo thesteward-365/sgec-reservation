@@ -22,7 +22,6 @@ vi.mock('../lib/db', () => ({
     ),
   },
   fromDbDate: vi.fn((d) => new Date(d)),
-  isPostgres: false,
 }));
 
 vi.mock('../lib/repositories/reservation-repository');
@@ -232,7 +231,12 @@ describe('ReservationService', () => {
     });
 
     it('should throw error if reservation is already cancelled', async () => {
-      const mockCurrent = { id: 1, ...mockData, userId: 1, status: 'cancelled' };
+      const mockCurrent = {
+        id: 1,
+        ...mockData,
+        userId: 1,
+        status: 'cancelled',
+      };
       vi.mocked(ReservationRepository.findByIdAndUser).mockResolvedValue(
         mockCurrent
       );

@@ -4,7 +4,6 @@ import {
   reservationHistories,
   places,
   toDbDate,
-  isPostgres,
 } from '@/lib/db';
 import { eq, and, ne, lt, gt } from 'drizzle-orm';
 
@@ -19,7 +18,7 @@ export class ReservationRepository {
       .where(eq(reservations.id, id))
       .limit(1);
 
-    const rows = isPostgres ? await query : query.all();
+    const rows = await query;
     return rows[0] || null;
   }
 
@@ -33,7 +32,7 @@ export class ReservationRepository {
       .where(and(eq(reservations.id, id), eq(reservations.userId, userId)))
       .limit(1);
 
-    const rows = isPostgres ? await query : query.all();
+    const rows = await query;
     return rows[0] || null;
   }
 
@@ -66,7 +65,7 @@ export class ReservationRepository {
       .from(reservations)
       .where(and(...conditions));
 
-    return isPostgres ? await query : query.all();
+    return await query;
   }
 
   /**
@@ -90,11 +89,7 @@ export class ReservationRepository {
     };
 
     const query = tx.insert(reservations).values(dbData).returning();
-    if (isPostgres) {
-      return query.then((rows: any[]) => rows[0]);
-    } else {
-      return query.all()[0];
-    }
+    return query.then((rows: any[]) => rows[0]);
   }
 
   /**
@@ -122,11 +117,7 @@ export class ReservationRepository {
       .where(eq(reservations.id, id))
       .returning();
 
-    if (isPostgres) {
-      return query.then((rows: any[]) => rows[0]);
-    } else {
-      return query.all()[0];
-    }
+    return query.then((rows: any[]) => rows[0]);
   }
 
   /**
@@ -138,11 +129,7 @@ export class ReservationRepository {
       .where(eq(reservations.id, id))
       .returning();
 
-    if (isPostgres) {
-      return query.then((rows: any[]) => rows[0]);
-    } else {
-      return query.all()[0];
-    }
+    return query.then((rows: any[]) => rows[0]);
   }
 
   /**
@@ -161,11 +148,7 @@ export class ReservationRepository {
   ) {
     const query = tx.insert(reservationHistories).values(data).returning();
 
-    if (isPostgres) {
-      return query.then((rows: any[]) => rows[0]);
-    } else {
-      return query.all()[0];
-    }
+    return query.then((rows: any[]) => rows[0]);
   }
 
   /**
@@ -177,7 +160,7 @@ export class ReservationRepository {
       .from(places)
       .where(eq(places.id, id))
       .limit(1);
-    const rows = isPostgres ? await query : query.all();
+    const rows = await query;
     return rows[0] || null;
   }
 }

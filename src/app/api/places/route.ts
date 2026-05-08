@@ -43,7 +43,7 @@ export async function GET() {
     floorId: place.floorId,
     floorName: place.floorName,
     sortOrder: place.sortOrder,
-    isPinned: place.isPinned === 1,
+    isPinned: place.isPinned,
     tags: tagRows
       .filter((t) => t.placeId === place.id)
       .map((t) => ({ id: t.tagId, name: t.tagName })),

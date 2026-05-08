@@ -29,7 +29,7 @@ export async function PATCH(req: Request) {
     for (let i = 0; i < orderedIds.length; i++) {
       await db
         .update(places)
-        .set({ sortOrder: i, isPinned: pinnedSet.has(orderedIds[i]) ? 1 : 0 })
+        .set({ sortOrder: i, isPinned: pinnedSet.has(orderedIds[i]) })
         .where(eq(places.id, orderedIds[i]));
     }
 

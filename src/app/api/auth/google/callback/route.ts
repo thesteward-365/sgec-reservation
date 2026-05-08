@@ -45,7 +45,9 @@ export async function GET(request: NextRequest) {
     const values = {
       googleAccessToken: tokens.access_token,
       googleRefreshToken: tokens.refresh_token,
-      googleTokenExpiry: tokens.expiry_date ? Math.floor(tokens.expiry_date / 1000) : null,
+      googleTokenExpiry: tokens.expiry_date
+        ? new Date(tokens.expiry_date)
+        : null,
       connectedEmail: email,
     };
 

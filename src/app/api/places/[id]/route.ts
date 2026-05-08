@@ -59,7 +59,7 @@ export async function PATCH(
       description,
       floorId,
       tagIds,
-      isPinned: isPinned ? 1 : 0,
+      isPinned: typeof isPinned === 'boolean' ? isPinned : undefined,
     });
 
     return NextResponse.json(updated);
