@@ -18,7 +18,7 @@ type Props = {
   onFloorDeleteRequest?: (floorId: number) => void;
 };
 
-export function PlaceSheet({ open, onOpenChange, config, data, onSuccess }: Props) {
+export function PlaceSheet({ open, onOpenChange, config, data, onSuccess, onFloorDeleteRequest }: Props) {
   const [name, setName] = useState('');
   const [desc, setDesc] = useState('');
   const [floorId, setFloorId] = useState<number | null>(null);
@@ -66,6 +66,13 @@ export function PlaceSheet({ open, onOpenChange, config, data, onSuccess }: Prop
 
   const handleDelete = async () => {
     if (!config.editingId) return;
+
+    if (config.mode === '층' && onFloorDeleteRequest) {
+      onOpenChange(false);
+      onFloorDeleteRequest(config.editingId);
+      return;
+    }
+
     setSaving(true);
     try {
       const endpoint = config.mode === '장소' ? `/api/places/${config.editingId}` : `/api/floors/${config.editingId}`;

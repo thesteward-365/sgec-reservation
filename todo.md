@@ -350,17 +350,16 @@
 
 ## 버그 수정
 
-- [ ] 층, 장소 관리 시트 열었다가 닫았을 때 페이지가 약간 확대된건지 가로 스크롤이 생겨버려
-- [ ] 아직 태그가 등록되지 않은 경우 아무런 입력창도 뜨지 않음
+- [x] 층, 장소 관리 시트 열었다가 닫았을 때 페이지가 약간 확대된건지 가로 스크롤이 생겨버려
+- [x] 아직 태그가 등록되지 않은 경우 아무런 입력창도 뜨지 않음
       태그도 층처럼 인라인이 아닌 시트로 관리하도록 수정
-- [ ] postgresql은 예약 수정 시 아래 이슈 발생.
-- [ ] 장소 삭제 시 500 에러 발생
-- [ ] 장소 삭제 시 관련된 예약은 삭제되지 않도록.
+- [x] postgresql은 예약 수정 시 아래 이슈 발생.
+- [x] 장소 삭제 시 500 에러 발생
+- [x] 장소 삭제 시 관련된 예약은 삭제되지 않도록.
 
 ## PWA 환경 이슈
 
-- [ ] PWA를 고려해 safe-area 설정
-- [ ] keyboard avoid 유의
+- [x] keyboard avoid 유의
 - [x] PWA에서 로그아웃 시 API 호출 오류
       POST /api/auth/logout 307 in 9ms (next.js: 3ms, application-code: 6ms) [browser] ⨯ unhandledRejection: TypeError: Load failed
 - [x] 공유하기 시 에러 발생 -> http 환경에서 발생하는 문제

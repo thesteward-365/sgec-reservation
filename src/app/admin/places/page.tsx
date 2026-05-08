@@ -262,12 +262,10 @@ export default function PlacesPage() {
         onOpenChange={setSheetOpen}
         config={sheetConfig}
         data={{ floors, tags }}
-        onSuccess={async () => {
-          await loadAll();
-          if (sheetConfig.mode === '층' && sheetConfig.editingId) {
-            const floor = floors.find((f) => f.id === sheetConfig.editingId);
-            if (floor && (placesByFloor.get(floor.id)?.length ?? 0) > 0) setDeletingFloor(floor);
-          }
+        onSuccess={loadAll}
+        onFloorDeleteRequest={(floorId) => {
+          const floor = floors.find((f) => f.id === floorId) ?? null;
+          setDeletingFloor(floor);
         }}
       />
 
@@ -280,6 +278,9 @@ export default function PlacesPage() {
       <FloorDeleteDialog
         floor={deletingFloor}
         otherFloors={floors.filter((f) => f.id !== deletingFloor?.id)}
+        linkedPlaceCount={
+          deletingFloor ? (placesByFloor.get(deletingFloor.id)?.length ?? 0) : 0
+        }
         onClose={() => setDeletingFloor(null)}
         onSuccess={loadAll}
       />
