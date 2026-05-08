@@ -19,6 +19,7 @@ import {
 } from '@/components/reservations/filter-sheet';
 import { Chip } from '@/components/ui/chip';
 
+type ReservationStatus = 'active' | 'cancelled';
 type AdminReservation = {
   id: number;
   placeId: number;
@@ -29,6 +30,7 @@ type AdminReservation = {
   purpose: string;
   startTime: string | null;
   endTime: string | null;
+  status: ReservationStatus;
 };
 
 type PlaceTagMap = Record<number, number[]>;
@@ -100,11 +102,11 @@ export default function ReservationsPage() {
     floorId: null,
     tagId: null,
     sortOrder: 'asc',
+    includeCancelled: false,
   });
   const [showFilter, setShowFilter] = useState(false);
   const [loading, setLoading] = useState(true);
   const [now] = useState(() => new Date());
-
   useEffect(() => {
     Promise.all([
       fetch('/api/admin/reservations').then((r) => r.json()),
@@ -137,6 +139,10 @@ export default function ReservationsPage() {
       list = list.filter((reservation) =>
         (placeTagMap[reservation.placeId] ?? []).includes(filter.tagId!)
       );
+    }
+
+    if (!filter.includeCancelled) {
+      list = list.filter((reservation) => reservation.status !== 'cancelled');
     }
 
     return [...list].sort((a, b) => {
@@ -193,7 +199,6 @@ export default function ReservationsPage() {
       filter.sortOrder === 'asc' ? a.localeCompare(b) : b.localeCompare(a)
     );
   }, [filter.sortOrder, listViewReservations]);
-
   return (
     <>
       <BrandHeader />
@@ -272,7 +277,9 @@ export default function ReservationsPage() {
                         <button
                           key={reservation.id}
                           type="button"
-                          onClick={() => router.push(`/admin/reservations/${reservation.id}`)}
+                          onClick={() =>
+                            router.push(`/admin/reservations/${reservation.id}`)
+                          }
                           className="w-full rounded-none px-4 py-4 text-left transition hover:bg-neutral-50 active:bg-neutral-100"
                         >
                           <div className="flex items-center gap-3">
@@ -291,8 +298,14 @@ export default function ReservationsPage() {
                                     ? `${reservation.floorName} ${reservation.placeName}`
                                     : '장소 없음'}
                                 </p>
+
+                                {reservation.status === 'cancelled' && (
+                                  <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-medium text-red-600">
+                                    취소됨
+                                  </span>
+                                )}
                               </div>
-                              <p className="text-muted-foreground text-[14px]! mt-2 leading-snug">
+                              <p className="text-muted-foreground mt-2 text-[14px]! leading-snug">
                                 {reservation.userName
                                   ? `${reservation.userName} · `
                                   : ''}
@@ -365,7 +378,11 @@ export default function ReservationsPage() {
                           <ListItem key={reservation.id} className="px-0 py-0">
                             <button
                               type="button"
-                              onClick={() => router.push(`/admin/reservations/${reservation.id}`)}
+                              onClick={() =>
+                                router.push(
+                                  `/admin/reservations/${reservation.id}`
+                                )
+                              }
                               className="w-full rounded-none px-4 py-4 text-left transition hover:bg-neutral-50 active:bg-neutral-100"
                             >
                               <div className="flex items-center gap-3">
@@ -384,8 +401,13 @@ export default function ReservationsPage() {
                                         ? `${reservation.floorName} ${reservation.placeName}`
                                         : '장소 없음'}
                                     </p>
+                                    {reservation.status === 'cancelled' && (
+                                      <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-medium text-red-600">
+                                        취소됨
+                                      </span>
+                                    )}
                                   </div>
-                                  <p className="text-muted-foreground text-[14px]! mt-2 leading-snug">
+                                  <p className="text-muted-foreground mt-2 text-[14px]! leading-snug">
                                     {reservation.userName
                                       ? `${reservation.userName} · `
                                       : ''}
@@ -408,7 +430,7 @@ export default function ReservationsPage() {
 
       <Link
         href="/reserve"
-        className="fixed right-5 bottom-24 z-50 inline-flex h-14 w-14 items-center justify-center rounded-full bg-(--color-fg-strong) text-white shadow-[0_10px_20px_rgba(0,0,0,0.16)] transition hover:bg-(--color-fg-strong)/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        className="fixed right-5 bottom-24 z-50 inline-flex h-14 w-14 items-center justify-center rounded-full bg-(--color-fg-strong) text-white shadow-[0_10px_20px_rgba(0,0,0,0.16)] transition hover:bg-(--color-fg-strong)/90 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
         aria-label="예약하기"
       >
         <PlusIcon className="h-6 w-6" aria-hidden="true" />

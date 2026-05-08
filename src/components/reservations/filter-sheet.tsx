@@ -18,6 +18,7 @@ export type FilterState = {
   floorId: number | null;
   tagId: number | null;
   sortOrder: 'asc' | 'desc';
+  includeCancelled: boolean;
 };
 
 type Props = {
@@ -55,7 +56,12 @@ export function FilterSheet({ open, onClose, current, onApply }: Props) {
   }, [open, current]);
 
   function reset() {
-    setDraft({ floorId: null, tagId: null, sortOrder: 'asc' });
+    setDraft({
+      floorId: null,
+      tagId: null,
+      sortOrder: 'asc',
+      includeCancelled: true,
+    });
   }
 
   function apply() {
@@ -126,7 +132,7 @@ export function FilterSheet({ open, onClose, current, onApply }: Props) {
               </div>
             </div>
           )}
-
+          {/* 정렬 순서 */}
           <div className="flex flex-col gap-2.5">
             <SectionLabel>정렬</SectionLabel>
             <div className="flex gap-2">
@@ -141,6 +147,26 @@ export function FilterSheet({ open, onClose, current, onApply }: Props) {
                 onClick={() => setDraft((d) => ({ ...d, sortOrder: 'desc' }))}
               >
                 최신순
+              </Chip>
+            </div>
+          </div>
+          {/* 기타 */}
+          <div className="flex flex-col gap-2.5">
+            <SectionLabel>기타</SectionLabel>
+            <div className="flex gap-2">
+              <Chip
+                variant={
+                  draft.includeCancelled === false ? 'active' : 'inactive'
+                }
+                onClick={() =>
+                  setDraft((d) => ({
+                    ...d,
+                    includeCancelled:
+                      d.includeCancelled === false ? true : false,
+                  }))
+                }
+              >
+                취소된 예약 제외
               </Chip>
             </div>
           </div>

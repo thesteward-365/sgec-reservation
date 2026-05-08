@@ -16,15 +16,20 @@ describe('PlaceService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(db.transaction).mockImplementation((cb) => {
-      return cb({});
+      return cb({} as any);
     });
-    vi.mocked(PlaceRepository.getMaxSortOrder).mockReturnValue(0);
+    vi.mocked(PlaceRepository.getMaxSortOrder).mockResolvedValue(0);
   });
 
   describe('createPlace', () => {
     it('should create a place and sync tags', async () => {
-      vi.mocked(PlaceRepository.findFloorById).mockResolvedValue({ id: 1 } as any);
-      vi.mocked(PlaceRepository.create).mockReturnValue({ id: 100, name: 'New Place' } as any);
+      vi.mocked(PlaceRepository.findFloorById).mockResolvedValue({
+        id: 1,
+      } as any);
+      vi.mocked(PlaceRepository.create).mockReturnValue({
+        id: 100,
+        name: 'New Place',
+      } as any);
 
       const result = await PlaceService.createPlace({
         name: 'New Place',
@@ -34,14 +39,19 @@ describe('PlaceService', () => {
 
       expect(result.id).toBe(100);
       expect(PlaceRepository.create).toHaveBeenCalled();
-      expect(PlaceRepository.syncTags).toHaveBeenCalledWith(100, [1, 2], expect.anything());
+      expect(PlaceRepository.syncTags).toHaveBeenCalledWith(
+        100,
+        [1, 2],
+        expect.anything()
+      );
     });
 
     it('should throw error if floor not found', async () => {
       vi.mocked(PlaceRepository.findFloorById).mockResolvedValue(null);
 
-      await expect(PlaceService.createPlace({ name: 'Fail', floorId: 99 }))
-        .rejects.toThrow('Floor not found');
+      await expect(
+        PlaceService.createPlace({ name: 'Fail', floorId: 99 })
+      ).rejects.toThrow('Floor not found');
     });
   });
 

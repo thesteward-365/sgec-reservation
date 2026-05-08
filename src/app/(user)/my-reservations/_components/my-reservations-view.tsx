@@ -60,6 +60,7 @@ export function MyReservationsView() {
     floorId: null,
     tagId: null,
     sortOrder: 'asc',
+    includeCancelled: false,
   });
   const [showFilter, setShowFilter] = useState(false);
   const [activeRes, setActiveRes] = useState<MyReservation | null>(null);
@@ -113,6 +114,11 @@ export function MyReservationsView() {
         (placeTagMap[r.placeId] ?? []).includes(filter.tagId!)
       );
     }
+
+    if (!filter.includeCancelled) {
+      list = list.filter((reservation) => reservation.status !== 'cancelled');
+    }
+
     return [...list].sort((a, b) => {
       const ta = new Date(a.startTime).getTime();
       const tb = new Date(b.startTime).getTime();
