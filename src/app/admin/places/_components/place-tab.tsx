@@ -3,8 +3,20 @@
 import { List } from '@/components/ui/list';
 import { BookmarkIcon as BookmarkSolidIcon } from '@heroicons/react/24/solid';
 import { ChevronRightIcon } from '@heroicons/react/24/outline';
-import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
-import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import { SortablePlaceItem } from './sortable-place-item';
 import type { PlaceRow } from '../types';
 
@@ -31,8 +43,15 @@ export function PlaceTab({ places, sortMode, sort, onOpenSheet }: Props) {
   if (sortMode) {
     return (
       <List>
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={sort.onDragEnd}>
-          <SortableContext items={sort.items.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={sort.onDragEnd}
+        >
+          <SortableContext
+            items={sort.items.map((p) => p.id)}
+            strategy={verticalListSortingStrategy}
+          >
             {sort.items.map((place) => (
               <SortablePlaceItem
                 key={place.id}
@@ -59,18 +78,20 @@ export function PlaceTab({ places, sortMode, sort, onOpenSheet }: Props) {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
                 {place.isPinned && (
-                  <BookmarkSolidIcon className="size-3.5 shrink-0 text-neutral-500" />
+                  <BookmarkSolidIcon className="size-3.5 shrink-0 text-neutral-950" />
                 )}
-                <p className="text-[15px] font-bold text-foreground">{place.name}</p>
+                <p className="text-foreground text-[15px] font-bold">
+                  {place.name}
+                </p>
               </div>
-              <p className="mt-0.5 text-[13px] text-muted-foreground">
+              <p className="text-muted-foreground mt-0.5 text-[13px]">
                 {place.floorName}
                 {place.tags.length > 0 && (
                   <> · {place.tags.map((t) => `#${t.name}`).join(' ')}</>
                 )}
               </p>
             </div>
-            <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" />
+            <ChevronRightIcon className="text-muted-foreground size-4 shrink-0" />
           </div>
         </button>
       ))}

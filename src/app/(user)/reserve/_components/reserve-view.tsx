@@ -8,6 +8,7 @@ import {
   ChevronRightIcon,
   AdjustmentsHorizontalIcon,
 } from '@heroicons/react/24/outline';
+import { BookmarkIcon as BookmarkSolidIcon } from '@heroicons/react/24/solid';
 import { WeeklyCalendar } from '@/components/ui/weekly-calendar';
 import { Button } from '@/components/ui/button';
 import {
@@ -31,6 +32,7 @@ type Place = {
   description: string | null;
   floorId: number;
   floorName: string | null;
+  isPinned: boolean;
   tags: { id: number | null; name: string | null }[];
 };
 
@@ -273,9 +275,14 @@ export function ReserveView({ userName }: ReserveViewProps) {
                   >
                     <div className="bg-card flex items-center gap-3 px-4.5 py-4">
                       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                        <span className="text-body-lg text-foreground font-bold">
-                          {place.name}
-                        </span>
+                        <div className="flex items-center gap-1">
+                          {place.isPinned && (
+                            <BookmarkSolidIcon className="size-4 shrink-0 text-neutral-950" />
+                          )}
+                          <span className="text-body-lg text-foreground font-bold">
+                            {place.name}
+                          </span>
+                        </div>
                         <div className="flex flex-wrap items-center gap-1.5">
                           {place.floorName && (
                             <span className="text-caption text-muted-foreground">
