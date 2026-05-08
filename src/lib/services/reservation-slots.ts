@@ -5,8 +5,8 @@ export type ReservationSchedule = {
   id: number;
   userId: number;
   userName: string | null;
-  startTime: string | Date;
-  endTime: string | Date;
+  startTime: string | Date | number;
+  endTime: string | Date | number;
   purpose: string;
 };
 
@@ -24,10 +24,26 @@ export type MinuteRange = {
   endMinute: number;
 };
 
-export function formatLocalDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
+export function toDate(value: Date | string | number): Date {
+  if (value instanceof Date) return value;
+  if (typeof value === 'number') {
+    // Unix epoch in seconds (Postgres) vs milliseconds
+    if (value < 10000000000) return new Date(value * 1000);
+    return new Date(value);
+  }
+  if (typeof value === 'string' && !isNaN(Number(value)) && value.trim() !== '') {
+    const num = Number(value);
+    if (num < 10000000000) return new Date(num * 1000);
+    return new Date(num);
+  }
+  return new Date(value);
+}
+
+export function formatLocalDate(date: Date | string | number): string {
+  const d = toDate(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
 
@@ -75,8 +91,8 @@ export function normalizeReservations(
 ): ReservationRange[] {
   return reservations
     .map((reservation) => {
-      const startTime = new Date(reservation.startTime);
-      const endTime = new Date(reservation.endTime);
+      const startTime = toDate(reservation.startTime);
+      const endTime = toDate(reservation.endTime);
 
       return {
         id: reservation.id,

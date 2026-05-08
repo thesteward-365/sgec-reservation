@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import { sessionOptions, SessionData } from '@/lib/session';
 import { createOAuthClient } from '@/lib/calendar/google-client';
 import { db } from '@/lib/db';
-import { calendarSettings } from '@/lib/db/schema';
+import { calendarSettings } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);

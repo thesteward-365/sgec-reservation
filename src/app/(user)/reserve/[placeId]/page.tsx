@@ -1,9 +1,8 @@
 import { cookies } from 'next/headers';
 import { getIronSession } from 'iron-session';
 import { sessionOptions, SessionData } from '@/lib/session';
-import { db } from '@/lib/db';
-import { places, floors, placeTags, tags, reservations } from '@/lib/db/schema';
-import { and, eq, or } from 'drizzle-orm';
+import { db, places, floors, placeTags, tags, reservations, fromDbDate } from '@/lib/db';
+import { and, eq } from 'drizzle-orm';
 import { notFound, redirect } from 'next/navigation';
 import { PlaceDetailView } from './_components/place-detail-view';
 
@@ -55,15 +54,7 @@ export default async function PlaceDetailPage({
     .map((t) => t.name)
     .filter((n): n is string => n !== null);
 
-  let initialReservation:
-    | {
-        id: number;
-        placeId: number;
-        startTime: Date;
-        endTime: Date;
-        purpose: string;
-      }
-    | undefined;
+  let initialReservation: any | undefined;
 
   if (reservationId) {
     const parsedReservationId = parseInt(reservationId);
@@ -90,12 +81,19 @@ export default async function PlaceDetailPage({
 
     if (!reservation) notFound();
     
+    const start = fromDbDate(reservation.startTime);
+    const end = fromDbDate(reservation.endTime);
+
     // 관리자가 아니면서 종료 시간이 지난 예약은 수정할 수 없음
-    if (session.user.role !== 'admin' && reservation.endTime < new Date()) {
+    if (session.user.role !== 'admin' && end < new Date()) {
       redirect(backUrl ?? '/my-reservations');
     }
 
-    initialReservation = reservation;
+    initialReservation = {
+      ...reservation,
+      startTime: start.toISOString(),
+      endTime: end.toISOString(),
+    };
   }
 
   return (

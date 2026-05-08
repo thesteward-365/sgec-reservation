@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { reservations, places, floors, users } from '@/lib/db/schema';
+import { db, reservations, places, floors, users, fromDbDate } from '@/lib/db';
 import { eq, asc } from 'drizzle-orm';
 import { getIronSession } from 'iron-session';
 import { sessionOptions, SessionData } from '@/lib/session';
@@ -31,5 +30,11 @@ export async function GET() {
     .where(eq(reservations.userId, session.user.id))
     .orderBy(asc(reservations.startTime));
 
-  return NextResponse.json(rows);
+  return NextResponse.json(
+    rows.map((r) => ({
+      ...r,
+      startTime: fromDbDate(r.startTime).toISOString(),
+      endTime: fromDbDate(r.endTime).toISOString(),
+    }))
+  );
 }

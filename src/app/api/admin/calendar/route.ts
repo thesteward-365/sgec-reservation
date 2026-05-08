@@ -5,9 +5,9 @@ import { cookies } from 'next/headers';
 import { getCalendarSettings, createOAuthClient } from '@/lib/calendar/google-client';
 import { syncAll, saveCalendarIds } from '@/lib/calendar/calendar-service';
 import { db } from '@/lib/db';
-import { calendarSettings } from '@/lib/db/schema';
+import { calendarSettings } from '@/lib/db';
 import { eq } from 'drizzle-orm';
-import { syncLogs } from '@/lib/db/schema';
+import { syncLogs } from '@/lib/db';
 import { desc } from 'drizzle-orm';
 
 async function requireAdmin() {

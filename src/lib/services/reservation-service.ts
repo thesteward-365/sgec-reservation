@@ -1,4 +1,4 @@
-import { db } from '@/lib/db';
+import { db, fromDbDate } from '@/lib/db';
 import { ReservationRepository } from '../repositories/reservation-repository';
 import {
   buildReservationHistoryChanges,
@@ -68,7 +68,7 @@ export class ReservationService {
       throw new Error('예약을 찾을 수 없거나 권한이 없습니다.');
     }
 
-    if (new Date(current.endTime) < new Date()) {
+    if (fromDbDate(current.endTime) < new Date()) {
       throw new Error('지난 예약은 수정할 수 없습니다.');
     }
 
@@ -82,8 +82,8 @@ export class ReservationService {
     const changes = buildReservationHistoryChanges(
       {
         placeId: current.placeId,
-        startTime: new Date(current.startTime),
-        endTime: new Date(current.endTime),
+        startTime: fromDbDate(current.startTime),
+        endTime: fromDbDate(current.endTime),
         purpose: current.purpose,
       },
       {

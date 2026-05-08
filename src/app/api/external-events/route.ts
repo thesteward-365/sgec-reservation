@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { externalEvents } from '@/lib/db/schema';
+import { db, externalEvents, toDbDate, fromDbDate } from '@/lib/db';
 import { and, lt, gt } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
@@ -25,10 +24,16 @@ export async function GET(request: NextRequest) {
     .from(externalEvents)
     .where(
       and(
-        lt(externalEvents.startTime, dayEnd),
-        gt(externalEvents.endTime, dayStart)
+        lt(externalEvents.startTime, toDbDate(dayEnd) as any),
+        gt(externalEvents.endTime, toDbDate(dayStart) as any)
       )
     );
 
-  return NextResponse.json(rows);
+  return NextResponse.json(
+    rows.map((r) => ({
+      ...r,
+      startTime: fromDbDate(r.startTime).toISOString(),
+      endTime: fromDbDate(r.endTime).toISOString(),
+    }))
+  );
 }

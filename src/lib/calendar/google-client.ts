@@ -1,6 +1,6 @@
 import { google } from 'googleapis';
 import { db } from '@/lib/db';
-import { calendarSettings } from '@/lib/db/schema';
+import { calendarSettings } from '@/lib/db';
 import { eq } from 'drizzle-orm';
 
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;

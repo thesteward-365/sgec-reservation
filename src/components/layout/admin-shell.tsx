@@ -14,6 +14,7 @@ function AdminShell({ children, className, hideNav = false }: AdminShellProps) {
       <div
         className={cn(
           'relative flex min-h-dvh w-full max-w-107.5 flex-col bg-(--color-neutral-150)',
+          !hideNav && 'pb-20',
           className
         )}
       >

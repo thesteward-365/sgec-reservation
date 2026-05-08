@@ -1,5 +1,4 @@
-import { db } from '@/lib/db';
-import { users } from '@/lib/db/schema';
+import { db, users } from '@/lib/db';
 import { eq } from 'drizzle-orm';
 
 export class UserRepository {

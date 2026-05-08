@@ -462,9 +462,9 @@ export function PlaceDetailView({
         </div>
       </div>
 
-      <div className="bg-background sticky bottom-0 z-50 border-t border-(--color-border-subtle) w-full mt-auto">
+      <div className="bg-background fixed bottom-0 inset-x-0 z-50 mx-auto w-full max-w-107.5 border-t border-(--color-border-subtle)">
         <div
-          className="mx-auto max-w-107.5 px-5 pt-3"
+          className="px-5 pt-3"
           style={{
             paddingBottom:
               'calc(1.5rem + max(env(safe-area-inset-bottom), 8px))',
@@ -543,8 +543,9 @@ export function PlaceDetailView({
                   전체
                 </Chip>
 
-                {pickerFloors.map((f) => (
+                {pickerFloors.map((f, index) => (
                   <Chip
+                    key={index}
                     onClick={() =>
                       setPickerFloorId(pickerFloorId === f.id ? null : f.id)
                     }

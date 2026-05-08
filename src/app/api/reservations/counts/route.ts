@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { reservations } from '@/lib/db/schema';
+import { db, reservations, toDbDate, fromDbDate } from '@/lib/db';
 import { and, lt, gt } from 'drizzle-orm';
 
 function formatLocalDate(date: Date): string {
@@ -34,16 +33,16 @@ export async function GET(request: NextRequest) {
     .from(reservations)
     .where(
       and(
-        lt(reservations.startTime, rangeEnd),
-        gt(reservations.endTime, rangeStart),
+        lt(reservations.startTime, toDbDate(rangeEnd) as any),
+        gt(reservations.endTime, toDbDate(rangeStart) as any),
       )
     );
 
   const countsMap: Record<number, Record<string, number>> = {};
   for (const r of reservationRows) {
-    let cur = new Date(r.startTime);
+    let cur = fromDbDate(r.startTime);
     cur.setHours(0, 0, 0, 0);
-    const resEnd = new Date(r.endTime);
+    const resEnd = fromDbDate(r.endTime);
     while (cur < resEnd && cur < rangeEnd) {
       if (cur >= rangeStart) {
         const key = formatLocalDate(cur);

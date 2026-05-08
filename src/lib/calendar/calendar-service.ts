@@ -1,8 +1,8 @@
 import { getCalendarClient, getCalendarSettings } from './google-client';
 import { db } from '@/lib/db';
-import { reservations, externalEvents, syncLogs, calendarSettings, reservationHistories } from '@/lib/db/schema';
+import { reservations, externalEvents, syncLogs, calendarSettings, reservationHistories } from '@/lib/db';
 import { eq, and, gte, sql, isNotNull } from 'drizzle-orm';
-import { places, users } from '@/lib/db/schema';
+import { places, users } from '@/lib/db';
 
 type ReservationEvent = {
   id: number;

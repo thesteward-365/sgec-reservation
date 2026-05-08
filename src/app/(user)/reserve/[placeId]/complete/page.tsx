@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import { getIronSession } from 'iron-session';
 import { sessionOptions, SessionData } from '@/lib/session';
 import { db } from '@/lib/db';
-import { places, floors } from '@/lib/db/schema';
+import { places, floors } from '@/lib/db';
 import { eq } from 'drizzle-orm';
 import { notFound, redirect } from 'next/navigation';
 import { CheckIcon } from '@heroicons/react/24/outline';

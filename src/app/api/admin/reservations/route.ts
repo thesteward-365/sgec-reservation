@@ -2,10 +2,8 @@ import { NextResponse } from 'next/server';
 import { getIronSession } from 'iron-session';
 import { sessionOptions, SessionData } from '@/lib/session';
 import { cookies } from 'next/headers';
-import { db } from '@/lib/db';
-import { reservations, users, places } from '@/lib/db/schema';
+import { db, reservations, users, places, floors, fromDbDate } from '@/lib/db';
 import { eq, asc } from 'drizzle-orm';
-import { floors } from '@/lib/db/schema';
 
 export async function GET() {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
@@ -35,8 +33,8 @@ export async function GET() {
   return NextResponse.json(
     rows.map((r) => ({
       ...r,
-      startTime: r.startTime instanceof Date ? r.startTime.toISOString() : null,
-      endTime: r.endTime instanceof Date ? r.endTime.toISOString() : null,
+      startTime: fromDbDate(r.startTime).toISOString(),
+      endTime: fromDbDate(r.endTime).toISOString(),
     }))
   );
 }

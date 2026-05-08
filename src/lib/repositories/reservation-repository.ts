@@ -1,16 +1,5 @@
-import { db } from '@/lib/db';
-import { reservations, reservationHistories, places } from '@/lib/db/schema';
+import { db, reservations, reservationHistories, places, toDbDate } from '@/lib/db';
 import { eq, and, ne, lt, gt } from 'drizzle-orm';
-
-const isPostgres = process.env.DATABASE_TYPE === 'postgres';
-
-/**
- * DB 환경(SQLite vs PostgreSQL)에 따라 Date 타입을 적절히 변환합니다.
- */
-function toDbDate(date: Date) {
-  // PostgreSQL schema에서는 integer(unix epoch)를 사용하므로 변환 필요
-  return isPostgres ? Math.floor(date.getTime() / 1000) : date;
-}
 
 export class ReservationRepository {
   /**

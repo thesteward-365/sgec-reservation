@@ -14,6 +14,7 @@ function AppShell({ children, className, hideNav = false }: AppShellProps) {
       <div
         className={cn(
           "relative flex flex-col w-full max-w-107.5 min-h-dvh bg-(--color-neutral-150)",
+          !hideNav && "pb-20",
           className
         )}
       >

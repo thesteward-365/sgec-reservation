@@ -53,7 +53,7 @@ function AdminBottomNav() {
 
   return (
     <nav
-      className="bg-card sticky bottom-0 z-40 w-full mt-auto"
+      className="fixed bottom-0 inset-x-0 z-40 mx-auto w-full max-w-107.5 bg-card"
       style={{ boxShadow: '0 -1px 0 var(--color-border-subtle)' }}
     >
       <div

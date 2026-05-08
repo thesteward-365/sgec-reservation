@@ -3,7 +3,7 @@ import { getIronSession } from 'iron-session';
 import { and, eq, ne } from 'drizzle-orm';
 import { cookies } from 'next/headers';
 import { db } from '@/lib/db';
-import { users } from '@/lib/db/schema';
+import { users } from '@/lib/db';
 import { sessionOptions, type SessionData } from '@/lib/session';
 
 export async function GET() {

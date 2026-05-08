@@ -1,5 +1,4 @@
-import { db } from '@/lib/db';
-import { places, placeTags, floors, tags } from '@/lib/db/schema';
+import { db, places, placeTags, floors, tags } from '@/lib/db';
 import { eq, and, inArray, max } from 'drizzle-orm';
 
 export class PlaceRepository {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { places, floors, placeTags, tags } from '@/lib/db/schema';
+import { places, floors, placeTags, tags } from '@/lib/db';
 import { eq } from 'drizzle-orm';
 import { getIronSession } from 'iron-session';
 import { cookies } from 'next/headers';

@@ -3,7 +3,7 @@ import { getIronSession } from 'iron-session';
 import { sessionOptions, SessionData } from '@/lib/session';
 import { cookies } from 'next/headers';
 import { db } from '@/lib/db';
-import { reservations, reservationHistories } from '@/lib/db/schema';
+import { reservations, reservationHistories } from '@/lib/db';
 import { eq } from 'drizzle-orm';
 import { deleteGoogleEvent } from '@/lib/calendar/calendar-service';
 
