@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Chip } from '@/components/ui/chip';
@@ -24,6 +24,7 @@ export function PlaceSheet({ open, onOpenChange, config, data, onSuccess }: Prop
   const [floorId, setFloorId] = useState<number | null>(null);
   const [tagIds, setTagIds] = useState<number[]>([]);
   const [saving, setSaving] = useState(false);
+  const bodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (open) {
@@ -31,6 +32,9 @@ export function PlaceSheet({ open, onOpenChange, config, data, onSuccess }: Prop
       setDesc(config.initialValues.desc);
       setFloorId(config.initialValues.floorId);
       setTagIds(config.initialValues.tagIds);
+      requestAnimationFrame(() => {
+        bodyRef.current?.scrollTo({ top: 0 });
+      });
     }
   }, [open, config.editingId, config.mode]);
 
@@ -79,58 +83,81 @@ export function PlaceSheet({ open, onOpenChange, config, data, onSuccess }: Prop
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent>
+      <DrawerContent className="max-h-[92dvh]">
         <DrawerHeader>
           <DrawerTitle>{config.editingId ? `${config.mode} 수정` : `${config.mode} 추가`}</DrawerTitle>
         </DrawerHeader>
 
-        <div className="flex-1 space-y-5 overflow-y-auto px-5 pt-2 pb-10">
-          <div className="space-y-1.5">
-            <Label htmlFor="sheet-name">이름 *</Label>
-            <Input id="sheet-name" value={name} onChange={(e) => setName(e.target.value)} placeholder={`${config.mode} 이름을 입력하세요`} autoFocus />
+        <div
+          ref={bodyRef}
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-2 pb-6"
+        >
+          <div className="space-y-5">
+            <div className="space-y-1.5">
+              <Label htmlFor="sheet-name">이름 *</Label>
+              <Input
+                id="sheet-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={`${config.mode} 이름을 입력하세요`}
+              />
+            </div>
+
+            {config.mode === '장소' && (
+              <>
+                <div className="space-y-1.5">
+                  <Label htmlFor="sheet-desc">설명 (선택)</Label>
+                  <Input
+                    id="sheet-desc"
+                    value={desc}
+                    onChange={(e) => setDesc(e.target.value)}
+                    placeholder="장소에 대한 설명을 입력하세요"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>층 선택</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {data.floors.map((f) => (
+                      <Chip
+                        key={f.id}
+                        variant={floorId === f.id ? 'active' : 'inactive'}
+                        onClick={() => setFloorId(floorId === f.id ? null : f.id)}
+                      >
+                        {f.name}
+                      </Chip>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>태그 선택</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {data.tags.map((t) => (
+                      <Chip
+                        key={t.id}
+                        variant={tagIds.includes(t.id) ? 'active' : 'inactive'}
+                        onClick={() =>
+                          setTagIds((prev) =>
+                            prev.includes(t.id)
+                              ? prev.filter((id) => id !== t.id)
+                              : [...prev, t.id]
+                          )
+                        }
+                      >
+                        #{t.name}
+                      </Chip>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
+        </div>
 
-          {config.mode === '장소' && (
-            <>
-              <div className="space-y-1.5">
-                <Label htmlFor="sheet-desc">설명 (선택)</Label>
-                <Input id="sheet-desc" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="장소에 대한 설명을 입력하세요" />
-              </div>
-
-              <div className="space-y-2">
-                <Label>층 선택</Label>
-                <div className="flex flex-wrap gap-2">
-                  {data.floors.map((f) => (
-                    <Chip
-                      key={f.id}
-                      variant={floorId === f.id ? 'active' : 'inactive'}
-                      onClick={() => setFloorId(floorId === f.id ? null : f.id)}
-                    >
-                      {f.name}
-                    </Chip>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>태그 선택</Label>
-                <div className="flex flex-wrap gap-2">
-                  {data.tags.map((t) => (
-                    <Chip
-                      key={t.id}
-                      variant={tagIds.includes(t.id) ? 'active' : 'inactive'}
-                      onClick={() => setTagIds((prev) => prev.includes(t.id) ? prev.filter((id) => id !== t.id) : [...prev, t.id])}
-                    >
-                      #{t.name}
-                    </Chip>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-
-          <div className="pt-4 space-y-2">
-            <Button onClick={handleSave} disabled={saving} className="w-full py-6 text-body-lg font-bold">
+        <DrawerFooter className="border-t border-border bg-card">
+          <div className="space-y-2">
+            <Button onClick={handleSave} disabled={saving} className="w-full py-4 text-body font-bold">
               {saving ? '저장 중...' : '저장하기'}
             </Button>
             {config.editingId && (
@@ -139,7 +166,7 @@ export function PlaceSheet({ open, onOpenChange, config, data, onSuccess }: Prop
               </Button>
             )}
           </div>
-        </div>
+        </DrawerFooter>
       </DrawerContent>
     </Drawer>
   );

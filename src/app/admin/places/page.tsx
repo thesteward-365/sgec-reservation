@@ -13,6 +13,7 @@ import { PlaceTab } from './_components/place-tab';
 import { FloorTab } from './_components/floor-tab';
 import { TagTab } from './_components/tag-tab';
 import { PlaceSheet } from './_components/place-sheet';
+import { TagSheet } from './_components/tag-sheet';
 import { FloorDeleteDialog } from './_components/floor-delete-dialog';
 import { SortActionBar } from './_components/sort-action-bar';
 import { TABS, type FloorRow, type PlaceRow, type SheetConfig, type TabType, type TagRow } from './types';
@@ -28,6 +29,7 @@ export default function PlacesPage() {
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetConfig, setSheetConfig] = useState<SheetConfig>(EMPTY_CONFIG);
+  const [tagSheetOpen, setTagSheetOpen] = useState(false);
 
   const [sortMode, setSortMode] = useState(false);
   const [sortItems, setSortItems] = useState<PlaceRow[]>([]);
@@ -102,16 +104,6 @@ export default function PlacesPage() {
     } catch {
       setTags(prevTags);
       toast.error('태그 삭제에 실패했습니다.');
-    }
-  };
-
-  const handleTagAdd = async (name: string) => {
-    try {
-      const res = await fetch('/api/tags', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) });
-      if (!res.ok) { const err = await res.json(); throw new Error(err.error); }
-      await loadAll();
-    } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : '태그 추가에 실패했습니다.');
     }
   };
 
@@ -193,14 +185,24 @@ export default function PlacesPage() {
                 </Button>
               )}
               {activeTab === '태그' && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setTagEditMode((v) => !v)}
-                  className={cn(tagEditMode && 'text-primary')}
-                >
-                  {tagEditMode ? '완료' : '편집'}
-                </Button>
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setTagEditMode((v) => !v)}
+                    className={cn(tagEditMode && 'text-primary')}
+                  >
+                    {tagEditMode ? '완료' : '편집'}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setTagSheetOpen(true)}
+                    className="text-primary"
+                  >
+                    <PlusIcon className="size-5" />
+                  </Button>
+                </div>
               )}
             </>
           )}
@@ -239,7 +241,12 @@ export default function PlacesPage() {
                 />
               )}
               {activeTab === '태그' && (
-                <TagTab tags={tags} editMode={tagEditMode} onDelete={handleTagDelete} onAdd={handleTagAdd} />
+                <TagTab
+                  tags={tags}
+                  editMode={tagEditMode}
+                  onDelete={handleTagDelete}
+                  onOpenSheet={() => setTagSheetOpen(true)}
+                />
               )}
             </>
           )}
@@ -262,6 +269,12 @@ export default function PlacesPage() {
             if (floor && (placesByFloor.get(floor.id)?.length ?? 0) > 0) setDeletingFloor(floor);
           }
         }}
+      />
+
+      <TagSheet
+        open={tagSheetOpen}
+        onOpenChange={setTagSheetOpen}
+        onSuccess={loadAll}
       />
 
       <FloorDeleteDialog

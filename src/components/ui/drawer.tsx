@@ -6,10 +6,12 @@ import { cn } from '@/lib/utils';
 
 const Drawer = ({
   shouldScaleBackground = false,
+  repositionInputs = false,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Root>) => (
   <DrawerPrimitive.Root
     shouldScaleBackground={shouldScaleBackground}
+    repositionInputs={repositionInputs}
     {...props}
   />
 );
@@ -34,6 +36,7 @@ function DrawerOverlay({
 function DrawerContent({
   className,
   children,
+  onOpenAutoFocus,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Content>) {
   return (
@@ -48,6 +51,10 @@ function DrawerContent({
           'max-h-[96dvh]',
           className
         )}
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          onOpenAutoFocus?.(event);
+        }}
         {...props}
       >
         <div className="mx-auto mt-4 h-1.5 w-12 shrink-0 rounded-full bg-neutral-300" />
@@ -72,11 +79,11 @@ function DrawerFooter({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="drawer-footer"
       className={cn(
-        'mt-auto flex flex-col gap-2 px-6 pt-4 pb-12 shrink-0',
+        'mt-auto flex flex-col gap-2 px-5 pt-3 pb-8 shrink-0',
         className
       )}
       style={{
-        paddingBottom: 'max(3rem, calc(env(safe-area-inset-bottom) + 1.5rem))',
+        paddingBottom: 'max(1rem, calc(env(safe-area-inset-bottom) + 0.75rem))',
       }}
       {...props}
     />

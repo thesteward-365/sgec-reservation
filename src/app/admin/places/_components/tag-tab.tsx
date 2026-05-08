@@ -1,37 +1,35 @@
 'use client';
 
-import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { CheckIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import type { TagRow } from '../types';
 
 type Props = {
   tags: TagRow[];
   editMode: boolean;
   onDelete: (tag: TagRow) => void;
-  onAdd: (name: string) => void;
+  onOpenSheet: () => void;
 };
 
-export function TagTab({ tags, editMode, onDelete, onAdd }: Props) {
-  const [showInput, setShowInput] = useState(false);
-  const [newTagName, setNewTagName] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const handleAdd = () => {
-    const name = newTagName.trim();
-    if (!name) return;
-    onAdd(name);
-    setNewTagName('');
-    setShowInput(false);
-  };
-
+export function TagTab({ tags, editMode, onDelete, onOpenSheet }: Props) {
   return (
     <Card className="p-5">
-      {tags.length === 0 && !showInput ? (
-        <p className="text-muted-foreground py-2 text-center text-[14px]">
-          등록된 태그가 없습니다.
-        </p>
+      {tags.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 py-2">
+          <p className="text-muted-foreground text-center text-[14px]">
+            등록된 태그가 없습니다.
+          </p>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onOpenSheet}
+            className="border-grey-900 rounded-full border border-dashed hover:rounded-full hover:bg-neutral-50"
+          >
+            <PlusIcon className="size-3.5" />
+            첫 태그 추가
+          </Button>
+        </div>
       ) : (
         <div className="flex flex-wrap gap-2">
           {tags.map((tag) => (
@@ -53,45 +51,15 @@ export function TagTab({ tags, editMode, onDelete, onAdd }: Props) {
               )}
             </div>
           ))}
-
-          {showInput ? (
-            <div className="flex items-center gap-1 rounded-full border border-neutral-300 bg-white px-3 py-1">
-              <input
-                ref={inputRef}
-                value={newTagName}
-                onChange={(e) => setNewTagName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleAdd();
-                  if (e.key === 'Escape') {
-                    setShowInput(false);
-                    setNewTagName('');
-                  }
-                }}
-                placeholder="태그 이름"
-                className="w-20 text-[13px] outline-none"
-                autoFocus
-              />
-              <button
-                onClick={handleAdd}
-                className="flex size-4 items-center justify-center rounded-full bg-neutral-900 text-white"
-              >
-                <CheckIcon className="size-3" />
-              </button>
-            </div>
-          ) : (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setShowInput(true);
-                setTimeout(() => inputRef.current?.focus(), 50);
-              }}
-              className="border-grey-900 rounded-full border border-dashed hover:rounded-full hover:bg-neutral-50"
-            >
-              <PlusIcon className="size-3.5" />
-              태그 추가
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onOpenSheet}
+            className="border-grey-900 rounded-full border border-dashed hover:rounded-full hover:bg-neutral-50"
+          >
+            <PlusIcon className="size-3.5" />
+            태그 추가
+          </Button>
         </div>
       )}
     </Card>
