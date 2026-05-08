@@ -129,7 +129,9 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground break-keep;
+    @apply bg-background text-foreground;
     font-feature-settings: 'cv11', 'ss01';
+    word-break: keep-all;
+    overflow-wrap: anywhere;
   }
 }

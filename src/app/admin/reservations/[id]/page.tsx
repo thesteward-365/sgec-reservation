@@ -240,7 +240,7 @@ export default function ReservationDetailPage({
         />
         {reservation.isCancelled && (
           <div className="mt-8 rounded-2xl bg-red-50 p-6 text-center">
-            <p className="text-body-sm font-medium text-red-600">이 예약은 취소되어 상세 정보를 수정하거나 공유할 수 없습니다.</p>
+            <p className="text-body-sm font-medium text-red-600 break-keep">이 예약은 취소되어 상세 정보를 수정하거나 공유할 수 없습니다.</p>
           </div>
         )}
       </main>
