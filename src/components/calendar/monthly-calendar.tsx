@@ -134,8 +134,11 @@ export function MonthlyCalendar({
           const dow = day.getDay();
 
           // 해당 날짜의 이벤트들
+          // ID 순으로 정렬하여 여러 날짜에 걸쳐 있을 때 수직 위치(Lane)를 고정함
           const dayEvents = showEvents
-            ? events.filter((e) => ymd >= e.startDate && ymd <= e.endDate)
+            ? events
+                .filter((e) => ymd >= e.startDate && ymd <= e.endDate)
+                .sort((a, b) => String(a.id).localeCompare(String(b.id)))
             : [];
 
           return (
@@ -159,7 +162,7 @@ export function MonthlyCalendar({
                     <div
                       key={event.id}
                       className={cn(
-                        'flex h-8 items-center justify-center transition-all',
+                        'flex h-9 items-center justify-center transition-all',
                         EVENT_VARIANTS[event.variant || 'primary'],
                         isSingleDay
                           ? 'aspect-square rounded-full' // 단일 일정: 원형

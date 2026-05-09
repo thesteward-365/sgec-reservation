@@ -37,10 +37,47 @@ export const Default: Story = {
   },
 };
 
-export const WithEvents: Story = {
+export const MultiWeekEvent: Story = {
   render: (args) => <Template {...args} />,
   args: {
-    indicators: new Set(['2026-05-12', '2026-05-13']),
+    events: [
+      {
+        id: 1,
+        title: '여러 주에 걸친 행사',
+        startDate: '2026-05-15',
+        endDate: '2026-05-19',
+        variant: 'accent',
+      },
+    ],
+  },
+};
+
+export const OverlappingEvents: Story = {
+  render: (args) => <Template {...args} />,
+  args: {
+    events: [
+      {
+        id: 1,
+        title: '긴 행사 A',
+        startDate: '2026-05-10',
+        endDate: '2026-05-14',
+        variant: 'accent',
+      },
+      {
+        id: 2,
+        title: '중첩 행사 B',
+        startDate: '2026-05-12',
+        endDate: '2026-05-12',
+        variant: 'secondary',
+      },
+    ],
+  },
+};
+
+export const ComplexScenario: Story = {
+  render: (args) => <Template {...args} />,
+  args: {
+    indicators: new Set(['2026-05-12', '2026-05-18']),
     events: [
       {
         id: 1,
@@ -51,38 +88,16 @@ export const WithEvents: Story = {
       },
       {
         id: 2,
-        title: '부활절 연습',
-        startDate: '2026-05-04',
-        endDate: '2026-05-04',
+        title: '특별 집회',
+        startDate: '2026-05-13',
+        endDate: '2026-05-13',
         variant: 'info',
       },
       {
         id: 3,
-        title: '특별 집회',
-        startDate: '2026-05-24',
-        endDate: '2026-05-30',
-        variant: 'secondary',
-      },
-    ],
-  },
-};
-
-export const MultipleEventsPerDay: Story = {
-  render: (args) => <Template {...args} />,
-  args: {
-    events: [
-      {
-        id: 1,
-        title: '행사 A',
-        startDate: '2026-05-18',
-        endDate: '2026-05-22',
-        variant: 'accent',
-      },
-      {
-        id: 2,
-        title: '행사 B',
-        startDate: '2026-05-20',
-        endDate: '2026-05-20',
+        title: '심야 기도회',
+        startDate: '2026-05-15',
+        endDate: '2026-05-19',
         variant: 'secondary',
       },
     ],
