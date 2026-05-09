@@ -12,6 +12,8 @@ type PageProps = {
     date?: string;
     reservationId?: string;
     backUrl?: string;
+    startMin?: string;
+    endMin?: string;
   }>;
 };
 
@@ -20,7 +22,7 @@ export default async function PlaceDetailPage({
   searchParams,
 }: PageProps) {
   const { placeId } = await params;
-  const { date, reservationId, backUrl } = await searchParams;
+  const { date, reservationId, backUrl, startMin, endMin } = await searchParams;
 
   const session = await getIronSession<SessionData>(
     await cookies(),
@@ -101,6 +103,8 @@ export default async function PlaceDetailPage({
       place={{ ...place, tags: tagNames }}
       initialDate={date}
       initialReservation={initialReservation}
+      initialStartMin={startMin ? parseInt(startMin) : undefined}
+      initialEndMin={endMin ? parseInt(endMin) : undefined}
       backUrl={backUrl ?? undefined}
     />
   );

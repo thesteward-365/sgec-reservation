@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline';
+import Link from 'next/link';
+import { AdjustmentsHorizontalIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Chip } from '@/components/ui/chip';
@@ -287,6 +288,14 @@ export function MyReservationsView({ user }: Props) {
           </div>
         )}
       </div>
+
+      <Link
+        href={`/reserve?date=${toYMD(selectedDate)}`}
+        className="fixed right-5 bottom-24 z-50 inline-flex h-14 w-14 items-center justify-center rounded-full bg-(--color-fg-strong) text-white shadow-[0_10px_20px_rgba(0,0,0,0.16)] transition hover:bg-(--color-fg-strong)/90 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+        aria-label="예약하기"
+      >
+        <PlusIcon className="h-6 w-6" aria-hidden="true" />
+      </Link>
 
       {/* 예약 관리 바텀시트 */}
       <ReservationSheet

@@ -209,6 +209,7 @@ export function ReserveView({ userName }: ReserveViewProps) {
         {/* 캘린더 카드 */}
         <div className="bg-card mx-5 mb-4 rounded-2xl px-2 py-3.5 shadow-(--shadow-1)">
           <WeeklyCalendar
+            defaultDate={selectedDate}
             selectedDate={selectedDate}
             onDateSelect={handleDateSelect}
             getIndicator={getIndicator}

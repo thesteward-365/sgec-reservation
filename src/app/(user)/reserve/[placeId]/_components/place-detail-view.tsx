@@ -55,6 +55,8 @@ type PlaceDetailViewProps = {
   };
   initialDate?: string;
   initialReservation?: EditableReservation;
+  initialStartMin?: number;
+  initialEndMin?: number;
   backUrl?: string;
 };
 
@@ -108,6 +110,8 @@ export function PlaceDetailView({
   place,
   initialDate,
   initialReservation,
+  initialStartMin,
+  initialEndMin,
   backUrl,
 }: PlaceDetailViewProps) {
   const router = useRouter();
@@ -124,17 +128,18 @@ export function PlaceDetailView({
     { id: number; title: string; startMin: number; endMin: number }[]
   >([]);
   const [loading, setLoading] = useState(true);
-  const [selection, setSelection] = useState(() =>
-    initialReservation
-      ? {
-          startMin: minuteOf(initialReservation.startTime),
-          endMin: minuteOf(initialReservation.endTime),
-        }
-      : {
-          startMin: 10 * 60,
-          endMin: 11 * 60,
-        }
-  );
+  const [selection, setSelection] = useState(() => {
+    if (initialReservation) {
+      return {
+        startMin: minuteOf(initialReservation.startTime),
+        endMin: minuteOf(initialReservation.endTime),
+      };
+    }
+    return {
+      startMin: initialStartMin ?? 10 * 60,
+      endMin: initialEndMin ?? 11 * 60,
+    };
+  });
   const [purpose, setPurpose] = useState(initialReservation?.purpose ?? '');
   const [frequentPurposes] = useState<string[]>(() => {
     if (typeof window === 'undefined') return [];
@@ -599,6 +604,8 @@ export function PlaceDetailView({
                       setPlacePickerOpen(false);
                       const nextParams = new URLSearchParams({
                         date: selectedDate,
+                        startMin: String(selection.startMin),
+                        endMin: String(selection.endMin),
                       });
                       if (isEditMode && editReservationId !== null) {
                         nextParams.set(
@@ -663,9 +670,7 @@ export function PlaceDetailView({
               onDateSelect={(date) => {
                 setLoading(true);
                 setSelectedDate(formatLocalDate(date));
-                if (!isEditMode) {
-                  setSelection({ startMin: 10 * 60, endMin: 11 * 60 });
-                }
+                // Do not reset selection when date changes
                 setDatePickerOpen(false);
               }}
             />
