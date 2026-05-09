@@ -25,7 +25,7 @@ const NAV_ITEMS = [
     href: "/my-reservations",
     OutlineIcon: ClipboardOutline,
     SolidIcon: ClipboardSolid,
-    label: "나의 예약",
+    label: "예약 현황",
   },
   {
     href: "/settings",

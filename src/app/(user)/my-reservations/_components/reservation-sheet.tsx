@@ -22,9 +22,11 @@ import { ReservationDetailsCard } from '@/components/reservations/reservation-de
 import { shareReservation } from '@/lib/share-utils';
 import { formatKoreanDate, formatTime, toYMD } from '@/lib/date-utils';
 import type { MyReservation } from './reservation-item';
+import { SessionData } from '@/lib/session';
 
 type Props = {
   reservation: MyReservation | null;
+  user: SessionData['user'];
   open: boolean;
   onClose: () => void;
   onCancelled: () => void;
@@ -32,6 +34,7 @@ type Props = {
 
 export function ReservationSheet({
   reservation,
+  user,
   open,
   onClose,
   onCancelled,
@@ -43,6 +46,11 @@ export function ReservationSheet({
     () => reservation?.status === 'cancelled',
     [reservation?.status]
   );
+
+  const canManage = useMemo(() => {
+    if (!reservation) return false;
+    return user.role === 'admin' || user.id === reservation.userId;
+  }, [reservation, user]);
 
   async function handleConfirmCancel() {
     if (!reservation) return;
@@ -111,7 +119,7 @@ export function ReservationSheet({
       <Drawer open={open} onOpenChange={(v) => !v && onClose()}>
         <DrawerContent>
           <DrawerHeader className="relative">
-            <DrawerTitle>예약 관리</DrawerTitle>
+            <DrawerTitle>예약 정보</DrawerTitle>
             <button
               onClick={handleShare}
               className="absolute top-1/2 right-6 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full transition-colors hover:bg-neutral-100"
@@ -130,27 +138,29 @@ export function ReservationSheet({
               <ReservationDetailsCard rows={rows} tone="surface" />
             )}
 
-            <div className="flex gap-2 pt-1">
-              <Button
-                variant="secondary"
-                className="h-12 flex-1 rounded-2xl"
-                onClick={handleEdit}
-                disabled={isPast}
-                title={
-                  isPast ? '이미 지난 예약은 수정할 수 없습니다.' : undefined
-                }
-              >
-                예약 수정
-              </Button>
-              <Button
-                variant="destructive"
-                disabled={isPast || cancelling || isCancelled}
-                className="h-12 flex-1 rounded-2xl"
-                onClick={() => setConfirmOpen(true)}
-              >
-                예약 취소
-              </Button>
-            </div>
+            {canManage && (
+              <div className="flex gap-2 pt-1">
+                <Button
+                  variant="secondary"
+                  className="h-12 flex-1 rounded-2xl"
+                  onClick={handleEdit}
+                  disabled={isPast}
+                  title={
+                    isPast ? '이미 지난 예약은 수정할 수 없습니다.' : undefined
+                  }
+                >
+                  예약 수정
+                </Button>
+                <Button
+                  variant="destructive"
+                  disabled={isPast || cancelling || isCancelled}
+                  className="h-12 flex-1 rounded-2xl"
+                  onClick={() => setConfirmOpen(true)}
+                >
+                  예약 취소
+                </Button>
+              </div>
+            )}
             {isPast ? (
               <p className="text-caption! text-muted-foreground!">
                 이미 지난 예약입니다.

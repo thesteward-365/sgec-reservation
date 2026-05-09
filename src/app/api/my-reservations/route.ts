@@ -14,6 +14,7 @@ export async function GET() {
   const rows = await db
     .select({
       id: reservations.id,
+      userId: reservations.userId,
       placeId: reservations.placeId,
       placeName: places.name,
       floorId: places.floorId,
@@ -28,7 +29,6 @@ export async function GET() {
     .leftJoin(places, eq(reservations.placeId, places.id))
     .leftJoin(floors, eq(places.floorId, floors.id))
     .leftJoin(users, eq(reservations.userId, users.id))
-    .where(eq(reservations.userId, session.user.id))
     .orderBy(asc(reservations.startTime));
 
   return NextResponse.json(

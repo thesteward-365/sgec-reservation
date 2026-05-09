@@ -15,6 +15,7 @@ import {
   FilterSheet,
   type FilterState,
 } from '@/components/reservations/filter-sheet';
+import { SessionData } from '@/lib/session';
 
 type PlaceTagMap = Record<number, number[]>; // placeId -> tagId[]
 
@@ -46,7 +47,11 @@ function isToday(ymd: string): boolean {
   return ymd === toYMD(new Date());
 }
 
-export function MyReservationsView() {
+type Props = {
+  user: SessionData['user'];
+};
+
+export function MyReservationsView({ user }: Props) {
   const [tab, setTab] = useState<'calendar' | 'list'>('calendar');
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [viewMonth, setViewMonth] = useState(() => {
@@ -61,6 +66,7 @@ export function MyReservationsView() {
     tagId: null,
     sortOrder: 'asc',
     includeCancelled: false,
+    onlyMine: false,
   });
   const [showFilter, setShowFilter] = useState(false);
   const [activeRes, setActiveRes] = useState<MyReservation | null>(null);
@@ -119,12 +125,16 @@ export function MyReservationsView() {
       list = list.filter((reservation) => reservation.status !== 'cancelled');
     }
 
+    if (filter.onlyMine) {
+      list = list.filter((r) => r.userId === user.id);
+    }
+
     return [...list].sort((a, b) => {
       const ta = new Date(a.startTime).getTime();
       const tb = new Date(b.startTime).getTime();
       return filter.sortOrder === 'asc' ? ta - tb : tb - ta;
     });
-  }, [allReservations, filter, placeTagMap]);
+  }, [allReservations, filter, placeTagMap, user.id]);
 
   // 캘린더 인디케이터용 날짜 Set
   const indicatorDates = useMemo(
@@ -152,13 +162,14 @@ export function MyReservationsView() {
   const isFilterActive =
     filter.floorId !== null ||
     filter.tagId !== null ||
-    filter.sortOrder !== 'asc';
+    filter.sortOrder !== 'asc' ||
+    filter.onlyMine;
 
   return (
     <>
       <BrandHeader />
       <div className="flex items-end justify-between px-5 pt-1 pb-4">
-        <h2 className="text-h2 text-foreground font-bold">나의 예약</h2>
+        <h2 className="text-h2 text-foreground font-bold">예약 현황</h2>
         <button
           onClick={() => setShowFilter(true)}
           className="relative flex size-10 items-center justify-center rounded-full transition-colors hover:bg-neutral-100"
@@ -233,6 +244,7 @@ export function MyReservationsView() {
                     <ReservationItem
                       reservation={r}
                       isPast={new Date(r.endTime) < now}
+                      isMine={r.userId === user.id}
                       onTap={() => setActiveRes(r)}
                       flat
                     />
@@ -263,6 +275,7 @@ export function MyReservationsView() {
                       <ReservationItem
                         reservation={r}
                         isPast={new Date(r.endTime) < now}
+                        isMine={r.userId === user.id}
                         onTap={() => setActiveRes(r)}
                         flat
                       />
@@ -278,6 +291,7 @@ export function MyReservationsView() {
       {/* 예약 관리 바텀시트 */}
       <ReservationSheet
         reservation={activeRes}
+        user={user}
         open={!!activeRes}
         onClose={() => setActiveRes(null)}
         onCancelled={handleCancelled}

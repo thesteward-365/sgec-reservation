@@ -38,8 +38,8 @@ export const 예약하기Active: Story = {
   },
 };
 
-export const 나의예약Active: Story = {
-  name: '나의 예약 (active)',
+export const 예약현황Active: Story = {
+  name: '예약 현황 (active)',
   parameters: {
     nextjs: { navigation: { pathname: '/my-reservations' } },
   },

@@ -19,6 +19,7 @@ export type FilterState = {
   tagId: number | null;
   sortOrder: 'asc' | 'desc';
   includeCancelled: boolean;
+  onlyMine: boolean;
 };
 
 type Props = {
@@ -60,7 +61,8 @@ export function FilterSheet({ open, onClose, current, onApply }: Props) {
       floorId: null,
       tagId: null,
       sortOrder: 'asc',
-      includeCancelled: true,
+      includeCancelled: false,
+      onlyMine: false,
     });
   }
 
@@ -155,14 +157,24 @@ export function FilterSheet({ open, onClose, current, onApply }: Props) {
             <SectionLabel>기타</SectionLabel>
             <div className="flex gap-2">
               <Chip
+                variant={draft.onlyMine ? 'active' : 'inactive'}
+                onClick={() =>
+                  setDraft((d) => ({
+                    ...d,
+                    onlyMine: !d.onlyMine,
+                  }))
+                }
+              >
+                내 예약만 보기
+              </Chip>
+              <Chip
                 variant={
                   draft.includeCancelled === false ? 'active' : 'inactive'
                 }
                 onClick={() =>
                   setDraft((d) => ({
                     ...d,
-                    includeCancelled:
-                      d.includeCancelled === false ? true : false,
+                    includeCancelled: !d.includeCancelled,
                   }))
                 }
               >

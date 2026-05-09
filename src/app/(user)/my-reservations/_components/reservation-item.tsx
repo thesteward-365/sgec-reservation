@@ -7,6 +7,7 @@ import { Chip } from '@/components/ui/chip';
 export type ReservationStatus = 'active' | 'cancelled';
 export type MyReservation = {
   id: number;
+  userId: number;
   placeId: number;
   placeName: string | null;
   floorId: number | null;
@@ -23,6 +24,7 @@ type Props = {
   showDate?: boolean;
   flat?: boolean;
   isPast?: boolean;
+  isMine?: boolean;
   onTap?: () => void;
 };
 
@@ -45,6 +47,7 @@ export function ReservationItem({
   showDate,
   flat,
   isPast,
+  isMine,
   onTap,
 }: Props) {
   const start =
@@ -93,7 +96,16 @@ export function ReservationItem({
           )}
         </div>
         <p className="text-muted-foreground! mt-2 text-[14px]! leading-snug">
-          {reservation.userName ? `${reservation.userName} · ` : ''}
+          {reservation.userName && (
+            <span
+              className={cn(
+                isMine ? 'text-primary font-bold' : 'text-muted-foreground'
+              )}
+            >
+              {reservation.userName}
+            </span>
+          )}
+          {reservation.userName ? ' · ' : ''}
           {reservation.purpose}
         </p>
       </div>
