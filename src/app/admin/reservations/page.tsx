@@ -13,7 +13,10 @@ import { Badge } from '@/components/ui/badge';
 import { BrandHeader } from '@/components/layout/brand-header';
 import { List, ListItem } from '@/components/ui/list';
 import { ListSkeleton } from '@/components/ui/list-skeleton';
-import { MonthlyCalendar, type CalendarEvent } from '@/components/calendar/monthly-calendar';
+import {
+  MonthlyCalendar,
+  type CalendarEvent,
+} from '@/components/calendar/monthly-calendar';
 import {
   FilterSheet,
   type FilterState,
@@ -55,7 +58,12 @@ function toYMD(dt: Date | string): string {
 // 구글 캘린더 종일 일정(00:00:00 종료) 처리를 위한 헬퍼
 function toEffectiveYMD(isoString: string, isEnd: boolean): string {
   const d = new Date(isoString);
-  if (isEnd && d.getHours() === 0 && d.getMinutes() === 0 && d.getSeconds() === 0) {
+  if (
+    isEnd &&
+    d.getHours() === 0 &&
+    d.getMinutes() === 0 &&
+    d.getSeconds() === 0
+  ) {
     // 00:00:00에 끝나면 실제로는 전날 종료된 것으로 처리
     d.setDate(d.getDate() - 1);
   }
@@ -107,25 +115,35 @@ const CHIP_ACTIVE = 'bg-(--color-fg-strong) text-white';
 const CHIP_INACTIVE = 'bg-(--color-neutral-300) text-foreground';
 
 // 행사 정보 카드 컴포넌트 (스토리북 디자인 반영)
-function InformationalEventCard({ title, startTime, endTime }: { title: string; startTime: string; endTime: string }) {
+function InformationalEventCard({
+  title,
+  startTime,
+  endTime,
+}: {
+  title: string;
+  startTime: string;
+  endTime: string;
+}) {
   const startDate = new Date(startTime);
   const endDate = new Date(endTime);
   const isSingleDay = toYMD(startDate) === toYMD(endDate);
-  
-  const dateRangeLabel = isSingleDay 
+
+  const dateRangeLabel = isSingleDay
     ? `${startDate.getMonth() + 1}월 ${startDate.getDate()}일`
     : `${startDate.getMonth() + 1}월 ${startDate.getDate()}일 ~ ${endDate.getMonth() + 1}월 ${endDate.getDate()}일`;
 
   return (
-    <div className="bg-blue-50/30 text-blue-700 border-b border-blue-100/50 p-4 last:border-0">
-      <div className="flex items-center gap-1.5 mb-1.5 opacity-80">
+    <div className="border-b border-blue-100/50 bg-blue-50/30 p-4 text-blue-700 last:border-0">
+      <div className="mb-1.5 flex items-center gap-1.5 opacity-80">
         <CalendarIcon className="size-3.5 shrink-0" />
-        <span className="font-bold text-[12px] tracking-tight uppercase">Event</span>
+        <span className="text-[12px] font-bold tracking-tight uppercase">
+          Event
+        </span>
       </div>
-      <h4 className="text-[16px] font-bold mb-0.5 leading-tight text-foreground">
+      <h4 className="text-foreground mb-0.5 text-[16px] leading-tight font-bold">
         {title}
       </h4>
-      <p className="text-[13px] opacity-60 font-medium">{dateRangeLabel}</p>
+      <p className="text-[13px] font-medium opacity-60">{dateRangeLabel}</p>
     </div>
   );
 }
@@ -179,13 +197,15 @@ export default function ReservationsPage() {
     fetch(`/api/external-events?month=${monthStr}`)
       .then((r) => r.json())
       .then((data: ExternalEventResponse[]) => {
-        setExternalEvents((data || []).map(ev => ({
-          id: ev.id,
-          title: ev.title,
-          startDate: toEffectiveYMD(ev.startTime, false),
-          endDate: toEffectiveYMD(ev.endTime, true),
-          variant: 'accent' // 기본 테마색
-        })));
+        setExternalEvents(
+          (data || []).map((ev) => ({
+            id: ev.id,
+            title: ev.title,
+            startDate: toEffectiveYMD(ev.startTime, false),
+            endDate: toEffectiveYMD(ev.endTime, true),
+            variant: 'accent', // 기본 테마색
+          }))
+        );
       })
       .catch(console.error);
   }, [viewMonth]);
@@ -237,7 +257,9 @@ export default function ReservationsPage() {
 
   const dailyEvents = useMemo(() => {
     const ymd = toYMD(selectedDate);
-    return externalEvents.filter(ev => ymd >= ev.startDate && ymd <= ev.endDate);
+    return externalEvents.filter(
+      (ev) => ymd >= ev.startDate && ymd <= ev.endDate
+    );
   }, [externalEvents, selectedDate]);
 
   const activeFilter =
@@ -320,11 +342,22 @@ export default function ReservationsPage() {
               {loading ? (
                 <ListSkeleton count={2} className="px-1" />
               ) : dailyList.length === 0 && dailyEvents.length === 0 ? (
-                <div className="bg-card rounded-xl px-4 py-10 text-center shadow-(--shadow-1)">
-                  <p className="text-foreground text-[15px] font-semibold">
-                    일정이 없는 날이에요
-                  </p>
-                </div>
+                <>
+                  <div className="mt-8 flex items-center justify-between gap-2">
+                    <h3 className="text-foreground text-[16px]! font-bold">
+                      {selectedDate.toLocaleDateString('ko-KR', {
+                        month: 'long',
+                        day: 'numeric',
+                        weekday: 'short',
+                      })}
+                    </h3>
+                  </div>
+                  <div className="bg-card rounded-xl px-4 py-10 text-center shadow-(--shadow-1)">
+                    <p className="text-foreground text-[15px] font-semibold">
+                      일정이 없는 날이에요
+                    </p>
+                  </div>{' '}
+                </>
               ) : (
                 <>
                   <div className="mt-8 flex items-center justify-between gap-2">
@@ -339,16 +372,16 @@ export default function ReservationsPage() {
                       예약 {dailyList.length}건
                     </span>
                   </div>
-                  
-                  <div className="bg-card rounded-xl shadow-(--shadow-1) overflow-hidden">
+
+                  <div className="bg-card overflow-hidden rounded-xl shadow-(--shadow-1)">
                     {/* 행사 안내 카드 (최상단 고정) */}
-                    {dailyEvents.map(ev => (
-                        <InformationalEventCard 
-                          key={ev.id}
-                          title={ev.title}
-                          startTime={ev.startDate}
-                          endTime={ev.endDate}
-                        />
+                    {dailyEvents.map((ev) => (
+                      <InformationalEventCard
+                        key={ev.id}
+                        title={ev.title}
+                        startTime={ev.startDate}
+                        endTime={ev.endDate}
+                      />
                     ))}
 
                     {/* 예약 목록 */}
@@ -446,12 +479,21 @@ export default function ReservationsPage() {
                               오늘
                             </Badge>
                           )}
-                          
+
                           {/* 리스트 뷰 날짜 헤더 옆 행사 배지 */}
-                          {externalEvents.some(ev => dateKey >= ev.startDate && dateKey <= ev.endDate) && (
-                             <Badge className="bg-blue-50 text-blue-700 border-none px-2 py-0.5 text-[12px]!">
-                               {externalEvents.find(ev => dateKey >= ev.startDate && dateKey <= ev.endDate)?.title}
-                             </Badge>
+                          {externalEvents.some(
+                            (ev) =>
+                              dateKey >= ev.startDate && dateKey <= ev.endDate
+                          ) && (
+                            <Badge className="border-none bg-blue-50 px-2 py-0.5 text-[12px]! text-blue-700">
+                              {
+                                externalEvents.find(
+                                  (ev) =>
+                                    dateKey >= ev.startDate &&
+                                    dateKey <= ev.endDate
+                                )?.title
+                              }
+                            </Badge>
                           )}
                         </div>
                         <div className="flex items-center gap-2">

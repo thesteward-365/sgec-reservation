@@ -192,10 +192,13 @@ export function ReserveView({ userName }: ReserveViewProps) {
           className="text-h2 text-foreground font-bold"
           style={{ lineHeight: 1.3 }}
         >
-          {userName ? `${userName}님,` : '안녕하세요,'}
+          {userName ? `${userName}님,` : '반가워요!'}
           <br />
-          언제 예약하시겠어요?
+          기쁨과 감사함으로 섬깁시다.
         </h2>
+        <p className="text-body text-muted-foreground mt-3">
+          예약할 날짜와 장소를 선택해 주세요.
+        </p>
       </div>
 
       {/* sticky: 캘린더 + 장소 필터 */}
