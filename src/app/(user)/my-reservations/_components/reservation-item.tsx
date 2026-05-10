@@ -3,6 +3,7 @@
 import { EllipsisVerticalIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 import { Chip } from '@/components/ui/chip';
+import { formatTime } from '@/lib/date-utils';
 
 export type ReservationStatus = 'active' | 'cancelled';
 export type MyReservation = {
@@ -27,20 +28,6 @@ type Props = {
   isMine?: boolean;
   onTap?: () => void;
 };
-
-function formatTime(dt: Date | string): string {
-  const d = typeof dt === 'string' ? new Date(dt) : dt;
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-}
-
-function fmtDate(dt: Date | string): string {
-  const d = typeof dt === 'string' ? new Date(dt) : dt;
-  return d.toLocaleDateString('ko-KR', {
-    month: 'long',
-    day: 'numeric',
-    weekday: 'short',
-  });
-}
 
 export function ReservationItem({
   reservation,

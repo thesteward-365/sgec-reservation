@@ -100,6 +100,7 @@ export default async function PlaceDetailPage({
 
   return (
     <PlaceDetailView
+      key={`${place.id}-${reservationId ?? 'new'}-${date ?? 'today'}`}
       place={{ ...place, tags: tagNames }}
       initialDate={date}
       initialReservation={initialReservation}

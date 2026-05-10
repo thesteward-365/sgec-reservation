@@ -19,7 +19,7 @@ function minToY(min: number): number {
 }
 
 function fmtMin(min: number): string {
-  const h = Math.floor(min / 60);
+  const h = Math.floor(min / 60) % 24;
   const m = min % 60;
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }

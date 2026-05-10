@@ -41,9 +41,11 @@ export function toDate(value: Date | string | number): Date {
 
 export function formatLocalDate(date: Date | string | number): string {
   const d = toDate(date);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
+  // Convert to KST
+  const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+  const year = kst.getUTCFullYear();
+  const month = String(kst.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(kst.getUTCDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
 
@@ -59,7 +61,10 @@ export function getDateTimeForMinute(dateText: string, minute: number): Date {
   const [year, month, day] = dateText.split('-').map(Number);
   const hours = Math.floor(minute / 60);
   const minutes = minute % 60;
-  return new Date(year, month - 1, day, hours, minutes, 0, 0);
+  
+  // Create a UTC date that represents the time in KST (UTC+9).
+  // To get UTC time from KST time: UTC = KST - 9 hours.
+  return new Date(Date.UTC(year, month - 1, day, hours - 9, minutes, 0, 0));
 }
 
 export function formatMinuteLabel(minute: number): string {
@@ -94,13 +99,25 @@ export function normalizeReservations(
       const startTime = toDate(reservation.startTime);
       const endTime = toDate(reservation.endTime);
 
+      // Extract hours and minutes in KST (UTC+9)
+      const startKst = new Date(startTime.getTime() + 9 * 60 * 60 * 1000);
+      const endKst = new Date(endTime.getTime() + 9 * 60 * 60 * 1000);
+
+      const startMinute = startKst.getUTCHours() * 60 + startKst.getUTCMinutes();
+      let endMinute = endKst.getUTCHours() * 60 + endKst.getUTCMinutes();
+
+      // Normalize midnight (00:00) to 24:00 (1440 min) if it's after start time
+      if (endMinute === 0 && endKst.getTime() > startKst.getTime()) {
+        endMinute = 24 * 60;
+      }
+
       return {
         id: reservation.id,
         userId: reservation.userId,
         userName: reservation.userName,
         purpose: reservation.purpose,
-        startMinute: startTime.getHours() * 60 + startTime.getMinutes(),
-        endMinute: endTime.getHours() * 60 + endTime.getMinutes(),
+        startMinute,
+        endMinute,
       };
     })
     .sort((a, b) => a.startMinute - b.startMinute);

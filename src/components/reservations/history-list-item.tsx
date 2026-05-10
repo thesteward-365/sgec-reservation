@@ -23,8 +23,9 @@ function formatTime(iso: string | number | Date): string {
   try {
     const d = fromDbDate(iso);
     if (isNaN(d.getTime())) return '-';
-    const hours = String(d.getHours()).padStart(2, '0');
-    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+    const hours = String(kst.getUTCHours()).padStart(2, '0');
+    const minutes = String(kst.getUTCMinutes()).padStart(2, '0');
     return `${hours}:${minutes}`;
   } catch {
     return '-';
@@ -35,13 +36,29 @@ function formatDate(iso: string | number | Date): string {
   try {
     const d = fromDbDate(iso);
     if (isNaN(d.getTime())) return '-';
-    return new Intl.DateTimeFormat('ko-KR', {
-      month: 'long',
-      day: 'numeric',
-      weekday: 'short',
-    }).format(d);
+    const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+    const month = kst.getUTCMonth() + 1;
+    const day = kst.getUTCDate();
+    const weekday = ['일', '월', '화', '수', '목', '금', '토'][kst.getUTCDay()];
+    return `${month}월 ${day}일 (${weekday})`;
   } catch {
     return '-';
+  }
+}
+
+function isSameDay(d1: any, d2: any): boolean {
+  try {
+    const date1 = fromDbDate(d1);
+    const date2 = fromDbDate(d2);
+    const kst1 = new Date(date1.getTime() + 9 * 60 * 60 * 1000);
+    const kst2 = new Date(date2.getTime() + 9 * 60 * 60 * 1000);
+    return (
+      kst1.getUTCFullYear() === kst2.getUTCFullYear() &&
+      kst1.getUTCMonth() === kst2.getUTCMonth() &&
+      kst1.getUTCDate() === kst2.getUTCDate()
+    );
+  } catch {
+    return false;
   }
 }
 
@@ -78,6 +95,9 @@ export function HistoryListItem({ item, onClick }: Props) {
     endTime: '종료 시간',
     purpose: '사용 목적',
     placeName: '장소',
+    placeId: '장소',
+    place_id: '장소',
+    place: '장소',
     date: '날짜',
     userName: '예약자'
   };
@@ -91,6 +111,10 @@ export function HistoryListItem({ item, onClick }: Props) {
     if (type === 'cancelled') return changes.snapshot;
     return null;
   }
+
+  const dateChanged = item.actionType === 'updated' && changes?.startTime && !isSameDay(changes.startTime.from, changes.startTime.to);
+  const startTimeActuallyChanged = item.actionType === 'updated' && changes?.startTime && formatTime(changes.startTime.from) !== formatTime(changes.startTime.to);
+  const endTimeActuallyChanged = item.actionType === 'updated' && changes?.endTime && formatTime(changes.endTime.from) !== formatTime(changes.endTime.to);
 
   return (
     <div 
@@ -122,8 +146,21 @@ export function HistoryListItem({ item, onClick }: Props) {
         {item.actionType === 'updated' && changes && Object.keys(changes).length > 0 ? (
           /* Updated: show only modified fields */
           <div className="space-y-1.5">
+            {dateChanged && (
+              <div className="flex items-center gap-3 text-sm">
+                <span className="text-muted-foreground font-medium w-16 shrink-0">{labels.date}</span>
+                <div className="flex flex-1 items-center gap-2 overflow-hidden text-[13px]">
+                  <span className="line-through opacity-40 truncate">{formatDate(changes.startTime.from)}</span>
+                  <span className="opacity-30">→</span>
+                  <span className="font-semibold text-blue-600 truncate">{formatDate(changes.startTime.to)}</span>
+                </div>
+              </div>
+            )}
             {Object.entries(changes).map(([key, value]: [string, any]) => {
               if (key === 'cancelled') return null;
+              if (key === 'startTime' && !startTimeActuallyChanged) return null;
+              if (key === 'endTime' && !endTimeActuallyChanged) return null;
+
               return (
                 <div key={key} className="flex items-center gap-3 text-sm">
                   <span className="text-muted-foreground font-medium w-16 shrink-0">{labels[key] || key}</span>

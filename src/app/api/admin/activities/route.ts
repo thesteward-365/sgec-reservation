@@ -60,7 +60,36 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .offset(offset);
 
-    return NextResponse.json(history);
+    // Fetch all places to resolve placeId changes
+    const allPlaces = await db.select({ id: places.id, name: places.name }).from(places);
+    const placeMap = new Map(allPlaces.map((p) => [p.id, p.name]));
+
+    const mappedHistory = history.map((item: any) => {
+      let changes = item.changes;
+      if (typeof changes === 'string') {
+        try {
+          changes = JSON.parse(changes);
+        } catch {
+          changes = {};
+        }
+      }
+
+      // Resolve placeId names
+      if (changes?.placeId) {
+        changes.placeName = {
+          from: placeMap.get(changes.placeId.from) || changes.placeId.from,
+          to: placeMap.get(changes.placeId.to) || changes.placeId.to,
+        };
+        delete changes.placeId;
+      }
+
+      return {
+        ...item,
+        changes,
+      };
+    });
+
+    return NextResponse.json(mappedHistory);
   } catch (error) {
     console.error('Activities error:', error);
     return NextResponse.json(

@@ -65,16 +65,40 @@ export async function GET(_request: NextRequest) {
       .orderBy(desc(reservationHistories.createdAt))
       .limit(5);
 
-    const recentActivities = recentHistory.map((item) => ({
-      id: item.id,
-      reservationId: item.reservationId,
-      type: item.actionType,
-      message: getActionLabel(item.actionType),
-      actor: item.actorUserName,
-      place: item.placeName,
-      changes: item.changes,
-      timestamp: fromDbDate(item.createdAt).toISOString(),
-    }));
+    // Fetch all places to resolve placeId changes
+    const allPlacesList = await db.select({ id: places.id, name: places.name }).from(places);
+    const placeMap = new Map(allPlacesList.map((p) => [p.id, p.name]));
+
+    const recentActivities = recentHistory.map((item: any) => {
+      let changes = item.changes;
+      if (typeof changes === 'string') {
+        try {
+          changes = JSON.parse(changes);
+        } catch {
+          changes = {};
+        }
+      }
+
+      // Resolve placeId names
+      if (changes?.placeId) {
+        changes.placeName = {
+          from: placeMap.get(changes.placeId.from) || changes.placeId.from,
+          to: placeMap.get(changes.placeId.to) || changes.placeId.to,
+        };
+        delete changes.placeId;
+      }
+
+      return {
+        id: item.id,
+        reservationId: item.reservationId,
+        type: item.actionType,
+        message: getActionLabel(item.actionType),
+        actor: item.actorUserName,
+        place: item.placeName,
+        changes: changes,
+        timestamp: fromDbDate(item.createdAt).toISOString(),
+      };
+    });
 
     return NextResponse.json({
       pendingUsersCount: pendingUsers[0]?.count || 0,

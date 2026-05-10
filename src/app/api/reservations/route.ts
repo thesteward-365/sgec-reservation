@@ -17,8 +17,11 @@ export async function GET(request: NextRequest) {
   }
 
   const [y, mo, d] = date.split('-').map(Number);
-  const dayStart = new Date(y, mo - 1, d, 0, 0, 0);
-  const dayEnd = new Date(y, mo - 1, d + 1, 0, 0, 0);
+  // Create dates in a way that always represents the full day in KST (UTC+9)
+  // dayStart: YYYY-MM-DD 00:00:00 KST = YYYY-MM-DD-1 15:00:00 UTC
+  // dayEnd: YYYY-MM-DD 23:59:59 KST = YYYY-MM-DD 14:59:59 UTC
+  const dayStart = new Date(Date.UTC(y, mo - 1, d - 1, 15, 0, 0));
+  const dayEnd = new Date(Date.UTC(y, mo - 1, d, 15, 0, 0));
 
   const rows = await db
     .select({

@@ -87,11 +87,6 @@ function toDate(value: Date | string): Date {
   return typeof value === 'string' ? new Date(value) : value;
 }
 
-function minuteOf(value: Date | string): number {
-  const date = toDate(value);
-  return date.getHours() * 60 + date.getMinutes();
-}
-
 async function readResponseError(
   response: Response
 ): Promise<string | undefined> {
@@ -121,7 +116,7 @@ export function PlaceDetailView({
     ? formatLocalDate(toDate(initialReservation.startTime))
     : undefined;
   const [selectedDate, setSelectedDate] = useState(
-    initialReservationDate ?? getInitialDate(initialDate)
+    initialDate ?? initialReservationDate ?? getInitialDate()
   );
   const [reservations, setReservations] = useState<ReservationSchedule[]>([]);
   const [externalEvents, setExternalEvents] = useState<
@@ -129,11 +124,32 @@ export function PlaceDetailView({
   >([]);
   const [loading, setLoading] = useState(true);
   const [selection, setSelection] = useState(() => {
+    // URL params take priority (e.g. after changing place/date)
+    if (initialStartMin !== undefined && initialEndMin !== undefined) {
+      let startMin = initialStartMin;
+      let endMin = initialEndMin;
+      if (endMin === 0 && startMin > 0) endMin = 24 * 60;
+      return { startMin, endMin };
+    }
+
     if (initialReservation) {
-      return {
-        startMin: minuteOf(initialReservation.startTime),
-        endMin: minuteOf(initialReservation.endTime),
-      };
+      const start = toDate(initialReservation.startTime);
+      const end = toDate(initialReservation.endTime);
+      
+      // Extract KST hours/minutes
+      const startKst = new Date(start.getTime() + 9 * 60 * 60 * 1000);
+      const endKst = new Date(end.getTime() + 9 * 60 * 60 * 1000);
+      
+      let startMin = startKst.getUTCHours() * 60 + startKst.getUTCMinutes();
+      let endMin = endKst.getUTCHours() * 60 + endKst.getUTCMinutes();
+      
+      // Handle midnight ending on the next day
+      // If end time is technically after start time but minute-of-day is 0, it's 24:00 (1440 min)
+      if (endMin === 0 && end.getTime() > start.getTime()) {
+        endMin = 24 * 60;
+      }
+      
+      return { startMin, endMin };
     }
     return {
       startMin: initialStartMin ?? 10 * 60,
@@ -153,6 +169,13 @@ export function PlaceDetailView({
   const [isPending, startTransition] = useTransition();
   const purposeRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
+
+  // Normalize endMin to 1440 if it's midnight and technically after startMin
+  useEffect(() => {
+    if (selection.endMin === 0 && selection.startMin > 0) {
+      setSelection((s) => ({ ...s, endMin: 24 * 60 }));
+    }
+  }, [selection.endMin, selection.startMin]);
 
   const [placePickerOpen, setPlacePickerOpen] = useState(false);
   const [pickerPlaces, setPickerPlaces] = useState<PickerPlace[]>([]);

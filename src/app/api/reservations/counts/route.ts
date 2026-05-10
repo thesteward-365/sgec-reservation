@@ -21,8 +21,9 @@ export async function GET(request: NextRequest) {
 
   const [sy, smo, sd] = startDateParam.split('-').map(Number);
   const [ey, emo, ed] = endDateParam.split('-').map(Number);
-  const rangeStart = new Date(sy, smo - 1, sd, 0, 0, 0);
-  const rangeEnd = new Date(ey, emo - 1, ed + 1, 0, 0, 0); // exclusive
+  // KST range: startDate 00:00:00 to (endDate + 1) 00:00:00
+  const rangeStart = new Date(Date.UTC(sy, smo - 1, sd - 1, 15, 0, 0));
+  const rangeEnd = new Date(Date.UTC(ey, emo - 1, ed, 15, 0, 0)); // exclusive
 
   const reservationRows = await db
     .select({

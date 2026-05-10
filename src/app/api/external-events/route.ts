@@ -12,12 +12,14 @@ export async function GET(request: NextRequest) {
 
   if (month) {
     const [y, m] = month.split('-').map(Number);
-    dayStart = new Date(y, m - 1, 1);
-    dayEnd = new Date(y, m, 1);
+    // Month range in KST: YYYY-MM-01 00:00:00 KST to YYYY-(MM+1)-01 00:00:00 KST
+    dayStart = new Date(Date.UTC(y, m - 1, 0, 15, 0, 0));
+    dayEnd = new Date(Date.UTC(y, m, 0, 15, 0, 0));
   } else if (date) {
     const [y, mo, d] = date.split('-').map(Number);
-    dayStart = new Date(y, mo - 1, d, 0, 0, 0);
-    dayEnd = new Date(y, mo - 1, d + 1, 0, 0, 0);
+    // Day range in KST: YYYY-MM-DD 00:00:00 KST to YYYY-MM-DD+1 00:00:00 KST
+    dayStart = new Date(Date.UTC(y, mo - 1, d - 1, 15, 0, 0));
+    dayEnd = new Date(Date.UTC(y, mo - 1, d, 15, 0, 0));
   } else {
     return NextResponse.json(
       { error: 'date or month is required' },

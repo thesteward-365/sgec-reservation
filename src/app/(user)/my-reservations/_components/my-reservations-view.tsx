@@ -126,7 +126,7 @@ export function MyReservationsView({ user }: Props) {
       list = list.filter((reservation) => reservation.status !== 'cancelled');
     }
 
-    if (filter.onlyMine) {
+    if (filter.onlyMine && user) {
       list = list.filter((r) => r.userId === user.id);
     }
 
@@ -135,7 +135,7 @@ export function MyReservationsView({ user }: Props) {
       const tb = new Date(b.startTime).getTime();
       return filter.sortOrder === 'asc' ? ta - tb : tb - ta;
     });
-  }, [allReservations, filter, placeTagMap, user.id]);
+  }, [allReservations, filter, placeTagMap, user?.id]);
 
   // 캘린더 인디케이터용 날짜 Set
   const indicatorDates = useMemo(
@@ -245,7 +245,7 @@ export function MyReservationsView({ user }: Props) {
                     <ReservationItem
                       reservation={r}
                       isPast={new Date(r.endTime) < now}
-                      isMine={r.userId === user.id}
+                      isMine={r.userId === user?.id}
                       onTap={() => setActiveRes(r)}
                       flat
                     />
@@ -276,7 +276,7 @@ export function MyReservationsView({ user }: Props) {
                       <ReservationItem
                         reservation={r}
                         isPast={new Date(r.endTime) < now}
-                        isMine={r.userId === user.id}
+                        isMine={r.userId === user?.id}
                         onTap={() => setActiveRes(r)}
                         flat
                       />

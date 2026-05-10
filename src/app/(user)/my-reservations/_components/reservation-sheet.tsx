@@ -48,7 +48,7 @@ export function ReservationSheet({
   );
 
   const canManage = useMemo(() => {
-    if (!reservation) return false;
+    if (!reservation || !user) return false;
     return user.role === 'admin' || user.id === reservation.userId;
   }, [reservation, user]);
 

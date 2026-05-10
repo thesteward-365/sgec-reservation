@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ReservationDetailsCard } from './reservation-details-card';
 import { HistoryListItem, type HistoryItem } from './history-list-item';
 import { cn } from '@/lib/utils';
+import { formatTime, formatKoreanDate } from '@/lib/date-utils';
 
 export interface Reservation {
   id: number;
@@ -23,19 +24,6 @@ interface Props {
   loadingHistory?: boolean;
   onTabChange?: (tab: 'info' | 'history') => void;
   actions?: React.ReactNode;
-}
-
-function formatKoreanDate(iso: string): string {
-  return new Intl.DateTimeFormat('ko-KR', {
-    month: 'long',
-    day: 'numeric',
-    weekday: 'short',
-  }).format(new Date(iso));
-}
-
-function formatTime(iso: string): string {
-  const d = new Date(iso);
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
 export function ReservationDetailView({

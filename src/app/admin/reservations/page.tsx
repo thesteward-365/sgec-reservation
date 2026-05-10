@@ -165,6 +165,7 @@ export default function ReservationsPage() {
     tagId: null,
     sortOrder: 'asc',
     includeCancelled: false,
+    onlyMine: false,
   });
   const [showFilter, setShowFilter] = useState(false);
   const [loading, setLoading] = useState(true);
