@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import type { ReservationRange } from '@/lib/services/reservation-slots';
 
@@ -192,47 +192,76 @@ export function ReservationTimeline({
             return (
               <div
                 key={r.id}
-                className="pointer-events-none absolute bg-neutral-200 px-3 py-2"
+                className="pointer-events-none absolute px-3 py-2"
                 style={{ top: top + 1, height: height, left: 0, right: 0 }}
               >
-                <p
-                  className="text-muted-foreground truncate text-[12px] leading-tight font-semibold"
-                  style={{ fontSize: 12 }}
-                >
-                  {r.userName ? `${r.userName} · ${r.purpose}` : r.purpose}
-                </p>
-                <p
-                  className="text-muted-foreground/80 mt-0.5 text-[11px] tabular-nums"
-                  style={{ fontSize: 12 }}
-                >
-                  {fmtMin(r.startMinute)} – {fmtMin(r.endMinute)}
-                </p>
+                {/* White background box to prevent overlap bleed-through */}
+                <div className="absolute inset-0 bg-white" />
+                {/* Original background color (semi-transparent) */}
+                <div className="absolute inset-0 bg-neutral-200" />
+                
+                <div className="relative">
+                  <p
+                    className="text-muted-foreground truncate text-[12px] leading-tight font-semibold"
+                    style={{ fontSize: 12 }}
+                  >
+                    {r.userName ? `${r.userName} · ${r.purpose}` : r.purpose}
+                  </p>
+                  <p
+                    className="text-muted-foreground/80 mt-0.5 text-[11px] tabular-nums"
+                    style={{ fontSize: 12 }}
+                  >
+                    {fmtMin(r.startMinute)} – {fmtMin(r.endMinute)}
+                  </p>
+                </div>
               </div>
             );
           })}
 
           {/* External event blocks (행사 일정) */}
-          {timedEvents.map((ev) => {
-            const top = minToY(ev.startMin);
-            const height = Math.max(SLOT_H, minToY(ev.endMin) - top);
-            return (
-              <div
-                key={ev.id}
-                className="pointer-events-none absolute bg-indigo-50/50 border-l-4 border-indigo-400 px-3 py-2"
-                style={{
-                  top: top + 1,
-                  height,
-                  left: 0,
-                  right: 0,
-                  zIndex: 5,
-                }}
-              >
-                <p className="text-indigo-700 truncate text-[11px] leading-tight font-bold">
-                  {ev.title}
-                </p>
-              </div>
-            );
-          })}
+          {useMemo(() => {
+            // Group timed events by start and end time
+            const groups = new Map<string, ExternalEventBlock[]>();
+            timedEvents.forEach((ev) => {
+              const key = `${ev.startMin}-${ev.endMin}`;
+              if (!groups.has(key)) groups.set(key, []);
+              groups.get(key)!.push(ev);
+            });
+
+            return Array.from(groups.values()).map((group) => {
+              const ev = group[0];
+              const top = minToY(ev.startMin);
+              const height = Math.max(SLOT_H, minToY(ev.endMin) - top);
+              const displayTitle = group.length > 1 
+                ? `${ev.title} 외 ${group.length - 1}개`
+                : ev.title;
+
+              return (
+                <div
+                  key={ev.id}
+                  className="pointer-events-none absolute border-l-4 border-indigo-400 px-3 py-2"
+                  style={{
+                    top: top + 1,
+                    height,
+                    left: 0,
+                    right: 0,
+                    zIndex: 5,
+                  }}
+                >
+                  {/* White background box */}
+                  <div className="absolute inset-0 bg-white" />
+                  {/* Original background color */}
+                  <div className="absolute inset-0 bg-indigo-50/50" />
+                  
+                  <div className="relative">
+                    <p className="text-indigo-700 truncate text-[11px] leading-tight font-bold">
+                      {displayTitle}
+                    </p>
+                  </div>
+                </div>
+              );
+            });
+          }, [timedEvents])}
 
           {/* Selection block — transparent so underlying reservations are visible */}
           {selHeight > 0 && (
@@ -240,8 +269,8 @@ export function ReservationTimeline({
               className={cn(
                 'pointer-events-none absolute overflow-hidden',
                 collision
-                  ? 'border border-(--color-danger) bg-(--color-danger)/20'
-                  : 'bg-accent/50 border-2 border-(--color-accent)'
+                  ? 'border border-(--color-danger)'
+                  : 'border-2 border-(--color-accent)'
               )}
               style={{
                 top: selTop,
@@ -251,6 +280,14 @@ export function ReservationTimeline({
                 zIndex: 10,
               }}
             >
+              {/* White background box for selection as well */}
+              <div className="absolute inset-0 bg-white" />
+              {/* Original selection background */}
+              <div className={cn(
+                "absolute inset-0",
+                collision ? "bg-(--color-danger)/20" : "bg-accent/50"
+              )} />
+
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5 px-2">
                 <p
                   className="text-[13px] leading-none font-bold tabular-nums"

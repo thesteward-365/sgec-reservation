@@ -66,13 +66,28 @@ export const WithCollision: Story = {
   },
 };
 
-export const ManyExternalEvents: Story = {
+export const OverlappingExternalEvents: Story = {
   args: {
     ...Default.args,
     externalEvents: [
-      { id: 201, title: '행복나눔모임', startMin: 0, endMin: 1440 },
-      { id: 202, title: '샘키즈 유아부 행사', startMin: 0, endMin: 1440 },
-      { id: 203, title: '오후 특별 집회', startMin: 900, endMin: 1100 },
+      {
+        id: 301,
+        title: '신년 특별 새벽 기도회',
+        startMin: 300, // 05:00
+        endMin: 420,   // 07:00
+      },
+      {
+        id: 302,
+        title: '새벽 기도 차량 봉사',
+        startMin: 300, // 05:00
+        endMin: 420,   // 07:00
+      },
+      {
+        id: 303,
+        title: '새벽 기도 안내팀 모임',
+        startMin: 300, // 05:00
+        endMin: 420,   // 07:00
+      },
     ],
   },
 };

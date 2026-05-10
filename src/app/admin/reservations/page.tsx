@@ -26,6 +26,7 @@ import { Chip } from '@/components/ui/chip';
 type ReservationStatus = 'active' | 'cancelled';
 type AdminReservation = {
   id: number;
+  userId: number | null;
   placeId: number;
   placeName: string | null;
   floorId: number | null;
@@ -160,6 +161,10 @@ export default function ReservationsPage() {
   const [reservations, setReservations] = useState<AdminReservation[]>([]);
   const [externalEvents, setExternalEvents] = useState<CalendarEvent[]>([]);
   const [placeTagMap, setPlaceTagMap] = useState<PlaceTagMap>({});
+  const [currentUser, setCurrentUser] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
   const [filter, setFilter] = useState<FilterState>({
     floorId: null,
     tagId: null,
@@ -171,13 +176,14 @@ export default function ReservationsPage() {
   const [loading, setLoading] = useState(true);
   const [now] = useState(() => new Date());
 
-  // 데이터 로딩: 예약, 장소
+  // 데이터 로딩: 예약, 장소, 계정
   useEffect(() => {
     Promise.all([
       fetch('/api/admin/reservations').then((r) => r.json()),
       fetch('/api/places').then((r) => r.json()),
+      fetch('/api/account').then((r) => r.json()),
     ])
-      .then(([adminReservations, places]) => {
+      .then(([adminReservations, places, accountData]) => {
         setReservations(adminReservations as AdminReservation[]);
 
         const map: PlaceTagMap = {};
@@ -187,6 +193,7 @@ export default function ReservationsPage() {
           );
         });
         setPlaceTagMap(map);
+        setCurrentUser(accountData.user || null);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -229,12 +236,18 @@ export default function ReservationsPage() {
       list = list.filter((reservation) => reservation.status !== 'cancelled');
     }
 
+    if (filter.onlyMine && currentUser) {
+      list = list.filter(
+        (reservation) => reservation.userId === currentUser.id
+      );
+    }
+
     return [...list].sort((a, b) => {
       const aTime = a.startTime ? new Date(a.startTime).getTime() : 0;
       const bTime = b.startTime ? new Date(b.startTime).getTime() : 0;
       return filter.sortOrder === 'asc' ? aTime - bTime : bTime - aTime;
     });
-  }, [filter, placeTagMap, reservations]);
+  }, [filter, placeTagMap, reservations, currentUser]);
 
   const indicatorDates = useMemo(
     () =>
@@ -266,7 +279,8 @@ export default function ReservationsPage() {
   const activeFilter =
     filter.floorId !== null ||
     filter.tagId !== null ||
-    filter.sortOrder !== 'asc';
+    filter.sortOrder !== 'asc' ||
+    filter.onlyMine;
 
   const listViewReservations = filteredReservations.filter((reservation) => {
     if (!reservation.startTime) return listTab === '전체';
@@ -420,9 +434,19 @@ export default function ReservationsPage() {
                                 )}
                               </div>
                               <p className="text-muted-foreground mt-2 text-[14px]! leading-snug">
-                                {reservation.userName
-                                  ? `${reservation.userName} · `
-                                  : ''}
+                                {reservation.userName ? (
+                                  <span
+                                    className={cn(
+                                      currentUser?.id === reservation.userId &&
+                                        'text-blue-600 font-bold'
+                                    )}
+                                  >
+                                    {reservation.userName}
+                                  </span>
+                                ) : (
+                                  ''
+                                )}
+                                {reservation.userName ? ' · ' : ''}
                                 {reservation.purpose}
                               </p>
                             </div>
@@ -538,9 +562,20 @@ export default function ReservationsPage() {
                                     )}
                                   </div>
                                   <p className="text-muted-foreground mt-2 text-[14px]! leading-snug">
-                                    {reservation.userName
-                                      ? `${reservation.userName} · `
-                                      : ''}
+                                    {reservation.userName ? (
+                                      <span
+                                        className={cn(
+                                          currentUser?.id ===
+                                            reservation.userId &&
+                                            'text-blue-600 font-bold'
+                                        )}
+                                      >
+                                        {reservation.userName}
+                                      </span>
+                                    ) : (
+                                      ''
+                                    )}
+                                    {reservation.userName ? ' · ' : ''}
                                     {reservation.purpose}
                                   </p>
                                 </div>
