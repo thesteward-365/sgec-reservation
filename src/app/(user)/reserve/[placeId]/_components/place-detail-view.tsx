@@ -208,11 +208,25 @@ export function PlaceDetailView({
               (eventsData ?? []).map((ev) => {
                 const s = new Date(ev.startTime);
                 const e = new Date(ev.endTime);
+
+                // selectedDate is 'YYYY-MM-DD' in KST.
+                const dayStart = new Date(`${selectedDate}T00:00:00+09:00`);
+                const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+
+                const startMin = Math.max(
+                  0,
+                  Math.floor((s.getTime() - dayStart.getTime()) / 60000)
+                );
+                const endMin = Math.min(
+                  1440,
+                  Math.floor((e.getTime() - dayStart.getTime()) / 60000)
+                );
+
                 return {
                   id: ev.id,
                   title: ev.title,
-                  startMin: s.getHours() * 60 + s.getMinutes(),
-                  endMin: e.getHours() * 60 + e.getMinutes(),
+                  startMin,
+                  endMin,
                 };
               })
             );
