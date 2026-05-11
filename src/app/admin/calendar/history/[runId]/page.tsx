@@ -90,6 +90,7 @@ function formatDuration(startedAt: string, finishedAt: string | null) {
 
 function formatFieldValue(key: string, value: unknown) {
   if (value === null || value === undefined) return '-';
+  if (typeof value === 'string' && value.trim() === '') return '-';
 
   if (
     typeof value === 'object' &&
@@ -103,11 +104,19 @@ function formatFieldValue(key: string, value: unknown) {
         (key === 'startTime' || key === 'endTime') &&
         typeof change.from === 'string'
           ? formatFieldDateTime(change.from)
-          : String(change.from ?? '-'),
+          : change.from === null ||
+              change.from === undefined ||
+              (typeof change.from === 'string' && change.from.trim() === '')
+            ? '-'
+            : String(change.from),
       value:
         (key === 'startTime' || key === 'endTime') && typeof change.to === 'string'
           ? formatFieldDateTime(change.to)
-          : String(change.to ?? '-'),
+          : change.to === null ||
+              change.to === undefined ||
+              (typeof change.to === 'string' && change.to.trim() === '')
+            ? '-'
+            : String(change.to),
     };
   }
 
@@ -118,6 +127,48 @@ function formatFieldValue(key: string, value: unknown) {
   return { value: String(value) };
 }
 
+type ReservationFieldKey =
+  | 'placeName'
+  | 'purpose'
+  | 'userName'
+  | 'startTime'
+  | 'endTime';
+
+const reservationFieldOrder: Array<{
+  key: ReservationFieldKey;
+  label: string;
+}> = [
+  { key: 'placeName', label: '장소' },
+  { key: 'purpose', label: '사용 목적' },
+  { key: 'userName', label: '예약자' },
+  { key: 'startTime', label: '시작' },
+  { key: 'endTime', label: '종료' },
+];
+
+function hasPayloadKey(payload: Record<string, unknown>, key: string) {
+  return Object.prototype.hasOwnProperty.call(payload, key);
+}
+
+function buildReservationFields(
+  payload: Record<string, unknown>,
+  action: 'created' | 'updated' | 'cancelled'
+) {
+  return reservationFieldOrder.flatMap(({ key, label }) => {
+    if (action === 'updated' && !hasPayloadKey(payload, key)) {
+      return [];
+    }
+
+    const formatted = formatFieldValue(key, payload[key]);
+    return [
+      {
+        label,
+        value: formatted.value,
+        previousValue: formatted.previousValue,
+      },
+    ];
+  });
+}
+
 function buildFields(
   payload: Record<string, unknown> | null,
   category: 'reservation' | 'event',
@@ -125,23 +176,8 @@ function buildFields(
 ) {
   if (!payload) return [];
 
-  if (category === 'reservation' && action !== 'updated') {
-    const reservationFields = [
-      { key: 'placeName', label: '장소' },
-      { key: 'purpose', label: '사용 목적' },
-      { key: 'userName', label: '예약자' },
-      { key: 'startTime', label: '시작' },
-      { key: 'endTime', label: '종료' },
-    ];
-
-    return reservationFields.map(({ key, label }) => {
-      const formatted = formatFieldValue(key, payload[key]);
-      return {
-        label,
-        value: formatted.value,
-        previousValue: formatted.previousValue,
-      };
-    });
+  if (category === 'reservation') {
+    return buildReservationFields(payload, action);
   }
 
   return Object.entries(payload).flatMap(([key, value]) => {

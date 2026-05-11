@@ -491,13 +491,14 @@ DB 마이그레이션 적용
   - 완료 기준: 같은 유형의 예약 생성/취소 카드가 같은 필드 구조를 가진다.
   - 테스트 수행 방법: `npm test -- --run src/tests/reservation-service.test.ts`
 
-- [ ] 2. 상세 이력 페이지 필드 매핑 단순화
+- [x] 2. 상세 이력 페이지 필드 매핑 단순화
   - 예약 항목 표시 순서를 `장소`, `사용 목적`, `예약자`, `시작`, `종료`로 고정한다.
   - 시간 포맷은 `월.일(요일) 오전/오후 시간` 형식으로 유지한다.
   - `reservationId`, `placeId`, `userId` 같은 내부 필드는 노출하지 않는다.
   - 값이 비어 있으면 `-`로 표기한다.
   - 완료 기준: 생성/취소 카드의 UI가 동일한 구조와 라벨로 보이고, 누락 값이 있어도 UI가 흔들리지 않는다.
   - 테스트 수행 방법: `npx eslint src/app/admin/calendar/history/[runId]/page.tsx src/components/admin/calendar-sync-history-detail.tsx`
+  - 수동 테스트: `/admin/calendar/history/[runId]`에서 생성/수정/취소 예약 카드가 의도한 순서와 포맷으로 보이는지 확인한다.
 
 - [ ] 3. 예약 상세 페이지에서 Google Calendar 이벤트 링크 제공 여부 검토 및 구현
   - 예약 상세 API 응답에 `googleEventId`를 포함할지 검토하고 구현한다.
