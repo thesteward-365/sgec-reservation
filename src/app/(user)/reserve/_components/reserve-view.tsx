@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Cog6ToothIcon,
   ChevronRightIcon,
   AdjustmentsHorizontalIcon,
+  CalendarIcon,
 } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkSolidIcon } from '@heroicons/react/24/solid';
 import { WeeklyCalendar } from '@/components/ui/weekly-calendar';
@@ -23,6 +24,7 @@ import { List, ListItem } from '@/components/ui/list';
 import { ListSkeleton } from '@/components/ui/list-skeleton';
 import { BrandHeader } from '@/components/layout/brand-header';
 import { cn } from '@/lib/utils';
+import type { CalendarEvent } from '@/components/calendar/monthly-calendar';
 
 type Floor = { id: number; name: string; order: number };
 type Tag = { id: number; name: string };
@@ -34,6 +36,14 @@ type Place = {
   floorName: string | null;
   isPinned: boolean;
   tags: { id: number | null; name: string | null }[];
+};
+
+type ExternalEventResponse = {
+  id: number;
+  title: string;
+  startTime: string;
+  endTime: string;
+  description: string | null;
 };
 
 function formatLocalDate(date: Date): string {
@@ -56,6 +66,58 @@ function getWeekStartStr(date: Date): string {
   d.setDate(d.getDate() - d.getDay());
   d.setHours(0, 0, 0, 0);
   return formatLocalDate(d);
+}
+
+// 구글 캘린더 종일 일정(00:00:00 종료) 처리를 위한 헬퍼
+function toEffectiveYMD(isoString: string, isEnd: boolean): string {
+  const d = new Date(isoString);
+  if (
+    isEnd &&
+    d.getHours() === 0 &&
+    d.getMinutes() === 0 &&
+    d.getSeconds() === 0
+  ) {
+    // 00:00:00에 끝나면 실제로는 전날 종료된 것으로 처리
+    d.setDate(d.getDate() - 1);
+  }
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${dd}`;
+}
+
+// 행사 정보 카드 컴포넌트 (관리자 페이지와 동일)
+function InformationalEventCard({
+  title,
+  startTime,
+  endTime,
+}: {
+  title: string;
+  startTime: string;
+  endTime: string;
+}) {
+  const startDate = new Date(startTime);
+  const endDate = new Date(endTime);
+  const isSingleDay = formatLocalDate(startDate) === formatLocalDate(endDate);
+
+  const dateRangeLabel = isSingleDay
+    ? `${startDate.getMonth() + 1}월 ${startDate.getDate()}일`
+    : `${startDate.getMonth() + 1}월 ${startDate.getDate()}일 ~ ${endDate.getMonth() + 1}월 ${endDate.getDate()}일`;
+
+  return (
+    <div className="border-b border-blue-100/50 bg-blue-50/30 p-4 text-blue-700 last:border-0">
+      <div className="mb-1.5 flex items-center gap-1.5 opacity-80">
+        <CalendarIcon className="size-3.5 shrink-0" />
+        <span className="text-[12px] font-bold tracking-tight uppercase">
+          Event
+        </span>
+      </div>
+      <h4 className="text-foreground mb-0.5 text-[16px] leading-tight font-bold">
+        {title}
+      </h4>
+      <p className="text-[13px] font-medium opacity-60">{dateRangeLabel}</p>
+    </div>
+  );
 }
 
 type ReserveViewProps = {
@@ -84,6 +146,7 @@ export function ReserveView({ userName }: ReserveViewProps) {
   const [floors, setFloors] = useState<Floor[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [allPlaces, setAllPlaces] = useState<Place[]>([]);
+  const [externalEvents, setExternalEvents] = useState<CalendarEvent[]>([]);
   const [loadingPlaces, setLoadingPlaces] = useState(true);
   const [countsMap, setCountsMap] = useState<
     Record<number, Record<string, number>>
@@ -111,6 +174,25 @@ export function ReserveView({ userName }: ReserveViewProps) {
       })
       .catch(() => setLoadingPlaces(false));
   }, []);
+
+  // 외부 행사 로딩 (선택된 날짜의 월 기준)
+  useEffect(() => {
+    const monthStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}`;
+    fetch(`/api/external-events?month=${monthStr}`)
+      .then((r) => r.json())
+      .then((data: ExternalEventResponse[]) => {
+        setExternalEvents(
+          (data || []).map((ev) => ({
+            id: ev.id,
+            title: ev.title,
+            startDate: toEffectiveYMD(ev.startTime, false),
+            endDate: toEffectiveYMD(ev.endTime, true),
+            variant: 'accent',
+          }))
+        );
+      })
+      .catch(console.error);
+  }, [selectedDate.getFullYear(), selectedDate.getMonth()]);
 
   // 예약 건수 — 주 변경 시에만
   useEffect(() => {
@@ -179,6 +261,13 @@ export function ReserveView({ userName }: ReserveViewProps) {
     },
     [countsMap]
   );
+
+  const dailyEvents = useMemo(() => {
+    const ymd = formatLocalDate(selectedDate);
+    return externalEvents.filter(
+      (ev) => ymd >= ev.startDate && ymd <= ev.endDate
+    );
+  }, [externalEvents, selectedDate]);
 
   const hasActiveFilter = selectedFloorId !== null || selectedTagId !== null;
 

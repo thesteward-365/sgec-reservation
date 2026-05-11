@@ -125,13 +125,20 @@ function InformationalEventCard({
   startTime: string;
   endTime: string;
 }) {
-  const startDate = new Date(startTime);
-  const endDate = new Date(endTime);
-  const isSingleDay = toYMD(startDate) === toYMD(endDate);
+  const start = new Date(startTime);
+  const end = new Date(endTime);
 
-  const dateRangeLabel = isSingleDay
-    ? `${startDate.getMonth() + 1}월 ${startDate.getDate()}일`
-    : `${startDate.getMonth() + 1}월 ${startDate.getDate()}일 ~ ${endDate.getMonth() + 1}월 ${endDate.getDate()}일`;
+  // 종일 일정 판별 (KST 기준 00:00:00 시작 ~ 00:00:00 종료)
+  const isAllDay =
+    start.getHours() === 0 &&
+    start.getMinutes() === 0 &&
+    end.getHours() === 0 &&
+    end.getMinutes() === 0 &&
+    end.getTime() - start.getTime() >= 24 * 60 * 60 * 1000;
+
+  const timeLabel = isAllDay
+    ? '종일'
+    : `${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')} - ${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`;
 
   return (
     <div className="border-b border-blue-100/50 bg-blue-50/30 p-4 text-blue-700 last:border-0">
@@ -144,7 +151,7 @@ function InformationalEventCard({
       <h4 className="text-foreground mb-0.5 text-[16px] leading-tight font-bold">
         {title}
       </h4>
-      <p className="text-[13px] font-medium opacity-60">{dateRangeLabel}</p>
+      <p className="text-[13px] font-medium opacity-60">{timeLabel}</p>
     </div>
   );
 }
@@ -352,6 +359,7 @@ export default function ReservationsPage() {
                 onChangeMonth={setViewMonth}
                 indicators={indicatorDates}
                 events={externalEvents}
+                showEvents={false}
               />
 
               {loading ? (
@@ -438,7 +446,7 @@ export default function ReservationsPage() {
                                   <span
                                     className={cn(
                                       currentUser?.id === reservation.userId &&
-                                        'text-blue-600 font-bold'
+                                        'font-bold text-blue-600'
                                     )}
                                   >
                                     {reservation.userName}
@@ -567,7 +575,7 @@ export default function ReservationsPage() {
                                         className={cn(
                                           currentUser?.id ===
                                             reservation.userId &&
-                                            'text-blue-600 font-bold'
+                                            'font-bold text-blue-600'
                                         )}
                                       >
                                         {reservation.userName}
