@@ -154,6 +154,9 @@ export const externalEvents = pgTable('external_events', {
 // 9. 동기화 로그
 export const syncLogs = pgTable('sync_logs', {
   id: serial('id').primaryKey(),
+  runId: text('run_id').references(() => calendarSyncRuns.id, {
+    onDelete: 'cascade',
+  }),
   level: text('level').notNull().default('info'),
   message: text('message').notNull(),
   timestamp: timestamp('timestamp', { withTimezone: true })

@@ -36,6 +36,12 @@ type RunDetailResponse = {
     errorMessage: string | null;
     processedAt: string;
   }>;
+  logs: Array<{
+    id: number;
+    level: 'info' | 'warning' | 'error';
+    message: string;
+    timestamp: string;
+  }>;
 };
 
 function formatStartedAt(iso: string) {
@@ -257,14 +263,12 @@ export default function CalendarSyncHistoryPage() {
       fields: buildFields(item.payload, item.category, item.action),
     }));
 
-    const logs = detail.items
-      .filter((item) => item.errorMessage)
-      .map((item) => ({
-        id: `log-${item.id}`,
-        level: 'error' as const,
-        timestampLabel: formatShortTime(item.processedAt),
-        message: item.errorMessage!,
-      }));
+    const logs = detail.logs.map((log) => ({
+      id: `log-${log.id}`,
+      level: log.level,
+      timestampLabel: formatShortTime(log.timestamp),
+      message: log.message,
+    }));
 
     return {
       run: {

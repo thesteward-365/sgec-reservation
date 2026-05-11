@@ -4,19 +4,47 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { tables, state } = vi.hoisted(() => ({
   tables: {
-    reservations: { name: 'reservations' },
-    reservationHistories: { name: 'reservation_histories' },
-    externalEvents: { name: 'external_events' },
+    reservations: {
+      name: 'reservations',
+      id: 'reservations.id',
+      startTime: 'reservations.start_time',
+      endTime: 'reservations.end_time',
+      purpose: 'reservations.purpose',
+      googleEventId: 'reservations.google_event_id',
+      placeId: 'reservations.place_id',
+      userId: 'reservations.user_id',
+      status: 'reservations.status',
+    },
+    reservationHistories: {
+      name: 'reservation_histories',
+      id: 'reservation_histories.id',
+      reservationId: 'reservation_histories.reservation_id',
+      googleEventId: 'reservation_histories.google_event_id',
+      changes: 'reservation_histories.changes',
+      actionType: 'reservation_histories.action_type',
+      createdAt: 'reservation_histories.created_at',
+    },
+    externalEvents: {
+      name: 'external_events',
+      googleEventId: 'external_events.google_event_id',
+    },
     syncLogs: { name: 'sync_logs' },
     calendarSettings: { name: 'calendar_settings' },
-    calendarSyncRuns: { name: 'calendar_sync_runs' },
+    calendarSyncRuns: {
+      name: 'calendar_sync_runs',
+      startedAt: 'calendar_sync_runs.started_at',
+      finishedAt: 'calendar_sync_runs.finished_at',
+      reservationSyncStatus: 'calendar_sync_runs.reservation_sync_status',
+    },
     calendarSyncItems: { name: 'calendar_sync_items' },
-    places: { name: 'places' },
-    users: { name: 'users' },
+    places: { tableName: 'places', id: 'places.id', name: 'places.name' },
+    users: { tableName: 'users', id: 'users.id', name: 'users.name' },
   },
   state: {
     reservationRows: [] as any[],
     cancellationRows: [] as any[],
+    updatedHistoryRows: [] as any[],
+    latestHistoryRows: [] as any[],
     runRows: [] as any[],
     itemRows: [] as any[],
     insertedRuns: [] as any[],
@@ -51,6 +79,11 @@ vi.mock('../lib/calendar/google-client', () => ({
 vi.mock('../lib/db', () => {
   class QueryMock {
     table: any;
+    shape: any;
+
+    constructor(shape?: any) {
+      this.shape = shape;
+    }
 
     from(table: any) {
       this.table = table;
@@ -81,7 +114,15 @@ vi.mock('../lib/db', () => {
       let rows: any[] = [];
 
       if (this.table === tables.reservations) rows = state.reservationRows;
-      if (this.table === tables.reservationHistories) rows = state.cancellationRows;
+      if (this.table === tables.reservationHistories) {
+        if (this.shape?.googleEventId) {
+          rows = state.cancellationRows;
+        } else if (this.shape?.reservationId && !this.shape?.changes) {
+          rows = state.updatedHistoryRows;
+        } else if (this.shape?.changes) {
+          rows = state.latestHistoryRows;
+        }
+      }
       if (this.table === tables.calendarSyncRuns) rows = state.runRows;
       if (this.table === tables.calendarSyncItems) rows = state.itemRows;
 
@@ -90,7 +131,7 @@ vi.mock('../lib/db', () => {
   }
 
   const db = {
-    select: vi.fn(() => new QueryMock()),
+    select: vi.fn((shape?: any) => new QueryMock(shape)),
     insert: vi.fn((table: any) => ({
       values: vi.fn((payload: any) => {
         if (table === tables.syncLogs) {
@@ -159,6 +200,8 @@ describe('calendar-service syncAll', () => {
   beforeEach(() => {
     state.reservationRows = [];
     state.cancellationRows = [];
+    state.updatedHistoryRows = [];
+    state.latestHistoryRows = [];
     state.runRows = [];
     state.itemRows = [];
     state.insertedRuns = [];
@@ -221,6 +264,7 @@ describe('calendar-service syncAll', () => {
     expect(result.status).toBe('success');
     expect(state.insertedRuns).toHaveLength(1);
     expect(state.insertedItems).toHaveLength(2);
+    expect(state.logRows.every((row) => row.runId === result.runId)).toBe(true);
   });
 
   it('deletes local external events when Google returns zero events', async () => {
@@ -244,6 +288,20 @@ describe('calendar-service syncAll', () => {
         googleEventId: null,
         placeName: '회의실 A',
         userName: '홍길동',
+      },
+    ];
+    state.latestHistoryRows = [
+      {
+        changes: JSON.stringify({
+          created: {
+            to: {
+              placeId: 1,
+              startTime: '2026-05-20T10:00:00.000Z',
+              endTime: '2026-05-20T11:00:00.000Z',
+              purpose: '회의',
+            },
+          },
+        }),
       },
     ];
     vi.mocked(state.calendarClient.events.insert).mockRejectedValueOnce(
@@ -282,6 +340,21 @@ describe('calendar-service syncAll', () => {
         userName: '김민수',
       },
     ];
+    state.runRows = [
+      {
+        startedAt: new Date('2026-05-19T00:00:00.000Z'),
+        finishedAt: new Date('2026-05-19T00:01:00.000Z'),
+        reservationSyncStatus: 'success',
+      },
+    ];
+    state.updatedHistoryRows = [{ reservationId: 2 }];
+    state.latestHistoryRows = [
+      {
+        changes: JSON.stringify({
+          purpose: { from: '이전 모임', to: '리더 모임' },
+        }),
+      },
+    ];
     vi.mocked(state.calendarClient.events.update).mockRejectedValueOnce({
       code: 404,
     });
@@ -297,5 +370,87 @@ describe('calendar-service syncAll', () => {
     expect(result.counts.reservationUpdated).toBe(1);
     expect(state.reservationUpdates).toContainEqual({ googleEventId: 'new-event' });
     expect(result.status).toBe('success');
+  });
+
+  it('does not update already-synced reservations without recent history changes', async () => {
+    state.reservationRows = [
+      {
+        id: 3,
+        startTime: new Date('2026-05-21T10:00:00.000Z'),
+        endTime: new Date('2026-05-21T11:00:00.000Z'),
+        purpose: '변경 없음',
+        googleEventId: 'existing-event',
+        placeName: '회의실 B',
+        userName: '박서준',
+      },
+    ];
+    state.runRows = [
+      {
+        startedAt: new Date('2026-05-20T00:00:00.000Z'),
+        finishedAt: new Date('2026-05-20T00:01:00.000Z'),
+        reservationSyncStatus: 'success',
+      },
+    ];
+    vi.mocked(state.calendarClient.events.list).mockResolvedValue({
+      data: { items: [] },
+    });
+
+    const result = await syncAll('manual');
+
+    expect(result.counts.reservationUpdated).toBe(0);
+    expect(vi.mocked(state.calendarClient.events.update)).not.toHaveBeenCalled();
+    expect(result.status).toBe('success');
+  });
+
+  it('updates only reservations changed since the last successful sync', async () => {
+    state.reservationRows = [
+      {
+        id: 4,
+        startTime: new Date('2026-05-22T10:00:00.000Z'),
+        endTime: new Date('2026-05-22T11:00:00.000Z'),
+        purpose: '수정 대상',
+        googleEventId: 'event-4',
+        placeName: '회의실 C',
+        userName: '이수진',
+      },
+      {
+        id: 5,
+        startTime: new Date('2026-05-23T10:00:00.000Z'),
+        endTime: new Date('2026-05-23T11:00:00.000Z'),
+        purpose: '스킵 대상',
+        googleEventId: 'event-5',
+        placeName: '회의실 D',
+        userName: '정우성',
+      },
+    ];
+    state.runRows = [
+      {
+        startedAt: new Date('2026-05-20T00:00:00.000Z'),
+        finishedAt: new Date('2026-05-20T00:01:00.000Z'),
+        reservationSyncStatus: 'success',
+      },
+    ];
+    state.updatedHistoryRows = [{ reservationId: 4 }];
+    state.latestHistoryRows = [
+      {
+        changes: JSON.stringify({
+          purpose: { from: '수정 전', to: '수정 대상' },
+        }),
+      },
+    ];
+    vi.mocked(state.calendarClient.events.update).mockResolvedValue({
+      data: {},
+    } as any);
+    vi.mocked(state.calendarClient.events.list).mockResolvedValue({
+      data: { items: [] },
+    });
+
+    const result = await syncAll('manual');
+
+    expect(result.counts.reservationUpdated).toBe(1);
+    expect(vi.mocked(state.calendarClient.events.update)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(state.calendarClient.events.update)).toHaveBeenCalledWith(
+      expect.objectContaining({ eventId: 'event-4' })
+    );
   });
 });

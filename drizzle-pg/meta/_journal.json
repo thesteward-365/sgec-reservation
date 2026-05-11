@@ -22,6 +22,13 @@
       "when": 1778500000000,
       "tag": "0002_calendar_sync_history",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1778540000000,
+      "tag": "0003_sync_logs_run_id",
+      "breakpoints": true
     }
   ]
 }

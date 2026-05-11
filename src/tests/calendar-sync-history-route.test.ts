@@ -50,6 +50,14 @@ const state = vi.hoisted(() => ({
         processedAt: '2026-05-11T10:00:10.000Z',
       },
     ],
+    logs: [
+      {
+        id: 10,
+        level: 'info' as const,
+        message: '행사 일정 pull 완료: 4건',
+        timestamp: '2026-05-11T10:00:20.000Z',
+      },
+    ],
   } as Record<string, unknown> | null,
 }));
 
@@ -103,6 +111,14 @@ describe('/api/admin/calendar/history routes', () => {
           processedAt: '2026-05-11T10:00:10.000Z',
         },
       ],
+      logs: [
+        {
+          id: 10,
+          level: 'info',
+          message: '행사 일정 pull 완료: 4건',
+          timestamp: '2026-05-11T10:00:20.000Z',
+        },
+      ],
     };
   });
 
@@ -133,6 +149,7 @@ describe('/api/admin/calendar/history routes', () => {
     expect(response.status).toBe(200);
     expect(json.id).toBe('sync_run_1');
     expect(json.items[0].reservationId).toBe(1234);
+    expect(json.logs[0].message).toBe('행사 일정 pull 완료: 4건');
   });
 
   it('returns 404 when sync run detail is missing', async () => {

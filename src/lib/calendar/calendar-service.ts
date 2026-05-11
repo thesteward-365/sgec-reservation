@@ -103,6 +103,12 @@ export type CalendarSyncRunDetail = CalendarSyncRunSummary & {
     errorMessage: string | null;
     processedAt: string;
   }>;
+  logs: Array<{
+    id: number;
+    level: 'info' | 'warning' | 'error';
+    message: string;
+    timestamp: string;
+  }>;
 };
 
 function buildEventBody(reservation: ReservationRow): calendar_v3.Schema$Event {
@@ -121,8 +127,12 @@ function buildEventBody(reservation: ReservationRow): calendar_v3.Schema$Event {
   };
 }
 
-async function logSync(level: 'info' | 'error', message: string) {
-  await db.insert(syncLogs).values({ level, message });
+async function logSync(
+  level: 'info' | 'error',
+  message: string,
+  runId?: string
+) {
+  await db.insert(syncLogs).values({ level, message, runId: runId ?? null });
 }
 
 function reservationTitle(row: {
@@ -216,6 +226,47 @@ function parseHistoryChanges(
   } catch {
     return null;
   }
+}
+
+async function getLatestReservationSyncCursor(): Promise<Date | null> {
+  const runs = await db
+    .select({
+      startedAt: calendarSyncRuns.startedAt,
+      finishedAt: calendarSyncRuns.finishedAt,
+      reservationSyncStatus: calendarSyncRuns.reservationSyncStatus,
+    })
+    .from(calendarSyncRuns)
+    .orderBy(desc(calendarSyncRuns.startedAt));
+
+  const latestRun = runs.find(
+    (run) =>
+      run.reservationSyncStatus !== 'failed' &&
+      (run.finishedAt instanceof Date || run.startedAt instanceof Date)
+  );
+
+  if (!latestRun) return null;
+
+  return latestRun.finishedAt ?? latestRun.startedAt;
+}
+
+async function getUpdatedReservationIdsSince(
+  since: Date | null
+): Promise<Set<number>> {
+  if (!since) return new Set();
+
+  const rows = await db
+    .select({
+      reservationId: reservationHistories.reservationId,
+    })
+    .from(reservationHistories)
+    .where(
+      and(
+        eq(reservationHistories.actionType, 'updated'),
+        gte(reservationHistories.createdAt, since)
+      )
+    );
+
+  return new Set(rows.map((row) => row.reservationId));
 }
 
 async function getLatestReservationHistoryPayload(
@@ -361,7 +412,10 @@ export async function deleteGoogleEvent(googleEventId: string): Promise<void> {
   }
 }
 
-async function pushReservationsDetailed(): Promise<SyncScopeResult> {
+async function pushReservationsDetailed(
+  lastReservationSyncAt: Date | null,
+  runId: string
+): Promise<SyncScopeResult> {
   const calendar = await getCalendarClient();
   const settings = await getCalendarSettings();
   if (!calendar || !settings?.calendarId) {
@@ -373,25 +427,32 @@ async function pushReservationsDetailed(): Promise<SyncScopeResult> {
     };
   }
 
-  const pending = await db
-    .select({
-      id: reservations.id,
-      startTime: reservations.startTime,
-      endTime: reservations.endTime,
-      purpose: reservations.purpose,
-      googleEventId: reservations.googleEventId,
-      placeName: places.name,
-      userName: users.name,
-    })
-    .from(reservations)
-    .innerJoin(places, eq(reservations.placeId, places.id))
-    .innerJoin(users, eq(reservations.userId, users.id))
-    .where(
-      and(
-        eq(reservations.status, 'active'),
-        gte(reservations.endTime, sql`now()`)
-      )
-    );
+  const [candidateRows] = await Promise.all([
+    db
+      .select({
+        id: reservations.id,
+        startTime: reservations.startTime,
+        endTime: reservations.endTime,
+        purpose: reservations.purpose,
+        googleEventId: reservations.googleEventId,
+        placeName: places.name,
+        userName: users.name,
+      })
+      .from(reservations)
+      .innerJoin(places, eq(reservations.placeId, places.id))
+      .innerJoin(users, eq(reservations.userId, users.id))
+      .where(
+        and(
+          eq(reservations.status, 'active'),
+          gte(reservations.endTime, sql`now()`)
+        )
+      ),
+  ]);
+  const updatedReservationIds =
+    await getUpdatedReservationIdsSince(lastReservationSyncAt);
+  const pending = candidateRows.filter(
+    (row) => !row.googleEventId || updatedReservationIds.has(row.id)
+  );
 
   const result: SyncScopeResult = {
     status: 'skipped',
@@ -483,19 +544,20 @@ async function pushReservationsDetailed(): Promise<SyncScopeResult> {
         payload,
         errorMessage: message,
       });
-      await logSync('error', message);
+      await logSync('error', message, runId);
     }
   }
 
   result.status = computeScopeStatus(result.counts, result.errors);
   await logSync(
     'info',
-    `예약 push 완료: 생성 ${result.counts.created}건, 수정 ${result.counts.updated}건, 실패 ${result.counts.failed}건`
+    `예약 push 완료: 생성 ${result.counts.created}건, 수정 ${result.counts.updated}건, 실패 ${result.counts.failed}건`,
+    runId
   );
   return result;
 }
 
-async function syncCancellationsDetailed(): Promise<SyncScopeResult> {
+async function syncCancellationsDetailed(runId: string): Promise<SyncScopeResult> {
   const calendar = await getCalendarClient();
   const settings = await getCalendarSettings();
   if (!calendar || !settings?.calendarId) {
@@ -606,7 +668,7 @@ async function syncCancellationsDetailed(): Promise<SyncScopeResult> {
           payload,
           errorMessage: message,
         });
-        await logSync('error', message);
+        await logSync('error', message, runId);
       }
     }
   }
@@ -615,13 +677,14 @@ async function syncCancellationsDetailed(): Promise<SyncScopeResult> {
   if (result.counts.deleted > 0 || result.counts.failed > 0) {
     await logSync(
       'info',
-      `취소 이벤트 Google 삭제 완료: ${result.counts.deleted}건, 실패 ${result.counts.failed}건`
+      `취소 이벤트 Google 삭제 완료: ${result.counts.deleted}건, 실패 ${result.counts.failed}건`,
+      runId
     );
   }
   return result;
 }
 
-async function pullExternalEventsDetailed(): Promise<SyncScopeResult> {
+async function pullExternalEventsDetailed(runId: string): Promise<SyncScopeResult> {
   const calendar = await getCalendarClient();
   const settings = await getCalendarSettings();
   if (!calendar || !settings?.eventCalendarId) {
@@ -725,40 +788,51 @@ async function pullExternalEventsDetailed(): Promise<SyncScopeResult> {
     }
 
     result.status = computeScopeStatus(result.counts, result.errors);
-    await logSync('info', `행사 일정 pull 완료: ${result.counts.pulled}건`);
+    await logSync('info', `행사 일정 pull 완료: ${result.counts.pulled}건`, runId);
     return result;
   } catch (error) {
     const message = `행사 일정 pull 실패: ${formatError(error)}`;
     result.counts.failed += 1;
     result.errors.push(message);
     result.status = 'failed';
-    await logSync('error', message);
+    await logSync('error', message, runId);
     return result;
   }
 }
 
-async function persistSyncRun(
-  result: SyncResult,
+async function createSyncRun(
+  runId: string,
   triggeredBy: SyncTrigger,
   startedAt: Date
 ) {
-  const now = new Date();
-
   await db.insert(calendarSyncRuns).values({
-    id: result.runId,
+    id: runId,
     triggeredBy,
     startedAt,
-    finishedAt: now,
-    status: result.status,
-    reservationSyncStatus: result.reservationSyncStatus,
-    eventSyncStatus: result.eventSyncStatus,
-    reservationCreatedCount: result.counts.reservationCreated,
-    reservationUpdatedCount: result.counts.reservationUpdated,
-    reservationDeletedCount: result.counts.reservationDeleted,
-    eventPulledCount: result.counts.eventPulled,
-    failedCount: result.counts.failed,
-    errorSummary: summarizeErrors(result.errors),
+    status: 'success',
+    reservationSyncStatus: 'skipped',
+    eventSyncStatus: 'skipped',
   });
+}
+
+async function finalizeSyncRun(result: SyncResult) {
+  const now = new Date();
+
+  await db
+    .update(calendarSyncRuns)
+    .set({
+      finishedAt: now,
+      status: result.status,
+      reservationSyncStatus: result.reservationSyncStatus,
+      eventSyncStatus: result.eventSyncStatus,
+      reservationCreatedCount: result.counts.reservationCreated,
+      reservationUpdatedCount: result.counts.reservationUpdated,
+      reservationDeletedCount: result.counts.reservationDeleted,
+      eventPulledCount: result.counts.eventPulled,
+      failedCount: result.counts.failed,
+      errorSummary: summarizeErrors(result.errors),
+    })
+    .where(eq(calendarSyncRuns.id, result.runId));
 
   if (result.items.length > 0) {
     await db.insert(calendarSyncItems).values(
@@ -783,10 +857,16 @@ export async function syncAll(
 ): Promise<SyncResult> {
   const startedAt = new Date();
   const runId = `sync_${randomUUID()}`;
+  const lastReservationSyncAt = await getLatestReservationSyncCursor();
 
-  const reservationPush = await pushReservationsDetailed();
-  const reservationDelete = await syncCancellationsDetailed();
-  const eventPull = await pullExternalEventsDetailed();
+  await createSyncRun(runId, triggeredBy, startedAt);
+
+  const reservationPush = await pushReservationsDetailed(
+    lastReservationSyncAt,
+    runId
+  );
+  const reservationDelete = await syncCancellationsDetailed(runId);
+  const eventPull = await pullExternalEventsDetailed(runId);
 
   const reservationErrors = [
     ...reservationPush.errors,
@@ -822,7 +902,7 @@ export async function syncAll(
     errors: [...reservationScope.errors, ...eventPull.errors],
   };
 
-  await persistSyncRun(result, triggeredBy, startedAt);
+  await finalizeSyncRun(result);
   return result;
 }
 
@@ -866,6 +946,11 @@ export async function getSyncRunDetail(
     .from(calendarSyncItems)
     .where(eq(calendarSyncItems.runId, runId))
     .orderBy(desc(calendarSyncItems.processedAt));
+  const logs = await db
+    .select()
+    .from(syncLogs)
+    .where(eq(syncLogs.runId, runId))
+    .orderBy(desc(syncLogs.timestamp));
 
   return {
     id: run.id,
@@ -893,6 +978,12 @@ export async function getSyncRunDetail(
       payload: item.payload ? parseHistoryChanges(item.payload) : null,
       errorMessage: item.errorMessage,
       processedAt: item.processedAt.toISOString(),
+    })),
+    logs: logs.map((log) => ({
+      id: log.id,
+      level: log.level as 'info' | 'warning' | 'error',
+      message: log.message,
+      timestamp: log.timestamp.toISOString(),
     })),
   };
 }
