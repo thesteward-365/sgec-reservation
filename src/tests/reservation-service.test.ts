@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ReservationService } from '../lib/services/reservation-service';
 import { ReservationRepository } from '../lib/repositories/reservation-repository';
-import { db } from '../lib/db';
+import { UserRepository } from '../lib/repositories/user-repository';
 
 // Mocking dependencies
 vi.mock('../lib/db', () => ({
@@ -25,6 +25,7 @@ vi.mock('../lib/db', () => ({
 }));
 
 vi.mock('../lib/repositories/reservation-repository');
+vi.mock('../lib/repositories/user-repository');
 vi.mock('../lib/repositories/place-repository', () => ({
   PlaceRepository: {
     findById: vi.fn().mockResolvedValue({ id: 1, name: 'Test Place' }),
@@ -34,6 +35,8 @@ vi.mock('../lib/calendar/calendar-service', () => ({
   updateGoogleEvent: vi.fn().mockResolvedValue(undefined),
   deleteGoogleEvent: vi.fn().mockResolvedValue(undefined),
 }));
+
+type MockUser = Awaited<ReturnType<typeof UserRepository.findById>>;
 
 describe('ReservationService', () => {
   const mockActor = { id: 1, name: 'Test User', role: 'user' };
@@ -76,6 +79,21 @@ describe('ReservationService', () => {
       expect(result.id).toBe(1);
       expect(ReservationRepository.create).toHaveBeenCalled();
       expect(ReservationRepository.createHistory).toHaveBeenCalled();
+      expect(vi.mocked(ReservationRepository.createHistory).mock.calls[0]?.[0])
+        .toMatchObject({
+          actionType: 'created',
+          changes: expect.any(String),
+        });
+
+      const changes = JSON.parse(
+        vi.mocked(ReservationRepository.createHistory).mock.calls[0]![0].changes
+      );
+      expect(changes.snapshot).toMatchObject({
+        placeId: mockData.placeId,
+        placeName: 'Test Place',
+        userName: mockActor.name,
+        purpose: mockData.purpose,
+      });
     });
 
     it('should throw an error if there is a conflict', async () => {
@@ -204,6 +222,10 @@ describe('ReservationService', () => {
         ...mockCurrent,
         status: 'cancelled',
       });
+      vi.mocked(UserRepository.findById).mockResolvedValue({
+        id: 1,
+        name: 'Reservation Owner',
+      } as MockUser);
 
       const result = await ReservationService.cancelReservation(1, mockActor);
 
@@ -213,6 +235,21 @@ describe('ReservationService', () => {
         { status: 'cancelled' },
         expect.anything()
       );
+      expect(vi.mocked(ReservationRepository.createHistory).mock.calls[0]?.[0])
+        .toMatchObject({
+          actionType: 'cancelled',
+          changes: expect.any(String),
+        });
+
+      const changes = JSON.parse(
+        vi.mocked(ReservationRepository.createHistory).mock.calls[0]![0].changes
+      );
+      expect(changes.snapshot).toMatchObject({
+        placeId: mockData.placeId,
+        placeName: 'Test Place',
+        userName: 'Reservation Owner',
+        purpose: mockData.purpose,
+      });
     });
 
     it('should allow admin to cancel any reservation', async () => {
@@ -222,6 +259,10 @@ describe('ReservationService', () => {
         ...mockCurrent,
         status: 'cancelled',
       });
+      vi.mocked(UserRepository.findById).mockResolvedValue({
+        id: 10,
+        name: 'Another User',
+      } as MockUser);
 
       const result = await ReservationService.cancelReservation(1, mockAdmin);
 

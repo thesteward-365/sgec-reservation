@@ -478,3 +478,54 @@ npm test -- --run src/tests/calendar-service.test.ts
 
 DB 마이그레이션 적용
 실제 상세 페이지 문구/필드 매핑 다듬기
+
+## 남은 작업-v2
+
+현재 확인된 기준으로, 다음 작업을 순서대로 진행한다.
+
+### Todo
+
+- [x] 1. reservation history payload 구조 통일
+  - 생성/취소 이력 `snapshot`에 `placeName`, `userName`, `purpose`, `startTime`, `endTime`가 항상 들어가도록 맞춘다.
+  - 상세 표시 기준 payload에서 `placeId`, `userId` 같은 원시 식별자 의존도를 낮춘다.
+  - 완료 기준: 같은 유형의 예약 생성/취소 카드가 같은 필드 구조를 가진다.
+  - 테스트 수행 방법: `npm test -- --run src/tests/reservation-service.test.ts`
+
+- [ ] 2. 상세 이력 페이지 필드 매핑 단순화
+  - 예약 항목 표시 순서를 `장소`, `사용 목적`, `예약자`, `시작`, `종료`로 고정한다.
+  - 시간 포맷은 `월.일(요일) 오전/오후 시간` 형식으로 유지한다.
+  - `reservationId`, `placeId`, `userId` 같은 내부 필드는 노출하지 않는다.
+  - 값이 비어 있으면 `-`로 표기한다.
+  - 완료 기준: 생성/취소 카드의 UI가 동일한 구조와 라벨로 보이고, 누락 값이 있어도 UI가 흔들리지 않는다.
+  - 테스트 수행 방법: `npx eslint src/app/admin/calendar/history/[runId]/page.tsx src/components/admin/calendar-sync-history-detail.tsx`
+
+- [ ] 3. 예약 상세 페이지에서 Google Calendar 이벤트 링크 제공 여부 검토 및 구현
+  - 예약 상세 API 응답에 `googleEventId`를 포함할지 검토하고 구현한다.
+  - Google Calendar event deep link 또는 관리용 캘린더 이동 방식 중 하나로 링크 구성을 결정한다.
+  - 취소된 예약 또는 `googleEventId`가 없는 예약의 표시 규칙을 정한다.
+  - 완료 기준: 가능한 경우 예약 상세 페이지에서 Google의 해당 이벤트로 이동할 수 있다.
+  - 테스트 수행 방법: `npx eslint src/app/admin/reservations/[id]/page.tsx src/app/api/admin/reservations/[id]/route.ts src/components/reservations/reservation-detail-view.tsx`
+
+- [ ] 4. API 테스트 추가
+  - `src/tests/calendar-sync-route.test.ts`
+  - `src/tests/calendar-sync-history-route.test.ts`
+  - `/api/admin/calendar` 수동 동기화 응답, `runId`, `status`, `counts`, 최근 이력 목록, 상세 이력, 비관리자 401을 검증한다.
+  - 완료 기준: API 레벨 회귀 테스트가 추가된다.
+  - 테스트 수행 방법: `npm test -- --run src/tests/calendar-sync-route.test.ts src/tests/calendar-sync-history-route.test.ts`
+
+- [ ] 5. DB 마이그레이션 실제 적용
+  - `drizzle-pg/0002_calendar_sync_history.sql`를 실제 DB에 반영한다.
+  - 적용 후 최근 이력/상세 이력 API 정상 동작을 확인한다.
+  - 완료 기준: 코드와 DB 스키마 상태가 일치한다.
+  - 테스트 수행 방법: `npm run db:migrate`
+
+- [ ] 6. 과거 history 데이터 보정 여부 결정
+  - 과거 데이터는 UI fallback으로만 대응할지, 보정 스크립트/마이그레이션으로 snapshot을 정리할지 결정한다.
+  - 완료 기준: 과거 데이터 처리 전략이 문서 또는 코드로 확정된다.
+  - 테스트 수행 방법: 결정 후 별도 기록
+
+- [ ] 7. sync_logs 실행 단위 연결 고도화
+  - 필요 시 `sync_logs`에 `runId`를 추가한다.
+  - 실행 단위 상세 페이지에서 run 기반 로그 조회가 가능하도록 확장한다.
+  - 완료 기준: run 단위 상세 로그 복원이 가능해진다.
+  - 테스트 수행 방법: 구현 범위 확정 후 별도 기록

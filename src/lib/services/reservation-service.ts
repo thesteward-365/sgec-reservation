@@ -1,5 +1,6 @@
 import { db, fromDbDate } from '@/lib/db';
 import { ReservationRepository } from '../repositories/reservation-repository';
+import { UserRepository } from '../repositories/user-repository';
 import {
   buildReservationHistoryChanges,
   hasReservationHistoryChanges,
@@ -23,6 +24,24 @@ export interface ReservationData {
   purpose: string;
 }
 
+function buildReservationHistorySnapshot(data: {
+  placeId: number;
+  placeName?: string | null;
+  userName?: string | null;
+  startTime: Date;
+  endTime: Date;
+  purpose: string;
+}) {
+  return {
+    placeId: data.placeId,
+    placeName: data.placeName ?? null,
+    userName: data.userName ?? null,
+    startTime: data.startTime,
+    endTime: data.endTime,
+    purpose: data.purpose,
+  };
+}
+
 export class ReservationService {
   /**
    * 새로운 예약을 생성합니다.
@@ -43,7 +62,7 @@ export class ReservationService {
 
     const place = await PlaceRepository.findById(data.placeId);
 
-    const performTransaction = async (tx: any) => {
+    const result = await db.transaction(async (tx) => {
       const reservation = await ReservationRepository.create(
         {
           userId: actor.id,
@@ -53,27 +72,23 @@ export class ReservationService {
       );
 
       const historyData = {
-        reservationId: 0, // Will fix ID for postgres in then()
+        reservationId: reservation.id,
         actorUserId: actor.id,
         actorUserName: actor.name,
         actionType: 'created' as const,
         changes: JSON.stringify({
           created: { to: data },
-          snapshot: {
+          snapshot: buildReservationHistorySnapshot({
             ...data,
             placeName: place?.name,
-          },
+            userName: actor.name,
+          }),
         }),
       };
 
-      historyData.reservationId = reservation.id;
       await ReservationRepository.createHistory(historyData, tx);
       return reservation;
-    };
-
-    const result = await db.transaction(
-      async (tx) => await performTransaction(tx)
-    );
+    });
 
     // Google Calendar 비동기 업데이트
     updateGoogleEvent(result.id).catch(() => {});
@@ -135,7 +150,7 @@ export class ReservationService {
       return current;
     }
 
-    const performTransaction = async (tx: any) => {
+    const result = await db.transaction(async (tx) => {
       const updated = await ReservationRepository.update(
         reservationId,
         data,
@@ -152,11 +167,7 @@ export class ReservationService {
         tx
       );
       return updated;
-    };
-
-    const result = await db.transaction(
-      async (tx) => await performTransaction(tx)
-    );
+    });
 
     // Google Calendar 비동기 업데이트
     updateGoogleEvent(reservationId).catch(() => {});
@@ -187,8 +198,9 @@ export class ReservationService {
     }
 
     const place = await PlaceRepository.findById(current.placeId);
+    const reservationUser = await UserRepository.findById(current.userId);
 
-    const performTransaction = async (tx: any) => {
+    const result = await db.transaction(async (tx) => {
       const updated = await ReservationRepository.update(
         reservationId,
         { status: 'cancelled' },
@@ -202,24 +214,21 @@ export class ReservationService {
           actionType: 'cancelled',
           changes: JSON.stringify({
             cancelled: { from: 'active', to: 'cancelled' },
-            snapshot: {
+            snapshot: buildReservationHistorySnapshot({
               placeId: current.placeId,
               placeName: place?.name,
+              userName: reservationUser?.name,
               startTime: fromDbDate(current.startTime),
               endTime: fromDbDate(current.endTime),
               purpose: current.purpose,
-            },
+            }),
           }),
           googleEventId: current.googleEventId,
         },
         tx
       );
       return updated;
-    };
-
-    const result = await db.transaction(
-      async (tx) => await performTransaction(tx)
-    );
+    });
 
     // Google Calendar 이벤트 삭제
     if (current.googleEventId) {

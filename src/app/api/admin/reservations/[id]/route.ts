@@ -5,7 +5,6 @@ import { cookies } from 'next/headers';
 import { db } from '@/lib/db';
 import { reservations, reservationHistories, places, users } from '@/lib/db/schema';
 import { eq, desc, and } from 'drizzle-orm';
-import { deleteGoogleEvent } from '@/lib/calendar/calendar-service';
 import { ReservationService } from '@/lib/services/reservation-service';
 
 type Params = { params: Promise<{ id: string }> };
@@ -71,7 +70,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
           id: reservationId,
           placeId: snapshot.placeId,
           placeName: snapshot.placeName || '삭제된 장소',
-          userName: cancelledHistory.actorUserName,
+          userName: snapshot.userName || '-',
           purpose: snapshot.purpose || '-',
           startTime: snapshot.startTime,
           endTime: snapshot.endTime,
@@ -106,9 +105,11 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     await ReservationService.cancelReservation(reservationId, session.user);
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('DELETE /api/admin/reservations/[id] error:', error);
-    const status = error.message.includes('찾을 수 없거나') ? 404 : 500;
-    return NextResponse.json({ error: error.message }, { status });
+    const message =
+      error instanceof Error ? error.message : 'Internal server error';
+    const status = message.includes('찾을 수 없거나') ? 404 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }
