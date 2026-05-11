@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
 
 import {
@@ -73,7 +73,8 @@ function formatFieldDateTime(value: string) {
   const month = parts.find((part) => part.type === 'month')?.value ?? '';
   const day = parts.find((part) => part.type === 'day')?.value ?? '';
   const weekday = parts.find((part) => part.type === 'weekday')?.value ?? '';
-  const dayPeriod = parts.find((part) => part.type === 'dayPeriod')?.value ?? '';
+  const dayPeriod =
+    parts.find((part) => part.type === 'dayPeriod')?.value ?? '';
   const hour = parts.find((part) => part.type === 'hour')?.value ?? '';
   const minute = parts.find((part) => part.type === 'minute')?.value ?? '';
 
@@ -95,8 +96,13 @@ function formatDuration(startedAt: string, finishedAt: string | null) {
 }
 
 function formatFieldValue(key: string, value: unknown) {
-  if (value === null || value === undefined) return '-';
-  if (typeof value === 'string' && value.trim() === '') return '-';
+  if (value === null || value === undefined) {
+    return { value: '-' };
+  }
+
+  if (typeof value === 'string' && value.trim() === '') {
+    return { value: '-' };
+  }
 
   if (
     typeof value === 'object' &&
@@ -105,6 +111,7 @@ function formatFieldValue(key: string, value: unknown) {
     'to' in value
   ) {
     const change = value as { from: unknown; to: unknown };
+
     return {
       previousValue:
         (key === 'startTime' || key === 'endTime') &&
@@ -116,7 +123,8 @@ function formatFieldValue(key: string, value: unknown) {
             ? '-'
             : String(change.from),
       value:
-        (key === 'startTime' || key === 'endTime') && typeof change.to === 'string'
+        (key === 'startTime' || key === 'endTime') &&
+        typeof change.to === 'string'
           ? formatFieldDateTime(change.to)
           : change.to === null ||
               change.to === undefined ||
@@ -218,7 +226,8 @@ function buildFields(
 
 export default function CalendarSyncHistoryPage() {
   const params = useParams<{ runId: string }>();
-  const searchParams = useSearchParams();
+  const router = useRouter();
+
   const [detail, setDetail] = useState<RunDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -247,14 +256,6 @@ export default function CalendarSyncHistoryPage() {
       cancelled = true;
     };
   }, [params.runId]);
-
-  const backHref = useMemo(() => {
-    const candidate = searchParams.get('backHref');
-    if (candidate && candidate.startsWith('/')) {
-      return candidate;
-    }
-    return '/admin/calendar';
-  }, [searchParams]);
 
   const viewProps = useMemo<CalendarSyncHistoryDetailProps | null>(() => {
     if (!detail) return null;
@@ -293,13 +294,14 @@ export default function CalendarSyncHistoryPage() {
         logs,
       },
       selectedItemFilter:
-        detail.eventSyncStatus === 'success' && detail.reservationSyncStatus !== 'success'
+        detail.eventSyncStatus === 'success' &&
+        detail.reservationSyncStatus !== 'success'
           ? 'reservation'
           : 'reservation',
       initialItemViewMode: 'summary',
-      backHref,
+      onBack: () => router.back(),
     };
-  }, [backHref, detail]);
+  }, [detail, router]);
 
   if (loading) {
     return (
@@ -312,7 +314,9 @@ export default function CalendarSyncHistoryPage() {
   if (!viewProps) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-(--color-neutral-150)">
-        <p className="text-muted-foreground text-body">동기화 이력을 찾을 수 없습니다.</p>
+        <p className="text-muted-foreground text-body">
+          동기화 이력을 찾을 수 없습니다.
+        </p>
       </div>
     );
   }
