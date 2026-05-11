@@ -10,6 +10,7 @@ import {
   users,
 } from '@/lib/db';
 import { eq, and, gte, sql, isNotNull } from 'drizzle-orm';
+import { calendar_v3 } from 'googleapis';
 
 /**
  * PostgreSQL timestamp 컬럼을 그대로 사용하는 예약 행 타입입니다.
@@ -27,14 +28,11 @@ type ReservationRow = {
 /**
  * DB의 Date 객체를 기반으로 Google Event Body 생성
  */
-function buildEventBody(
-  reservation: ReservationRow,
-  placeName: string,
-  userName: string
-) {
+function buildEventBody(reservation: ReservationRow): calendar_v3.Schema$Event {
   return {
-    summary: `[예약] ${placeName}`,
-    description: `예약자: ${userName}\n목적: ${reservation.purpose}`,
+    summary: `${reservation.placeName}•${reservation.purpose}`,
+    description: `예약자: ${reservation.userName}\n목적: ${reservation.purpose}\n장소: ${reservation.placeName}`,
+    location: reservation.placeName,
     start: {
       dateTime: reservation.startTime.toISOString(),
       timeZone: 'Asia/Seoul',
@@ -79,7 +77,7 @@ export async function createGoogleEvent(
   try {
     const event = await calendar.events.insert({
       calendarId: settings.calendarId,
-      requestBody: buildEventBody(row, row.placeName, row.userName),
+      requestBody: buildEventBody(row),
     });
 
     const eventId = event.data.id!;
@@ -132,7 +130,7 @@ export async function updateGoogleEvent(reservationId: number): Promise<void> {
     await calendar.events.update({
       calendarId: settings.calendarId,
       eventId: row.googleEventId,
-      requestBody: buildEventBody(row, row.placeName, row.userName),
+      requestBody: buildEventBody(row),
     });
     await logSync(
       'info',
@@ -272,12 +270,12 @@ export async function pushReservations(): Promise<number> {
         await calendar.events.update({
           calendarId: settings.calendarId,
           eventId: row.googleEventId,
-          requestBody: buildEventBody(row, row.placeName, row.userName),
+          requestBody: buildEventBody(row),
         });
       } else {
         const event = await calendar.events.insert({
           calendarId: settings.calendarId,
-          requestBody: buildEventBody(row, row.placeName, row.userName),
+          requestBody: buildEventBody(row),
         });
         const eventId = event.data.id!;
         await db
