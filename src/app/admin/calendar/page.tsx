@@ -397,6 +397,12 @@ function CalendarPageContent() {
                         </option>
                       ))}
                     </select>
+                    <Link
+                      href="/admin/calendar/events"
+                      className="text-caption inline-flex items-center font-semibold text-blue-600 hover:text-blue-700"
+                    >
+                      행사 일정 목록 보기
+                    </Link>
                   </div>
 
                   <Button

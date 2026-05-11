@@ -21,6 +21,7 @@ export interface Reservation {
     status: 'synced' | 'pending' | 'missing_event';
     label: string;
     lastSyncedAt: string | null;
+    runId: string | null;
   } | null;
 }
 
@@ -29,6 +30,7 @@ interface Props {
   history: HistoryItem[];
   loadingHistory?: boolean;
   onTabChange?: (tab: 'info' | 'history') => void;
+  googleSyncSection?: React.ReactNode;
   actions?: React.ReactNode;
 }
 
@@ -37,6 +39,7 @@ export function ReservationDetailView({
   history,
   loadingHistory,
   onTabChange,
+  googleSyncSection,
   actions,
 }: Props) {
   const [activeTab, setActiveTab] = useState<'info' | 'history'>('info');
@@ -52,17 +55,6 @@ export function ReservationDetailView({
     { label: '시간', value: reservation.startTime && reservation.endTime ? `${formatTime(reservation.startTime)} – ${formatTime(reservation.endTime)}` : '–' },
     { label: '목적', value: reservation.purpose },
     { label: '예약자', value: reservation.userName ?? '–' },
-    ...(reservation.googleSync
-      ? [{ label: 'Google 동기화', value: reservation.googleSync.label }]
-      : []),
-    ...(reservation.googleSync?.lastSyncedAt
-      ? [
-          {
-            label: '마지막 반영',
-            value: `${formatKoreanDate(reservation.googleSync.lastSyncedAt)} ${formatTime(reservation.googleSync.lastSyncedAt)}`,
-          },
-        ]
-      : []),
   ];
 
   return (
@@ -95,7 +87,10 @@ export function ReservationDetailView({
 
       {activeTab === 'info' ? (
         <div className="space-y-8">
-          <ReservationDetailsCard rows={detailRows} tone="white" />
+          <div className="space-y-3">
+            <ReservationDetailsCard rows={detailRows} tone="white" />
+            {googleSyncSection}
+          </div>
           {actions && <div className="flex flex-col gap-3">{actions}</div>}
         </div>
       ) : (

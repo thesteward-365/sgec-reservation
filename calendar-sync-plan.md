@@ -563,11 +563,11 @@ DB 마이그레이션 적용
   - 테스트 수행 방법: `npm test -- --run src/tests/admin-reservation-route.test.ts`
   - 수동 테스트: 생성 직후, 수정 후 미동기화 상태, 동기화 완료 상태, 취소 상태 각각에서 배지/문구가 기대대로 보이는지 확인한다.
 
-- [ ] 11. 행사 일정 전용 목록 화면 추가
+- [x] 11. 행사 일정 전용 목록 화면 추가
   - 예약 현황의 일자별 상세와 별개로, 행사 일정만 모아서 볼 수 있는 관리자 화면을 추가한다.
   - 우선 배치안은 `/admin/calendar` 내부에서 `행사 일정 목록 보기` 진입점을 두고, 별도 페이지 `/admin/calendar/events`에서 `external_events`를 날짜순으로 보여주는 방식으로 잡는다.
   - 기본 범위는 다가오는 행사 리스트이며, 필요 시 월 단위 필터나 검색은 후속으로 분리한다.
   - 이 화면은 행사 캘린더의 현재 동기화 결과를 운영자가 점검하는 용도로 사용한다.
   - 완료 기준: 운영자가 예약 화면으로 들어가지 않고도 동기화된 행사 일정을 한 화면에서 확인할 수 있다.
-  - 테스트 수행 방법: 구현 범위 확정 후 `eslint` 및 관련 route/page 테스트 추가
+  - 테스트 수행 방법: `npm test -- --run src/tests/admin-reservation-route.test.ts src/tests/calendar-service.test.ts src/tests/calendar-sync-history-route.test.ts src/tests/calendar-sync-route.test.ts`
   - 수동 테스트: `/admin/calendar`에서 목록 화면으로 이동 가능하고, 행사 일정이 시간순으로 노출되는지 확인한다.

@@ -24,12 +24,14 @@ async function getReservationGoogleSync(
   status: GoogleSyncStatus;
   label: string;
   lastSyncedAt: string | null;
+  runId: string | null;
 }> {
   if (!googleEventId) {
     return {
       status: 'missing_event',
       label: 'Google 이벤트 없음',
       lastSyncedAt: null,
+      runId: null,
     };
   }
 
@@ -54,6 +56,7 @@ async function getReservationGoogleSync(
       .select({
         processedAt: calendarSyncItems.processedAt,
         externalEventId: calendarSyncItems.externalEventId,
+        runId: calendarSyncItems.runId,
       })
       .from(calendarSyncItems)
       .where(
@@ -85,6 +88,7 @@ async function getReservationGoogleSync(
       status: 'pending',
       label: '동기화 필요',
       lastSyncedAt: syncedAt ? syncedAt.toISOString() : null,
+      runId: latestSyncItem?.runId ?? null,
     };
   }
 
@@ -92,6 +96,7 @@ async function getReservationGoogleSync(
     status: 'synced',
     label: '동기화됨',
     lastSyncedAt: syncedAt.toISOString(),
+    runId: latestSyncItem.runId,
   };
 }
 

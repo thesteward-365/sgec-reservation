@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
 
 import {
@@ -218,6 +218,7 @@ function buildFields(
 
 export default function CalendarSyncHistoryPage() {
   const params = useParams<{ runId: string }>();
+  const searchParams = useSearchParams();
   const [detail, setDetail] = useState<RunDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -246,6 +247,14 @@ export default function CalendarSyncHistoryPage() {
       cancelled = true;
     };
   }, [params.runId]);
+
+  const backHref = useMemo(() => {
+    const candidate = searchParams.get('backHref');
+    if (candidate && candidate.startsWith('/')) {
+      return candidate;
+    }
+    return '/admin/calendar';
+  }, [searchParams]);
 
   const viewProps = useMemo<CalendarSyncHistoryDetailProps | null>(() => {
     if (!detail) return null;
@@ -288,9 +297,9 @@ export default function CalendarSyncHistoryPage() {
           ? 'reservation'
           : 'reservation',
       initialItemViewMode: 'summary',
-      backHref: '/admin/calendar',
+      backHref,
     };
-  }, [detail]);
+  }, [backHref, detail]);
 
   if (loading) {
     return (

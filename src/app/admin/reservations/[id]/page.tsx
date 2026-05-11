@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { shareReservation } from '@/lib/share-utils';
-import { toYMD } from '@/lib/date-utils';
+import { formatKoreanDate, formatTime, toYMD } from '@/lib/date-utils';
 
 interface Reservation extends BaseReservation {
   isCancelled?: boolean;
@@ -34,6 +34,7 @@ interface Reservation extends BaseReservation {
     status: 'synced' | 'pending' | 'missing_event';
     label: string;
     lastSyncedAt: string | null;
+    runId: string | null;
   } | null;
 }
 
@@ -137,6 +138,15 @@ export default function ReservationDetailPage({
     window.open(reservation.googleEventUrl, '_blank', 'noopener,noreferrer');
   };
 
+  const handleOpenSyncRun = () => {
+    const runId = reservation?.googleSync?.runId;
+    if (!runId) return;
+    const params = new URLSearchParams({
+      backHref: `/admin/reservations/${reservation?.id}`,
+    });
+    router.push(`/admin/calendar/history/${runId}?${params.toString()}`);
+  };
+
   if (loading) {
     return (
       <div className="bg-neutral-150 flex min-h-screen items-center justify-center">
@@ -193,6 +203,30 @@ export default function ReservationDetailPage({
           history={history}
           loadingHistory={loadingHistory}
           onTabChange={(tab) => tab === 'history' && fetchHistory()}
+          googleSyncSection={
+            reservation.googleSync ? (
+              <button
+                type="button"
+                onClick={handleOpenSyncRun}
+                disabled={!reservation.googleSync.runId}
+                className="bg-white shadow-(--shadow-1) flex w-full items-center justify-between rounded-3xl px-6 py-5 text-left transition hover:bg-neutral-50 disabled:cursor-default disabled:hover:bg-white"
+              >
+                <div className="min-w-0">
+                  <p className="text-muted-foreground text-sm font-medium">
+                    Google 동기화
+                  </p>
+                  <p className="text-foreground mt-1 text-sm font-semibold">
+                    {reservation.googleSync.lastSyncedAt
+                      ? `${reservation.googleSync.label} · ${formatKoreanDate(reservation.googleSync.lastSyncedAt)} ${formatTime(reservation.googleSync.lastSyncedAt)} 반영`
+                      : reservation.googleSync.label}
+                  </p>
+                </div>
+                {reservation.googleSync.runId ? (
+                  <ArrowTopRightOnSquareIcon className="text-muted-foreground h-5 w-5 shrink-0" />
+                ) : null}
+              </button>
+            ) : null
+          }
           actions={
             !reservation.isCancelled && (
               <div className="mt-4 flex w-full flex-col gap-3">

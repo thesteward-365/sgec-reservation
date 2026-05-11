@@ -125,6 +125,7 @@ describe('/api/admin/reservations/[id] route', () => {
       {
         processedAt: new Date('2026-05-20T09:30:00.000Z'),
         externalEventId: 'evt-1',
+        runId: 'sync_run_1',
       },
     ];
     state.googleEventUrl = 'https://calendar.google.com/event?eid=abc';
@@ -142,6 +143,7 @@ describe('/api/admin/reservations/[id] route', () => {
     expect(json.googleSync).toMatchObject({
       status: 'synced',
       label: '동기화됨',
+      runId: 'sync_run_1',
     });
   });
 
@@ -158,6 +160,7 @@ describe('/api/admin/reservations/[id] route', () => {
     expect(json.googleSync).toMatchObject({
       status: 'pending',
       label: '동기화 필요',
+      runId: null,
     });
   });
 
@@ -186,6 +189,7 @@ describe('/api/admin/reservations/[id] route', () => {
     expect(json.googleSync).toMatchObject({
       status: 'missing_event',
       label: 'Google 이벤트 없음',
+      runId: null,
     });
   });
 });
