@@ -6,6 +6,7 @@ import {
   ChevronLeftIcon,
   ShareIcon,
   ArrowPathIcon,
+  ArrowTopRightOnSquareIcon,
   PencilIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
@@ -22,13 +23,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { shareReservation } from '@/lib/share-utils';
-import { formatKoreanDate, formatTime, toYMD } from '@/lib/date-utils';
+import { toYMD } from '@/lib/date-utils';
 
 interface Reservation extends BaseReservation {
   isCancelled?: boolean;
+  googleEventUrl?: string | null;
 }
 
 export default function ReservationDetailPage({
@@ -126,6 +127,11 @@ export default function ReservationDetailPage({
     router.push(`/reserve/${reservation.placeId}`);
   };
 
+  const handleOpenGoogleEvent = () => {
+    if (!reservation?.googleEventUrl) return;
+    window.open(reservation.googleEventUrl, '_blank', 'noopener,noreferrer');
+  };
+
   if (loading) {
     return (
       <div className="bg-neutral-150 flex min-h-screen items-center justify-center">
@@ -138,14 +144,16 @@ export default function ReservationDetailPage({
 
   return (
     <div className="bg-neutral-150 flex min-h-screen flex-col">
-      <header className="bg-neutral-150 sticky top-0 z-10 flex h-14 items-center justify-between px-4">
-        <button
-          onClick={() => router.back()}
-          className="flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-neutral-200"
-        >
-          <ChevronLeftIcon className="h-6 w-6" />
-        </button>
-        <div className="flex items-center gap-2">
+      <header className="bg-neutral-150 sticky top-0 z-10 grid h-14 grid-cols-[5rem_1fr_5rem] items-center px-4">
+        <div className="flex justify-start">
+          <button
+            onClick={() => router.back()}
+            className="flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-neutral-200"
+          >
+            <ChevronLeftIcon className="h-6 w-6" />
+          </button>
+        </div>
+        <div className="flex items-center justify-center gap-2">
           <h1 className="text-lg font-bold">예약 상세</h1>
           {reservation.isCancelled && (
             <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-medium text-red-600">
@@ -153,16 +161,25 @@ export default function ReservationDetailPage({
             </span>
           )}
         </div>
-        {!reservation.isCancelled ? (
-          <button
-            onClick={handleShare}
-            className="flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-neutral-200"
-          >
-            <ShareIcon className="h-6 w-6" />
-          </button>
-        ) : (
-          <div className="w-10" />
-        )}
+        <div className="flex justify-end gap-1">
+          {!reservation.isCancelled && reservation.googleEventUrl ? (
+            <button
+              onClick={handleOpenGoogleEvent}
+              className="flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-neutral-200"
+              aria-label="Google Calendar에서 보기"
+            >
+              <ArrowTopRightOnSquareIcon className="h-6 w-6" />
+            </button>
+          ) : null}
+          {!reservation.isCancelled ? (
+            <button
+              onClick={handleShare}
+              className="flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-neutral-200"
+            >
+              <ShareIcon className="h-6 w-6" />
+            </button>
+          ) : null}
+        </div>
       </header>
 
       <main className="flex-1 p-5 pb-32">

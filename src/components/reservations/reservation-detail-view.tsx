@@ -16,6 +16,7 @@ export interface Reservation {
   purpose: string;
   startTime: string | null;
   endTime: string | null;
+  googleEventUrl?: string | null;
 }
 
 interface Props {

@@ -913,6 +913,27 @@ export async function listCalendars(): Promise<
   }
 }
 
+export async function getGoogleEventUrl(
+  googleEventId: string | null | undefined
+): Promise<string | null> {
+  if (!googleEventId) return null;
+
+  const calendar = await getCalendarClient();
+  const settings = await getCalendarSettings();
+  if (!calendar || !settings?.calendarId) return null;
+
+  try {
+    const event = await calendar.events.get({
+      calendarId: settings.calendarId,
+      eventId: googleEventId,
+    });
+
+    return event.data.htmlLink ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function saveCalendarIds(
   calendarId: string,
   eventCalendarId: string

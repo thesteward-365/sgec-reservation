@@ -500,12 +500,13 @@ DB 마이그레이션 적용
   - 테스트 수행 방법: `npx eslint src/app/admin/calendar/history/[runId]/page.tsx src/components/admin/calendar-sync-history-detail.tsx`
   - 수동 테스트: `/admin/calendar/history/[runId]`에서 생성/수정/취소 예약 카드가 의도한 순서와 포맷으로 보이는지 확인한다.
 
-- [ ] 3. 예약 상세 페이지에서 Google Calendar 이벤트 링크 제공 여부 검토 및 구현
+- [x] 3. 예약 상세 페이지에서 Google Calendar 이벤트 링크 제공 여부 검토 및 구현
   - 예약 상세 API 응답에 `googleEventId`를 포함할지 검토하고 구현한다.
   - Google Calendar event deep link 또는 관리용 캘린더 이동 방식 중 하나로 링크 구성을 결정한다.
   - 취소된 예약 또는 `googleEventId`가 없는 예약의 표시 규칙을 정한다.
   - 완료 기준: 가능한 경우 예약 상세 페이지에서 Google의 해당 이벤트로 이동할 수 있다.
   - 테스트 수행 방법: `npx eslint src/app/admin/reservations/[id]/page.tsx src/app/api/admin/reservations/[id]/route.ts src/components/reservations/reservation-detail-view.tsx`
+  - 수동 테스트: 활성 예약 상세 페이지에서 `Google Calendar에서 보기` 버튼이 노출되고, 클릭 시 새 탭에서 해당 Google 이벤트가 열리는지 확인한다. 취소된 예약 또는 미연동 예약에서는 버튼이 숨겨지는지 확인한다.
 
 - [ ] 4. API 테스트 추가
   - `src/tests/calendar-sync-route.test.ts`

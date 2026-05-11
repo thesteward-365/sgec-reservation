@@ -6,6 +6,7 @@ import { db } from '@/lib/db';
 import { reservations, reservationHistories, places, users } from '@/lib/db/schema';
 import { eq, desc, and } from 'drizzle-orm';
 import { ReservationService } from '@/lib/services/reservation-service';
+import { getGoogleEventUrl } from '@/lib/calendar/calendar-service';
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -35,6 +36,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
         startTime: reservations.startTime,
         endTime: reservations.endTime,
         status: reservations.status,
+        googleEventId: reservations.googleEventId,
       })
       .from(reservations)
       .leftJoin(places, eq(reservations.placeId, places.id))
@@ -42,9 +44,13 @@ export async function GET(_req: NextRequest, { params }: Params) {
       .where(eq(reservations.id, reservationId));
 
     if (reservation) {
-      return NextResponse.json({ 
-        ...reservation, 
-        isCancelled: reservation.status === 'cancelled' 
+      return NextResponse.json({
+        ...reservation,
+        googleEventUrl:
+          reservation.status === 'cancelled'
+            ? null
+            : await getGoogleEventUrl(reservation.googleEventId),
+        isCancelled: reservation.status === 'cancelled',
       });
     }
 
@@ -74,6 +80,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
           purpose: snapshot.purpose || '-',
           startTime: snapshot.startTime,
           endTime: snapshot.endTime,
+          googleEventUrl: null,
           isCancelled: true,
         });
       }
