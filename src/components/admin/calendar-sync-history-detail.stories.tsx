@@ -22,6 +22,7 @@ const baseRun: CalendarSyncHistoryDetailProps['run'] = {
       action: 'created',
       title: '중예배실 · 수요예배 리허설',
       timeLabel: '10:30',
+      href: '/admin/reservations/418',
       fields: [
         { label: '예약자', value: '김민수' },
         { label: '장소', value: '중예배실' },
@@ -37,6 +38,7 @@ const baseRun: CalendarSyncHistoryDetailProps['run'] = {
       action: 'updated',
       title: '2층 세미나실 · 청년부 리더 모임',
       timeLabel: '10:30',
+      href: '/admin/reservations/419',
       fields: [
         { label: '시간', previousValue: '20:00 ~ 21:00', value: '20:30 ~ 21:30' },
         { label: '사용 목적', previousValue: '리허설', value: '리더 모임' },
@@ -49,6 +51,7 @@ const baseRun: CalendarSyncHistoryDetailProps['run'] = {
       action: 'cancelled',
       title: '본당 소강당 · 교육부 준비 모임',
       timeLabel: '10:30',
+      href: '/admin/reservations/422',
       fields: [
         { label: '예약자', value: '조은서' },
         { label: '장소', value: '본당 소강당' },
@@ -76,6 +79,7 @@ const baseRun: CalendarSyncHistoryDetailProps['run'] = {
       action: 'created',
       title: '1층 회의실 · 교역자 미팅',
       timeLabel: '10:31',
+      href: '/admin/reservations/420',
       fields: [
         { label: '예약자', value: '박선영' },
         { label: '장소', value: '1층 회의실' },
@@ -91,6 +95,7 @@ const baseRun: CalendarSyncHistoryDetailProps['run'] = {
       action: 'updated',
       title: '소예배실 · 금요 찬양팀 연습',
       timeLabel: '10:31',
+      href: '/admin/reservations/421',
       fields: [
         { label: '시간', previousValue: '18:00 ~ 19:00', value: '19:00 ~ 20:00' },
         { label: '장소', previousValue: '소예배실', value: '중예배실' },

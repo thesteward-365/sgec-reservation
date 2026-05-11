@@ -36,6 +36,7 @@ export type CalendarSyncItem = {
   title: string;
   timeLabel: string;
   fields: CalendarSyncItemField[];
+  href?: string;
 };
 
 export type CalendarSyncLog = {
@@ -323,7 +324,7 @@ function SyncHistoryListItem({
   item: CalendarSyncItem;
   compact: boolean;
 }) {
-  return (
+  const content = (
     <div className="rounded-2xl bg-white p-4 shadow-(--shadow-1)">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex min-w-0 items-center gap-2 overflow-hidden text-body">
@@ -369,5 +370,13 @@ function SyncHistoryListItem({
         </div>
       ) : null}
     </div>
+  );
+
+  if (!item.href) return content;
+
+  return (
+    <Link href={item.href} className="block">
+      {content}
+    </Link>
   );
 }
