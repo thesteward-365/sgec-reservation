@@ -516,16 +516,17 @@ DB 마이그레이션 적용
   - 테스트 수행 방법: `npm test -- --run src/tests/calendar-sync-route.test.ts src/tests/calendar-sync-history-route.test.ts`
   - 수동 테스트: 없음
 
-- [ ] 5. DB 마이그레이션 실제 적용
+- [x] 5. DB 마이그레이션 실제 적용
   - `drizzle-pg/0002_calendar_sync_history.sql`를 실제 DB에 반영한다.
   - 적용 후 최근 이력/상세 이력 API 정상 동작을 확인한다.
   - 완료 기준: 코드와 DB 스키마 상태가 일치한다.
   - 테스트 수행 방법: `npm run db:migrate`
+  - 수동 테스트: 로컬 서버 실행 후 `/admin/calendar`와 `/admin/calendar/history/[runId]`에서 최근 이력 및 상세 이력이 정상 조회되는지 확인한다.
 
-- [ ] 6. 과거 history 데이터 보정 여부 결정
-  - 과거 데이터는 UI fallback으로만 대응할지, 보정 스크립트/마이그레이션으로 snapshot을 정리할지 결정한다.
+- [x] 6. 과거 history 데이터 보정 여부 결정
+  - 결정: 과거 데이터는 우선 UI fallback으로 대응하고, 운영상 문제가 확인될 때만 별도 보정 스크립트/마이그레이션을 추가한다.
   - 완료 기준: 과거 데이터 처리 전략이 문서 또는 코드로 확정된다.
-  - 테스트 수행 방법: 결정 후 별도 기록
+  - 테스트 수행 방법: 없음
 
 - [ ] 7. sync_logs 실행 단위 연결 고도화
   - 필요 시 `sync_logs`에 `runId`를 추가한다.
