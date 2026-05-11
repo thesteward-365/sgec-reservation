@@ -31,6 +31,13 @@ type SyncCalendarStatus = 'success' | 'failed' | 'skipped';
 type SyncTrigger = 'manual' | 'system';
 type SyncCategory = 'reservation' | 'event';
 type SyncAction = 'created' | 'updated' | 'cancelled';
+type ExternalEventRow = {
+  googleEventId: string;
+  title: string;
+  startTime: Date;
+  endTime: Date;
+  description: string | null;
+};
 
 export type SyncItemResult = {
   category: SyncCategory;
@@ -172,6 +179,25 @@ function buildReservationPayload(row: ReservationRow) {
     startTime: row.startTime.toISOString(),
     endTime: row.endTime.toISOString(),
   };
+}
+
+function hasExternalEventChanged(
+  existing: ExternalEventRow | undefined,
+  next: {
+    title: string;
+    startTime: Date;
+    endTime: Date;
+    description: string | null;
+  }
+) {
+  if (!existing) return true;
+
+  return (
+    existing.title !== next.title ||
+    existing.startTime.toISOString() !== next.startTime.toISOString() ||
+    existing.endTime.toISOString() !== next.endTime.toISOString() ||
+    (existing.description ?? null) !== (next.description ?? null)
+  );
 }
 
 function computeScopeStatus(
@@ -713,6 +739,18 @@ async function pullExternalEventsDetailed(runId: string): Promise<SyncScopeResul
 
     const allItems: calendar_v3.Schema$Event[] = [];
     let pageToken: string | undefined;
+    const existingEvents = await db
+      .select({
+        googleEventId: externalEvents.googleEventId,
+        title: externalEvents.title,
+        startTime: externalEvents.startTime,
+        endTime: externalEvents.endTime,
+        description: externalEvents.description,
+      })
+      .from(externalEvents);
+    const existingEventsById = new Map(
+      existingEvents.map((event) => [event.googleEventId, event])
+    );
 
     do {
       const res = await calendar.events.list({
@@ -741,42 +779,47 @@ async function pullExternalEventsDetailed(runId: string): Promise<SyncScopeResul
       const startTime = new Date(startStr);
       const endTime = new Date(endStr);
       googleIds.push(item.id);
+      const nextEvent = {
+        title: item.summary,
+        startTime,
+        endTime,
+        description: item.description ?? null,
+      };
+      const existingEvent = existingEventsById.get(item.id);
+      const hasChanged = hasExternalEventChanged(existingEvent, nextEvent);
+      const action: SyncAction = existingEvent ? 'updated' : 'created';
 
       await db
         .insert(externalEvents)
         .values({
           googleEventId: item.id,
-          title: item.summary,
-          startTime,
-          endTime,
-          description: item.description ?? null,
+          ...nextEvent,
           syncedAt: new Date(),
         })
         .onConflictDoUpdate({
           target: externalEvents.googleEventId,
           set: {
-            title: item.summary,
-            startTime,
-            endTime,
-            description: item.description ?? null,
+            ...nextEvent,
             syncedAt: new Date(),
           },
         });
 
-      result.counts.pulled += 1;
-      result.items.push({
-        category: 'event',
-        action: 'created',
-        status: 'success',
-        externalEventId: item.id,
-        title: item.summary,
-        payload: {
+      if (hasChanged) {
+        result.counts.pulled += 1;
+        result.items.push({
+          category: 'event',
+          action,
+          status: 'success',
+          externalEventId: item.id,
           title: item.summary,
-          startTime: startTime.toISOString(),
-          endTime: endTime.toISOString(),
-          description: item.description ?? null,
-        },
-      });
+          payload: {
+            title: item.summary,
+            startTime: startTime.toISOString(),
+            endTime: endTime.toISOString(),
+            description: item.description ?? null,
+          },
+        });
+      }
     }
 
     if (googleIds.length > 0) {

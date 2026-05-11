@@ -3,12 +3,97 @@ import { getIronSession } from 'iron-session';
 import { sessionOptions, SessionData } from '@/lib/session';
 import { cookies } from 'next/headers';
 import { db } from '@/lib/db';
-import { reservations, reservationHistories, places, users } from '@/lib/db/schema';
-import { eq, desc, and } from 'drizzle-orm';
+import {
+  reservations,
+  reservationHistories,
+  places,
+  users,
+  calendarSyncItems,
+} from '@/lib/db/schema';
+import { eq, desc, and, or } from 'drizzle-orm';
 import { ReservationService } from '@/lib/services/reservation-service';
 import { getGoogleEventUrl } from '@/lib/calendar/calendar-service';
 
 type Params = { params: Promise<{ id: string }> };
+type GoogleSyncStatus = 'synced' | 'pending' | 'missing_event';
+
+async function getReservationGoogleSync(
+  reservationId: number,
+  googleEventId: string | null
+): Promise<{
+  status: GoogleSyncStatus;
+  label: string;
+  lastSyncedAt: string | null;
+}> {
+  if (!googleEventId) {
+    return {
+      status: 'missing_event',
+      label: 'Google 이벤트 없음',
+      lastSyncedAt: null,
+    };
+  }
+
+  const [latestChangeRows, latestSyncItemRows] = await Promise.all([
+    db
+      .select({
+        createdAt: reservationHistories.createdAt,
+      })
+      .from(reservationHistories)
+      .where(
+        and(
+          eq(reservationHistories.reservationId, reservationId),
+          or(
+            eq(reservationHistories.actionType, 'created'),
+            eq(reservationHistories.actionType, 'updated')
+          )
+        )
+      )
+      .orderBy(desc(reservationHistories.createdAt))
+      .limit(1),
+    db
+      .select({
+        processedAt: calendarSyncItems.processedAt,
+        externalEventId: calendarSyncItems.externalEventId,
+      })
+      .from(calendarSyncItems)
+      .where(
+        and(
+          eq(calendarSyncItems.reservationId, reservationId),
+          eq(calendarSyncItems.category, 'reservation'),
+          eq(calendarSyncItems.status, 'success'),
+          or(
+            eq(calendarSyncItems.action, 'created'),
+            eq(calendarSyncItems.action, 'updated')
+          )
+        )
+      )
+      .orderBy(desc(calendarSyncItems.processedAt))
+      .limit(1),
+  ]);
+  const latestChange = latestChangeRows[0];
+  const latestSyncItem = latestSyncItemRows[0];
+
+  const changeAt = latestChange?.createdAt ?? null;
+  const syncedAt = latestSyncItem?.processedAt ?? null;
+  const isOutdated =
+    !syncedAt ||
+    !!(changeAt && syncedAt.getTime() < changeAt.getTime()) ||
+    latestSyncItem?.externalEventId !== googleEventId;
+
+  if (isOutdated) {
+    return {
+      status: 'pending',
+      label: '동기화 필요',
+      lastSyncedAt: syncedAt ? syncedAt.toISOString() : null,
+    };
+  }
+
+  return {
+    status: 'synced',
+    label: '동기화됨',
+    lastSyncedAt: syncedAt.toISOString(),
+  };
+}
 
 export async function GET(_req: NextRequest, { params }: Params) {
   try {
@@ -44,12 +129,21 @@ export async function GET(_req: NextRequest, { params }: Params) {
       .where(eq(reservations.id, reservationId));
 
     if (reservation) {
+      const googleSync =
+        reservation.status === 'cancelled'
+          ? null
+          : await getReservationGoogleSync(
+              reservationId,
+              reservation.googleEventId
+            );
+
       return NextResponse.json({
         ...reservation,
         googleEventUrl:
           reservation.status === 'cancelled'
             ? null
             : await getGoogleEventUrl(reservation.googleEventId),
+        googleSync,
         isCancelled: reservation.status === 'cancelled',
       });
     }
@@ -81,6 +175,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
           startTime: snapshot.startTime,
           endTime: snapshot.endTime,
           googleEventUrl: null,
+          googleSync: null,
           isCancelled: true,
         });
       }

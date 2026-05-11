@@ -277,14 +277,8 @@ export default function CalendarSyncHistoryPage() {
         startedAtLabel: `${formatStartedAt(detail.startedAt)} 동기화`,
         durationLabel: formatDuration(detail.startedAt, detail.finishedAt),
         summary: {
-          reservationSyncStatus:
-            detail.reservationSyncStatus === 'skipped'
-              ? 'failed'
-              : detail.reservationSyncStatus,
-          eventSyncStatus:
-            detail.eventSyncStatus === 'skipped'
-              ? 'failed'
-              : detail.eventSyncStatus,
+          reservationSyncStatus: detail.reservationSyncStatus,
+          eventSyncStatus: detail.eventSyncStatus,
         },
         items,
         logs,

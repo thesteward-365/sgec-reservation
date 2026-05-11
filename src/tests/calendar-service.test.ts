@@ -27,6 +27,10 @@ const { tables, state } = vi.hoisted(() => ({
     externalEvents: {
       name: 'external_events',
       googleEventId: 'external_events.google_event_id',
+      title: 'external_events.title',
+      startTime: 'external_events.start_time',
+      endTime: 'external_events.end_time',
+      description: 'external_events.description',
     },
     syncLogs: { name: 'sync_logs' },
     calendarSettings: { name: 'calendar_settings' },
@@ -45,6 +49,7 @@ const { tables, state } = vi.hoisted(() => ({
     cancellationRows: [] as any[],
     updatedHistoryRows: [] as any[],
     latestHistoryRows: [] as any[],
+    externalEventRows: [] as any[],
     runRows: [] as any[],
     itemRows: [] as any[],
     insertedRuns: [] as any[],
@@ -123,6 +128,7 @@ vi.mock('../lib/db', () => {
           rows = state.latestHistoryRows;
         }
       }
+      if (this.table === tables.externalEvents) rows = state.externalEventRows;
       if (this.table === tables.calendarSyncRuns) rows = state.runRows;
       if (this.table === tables.calendarSyncItems) rows = state.itemRows;
 
@@ -202,6 +208,7 @@ describe('calendar-service syncAll', () => {
     state.cancellationRows = [];
     state.updatedHistoryRows = [];
     state.latestHistoryRows = [];
+    state.externalEventRows = [];
     state.runRows = [];
     state.itemRows = [];
     state.insertedRuns = [];
@@ -264,7 +271,85 @@ describe('calendar-service syncAll', () => {
     expect(result.status).toBe('success');
     expect(state.insertedRuns).toHaveLength(1);
     expect(state.insertedItems).toHaveLength(2);
+    expect(state.insertedItems.map((item) => item.action)).toEqual([
+      'created',
+      'created',
+    ]);
     expect(state.logRows.every((row) => row.runId === result.runId)).toBe(true);
+  });
+
+  it('marks existing external events as updated in sync history items', async () => {
+    state.externalEventRows = [
+      {
+        googleEventId: 'evt-1',
+        title: '이전 행사',
+        startTime: new Date('2026-05-11T10:00:00.000Z'),
+        endTime: new Date('2026-05-11T11:00:00.000Z'),
+        description: null,
+      },
+    ];
+    vi.mocked(state.calendarClient.events.list).mockResolvedValue({
+      data: {
+        items: [
+          {
+            id: 'evt-1',
+            summary: '기존 행사',
+            start: { dateTime: '2026-05-11T10:00:00.000Z' },
+            end: { dateTime: '2026-05-11T11:00:00.000Z' },
+          },
+          {
+            id: 'evt-2',
+            summary: '새 행사',
+            start: { dateTime: '2026-05-12T10:00:00.000Z' },
+            end: { dateTime: '2026-05-12T11:00:00.000Z' },
+          },
+        ],
+      },
+    });
+
+    const result = await syncAll('manual');
+
+    const eventItems = result.items.filter((item) => item.category === 'event');
+    expect(eventItems).toHaveLength(2);
+    expect(eventItems[0]).toMatchObject({
+      externalEventId: 'evt-1',
+      action: 'updated',
+    });
+    expect(eventItems[1]).toMatchObject({
+      externalEventId: 'evt-2',
+      action: 'created',
+    });
+  });
+
+  it('does not create sync items for unchanged external events', async () => {
+    state.externalEventRows = [
+      {
+        googleEventId: 'evt-1',
+        title: '그대로인 행사',
+        startTime: new Date('2026-05-11T10:00:00.000Z'),
+        endTime: new Date('2026-05-11T11:00:00.000Z'),
+        description: '설명',
+      },
+    ];
+    vi.mocked(state.calendarClient.events.list).mockResolvedValue({
+      data: {
+        items: [
+          {
+            id: 'evt-1',
+            summary: '그대로인 행사',
+            start: { dateTime: '2026-05-11T10:00:00.000Z' },
+            end: { dateTime: '2026-05-11T11:00:00.000Z' },
+            description: '설명',
+          },
+        ],
+      },
+    });
+
+    const result = await syncAll('manual');
+
+    expect(result.counts.eventPulled).toBe(0);
+    expect(result.eventSyncStatus).toBe('skipped');
+    expect(result.items.filter((item) => item.category === 'event')).toHaveLength(0);
   });
 
   it('deletes local external events when Google returns zero events', async () => {

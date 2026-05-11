@@ -49,6 +49,37 @@ type SyncRunSummary = {
   };
 };
 
+function formatScopeStatus(
+  status: SyncRunSummary['reservationSyncStatus'] | SyncRunSummary['eventSyncStatus']
+) {
+  switch (status) {
+    case 'success':
+      return '성공';
+    case 'skipped':
+      return '변경 없음';
+    case 'failed':
+      return '실패';
+  }
+}
+
+function getRunBadge(run: SyncRunSummary) {
+  if (
+    run.reservationSyncStatus === 'failed' ||
+    run.eventSyncStatus === 'failed'
+  ) {
+    return { label: '실패', color: 'red' as const };
+  }
+
+  if (
+    run.reservationSyncStatus === 'skipped' &&
+    run.eventSyncStatus === 'skipped'
+  ) {
+    return { label: '변경 없음', color: 'neutral' as const };
+  }
+
+  return null;
+}
+
 function formatLastSync(iso: string | null): string {
   if (!iso) return '없음';
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -477,33 +508,40 @@ function CalendarPageContent() {
                     최근 동기화 이력
                   </p>
                   <List emptyMessage="최근 동기화 이력이 없습니다.">
-                    {recentRuns.map((run) => (
-                      <ListItem key={run.id} className="p-0">
-                        <Link
-                          href={`/admin/calendar/history/${run.id}`}
-                          className="text-foreground block px-5 py-4"
-                        >
+                    {recentRuns.map((run) => {
+                      const badge = getRunBadge(run);
+
+                      return (
+                        <ListItem key={run.id} className="p-0">
+                          <Link
+                            href={`/admin/calendar/history/${run.id}`}
+                            className="text-foreground block px-5 py-4"
+                          >
                           <div className="flex items-center justify-between gap-3">
                             <div className="min-w-0">
                               <div className="flex items-center gap-2">
                                 <p className="text-body text-foreground min-w-0 truncate font-bold">
                                   {formatRunDate(run.startedAt)}
                                 </p>
-                                {run.counts.failed > 0 ? (
-                                  <Badge color="red" className="shrink-0">
-                                    실패
+                                {badge ? (
+                                  <Badge color={badge.color} className="shrink-0">
+                                    {badge.label}
                                   </Badge>
                                 ) : null}
                               </div>
                               <p className="text-caption text-muted-foreground mt-1">
                                 {formatLastSync(run.startedAt)}
                               </p>
+                              <p className="text-caption text-muted-foreground mt-1">
+                                {`예약 ${formatScopeStatus(run.reservationSyncStatus)} · 행사 ${formatScopeStatus(run.eventSyncStatus)}`}
+                              </p>
                             </div>
                             <ChevronRightIcon className="text-muted-foreground size-4 shrink-0" />
                           </div>
-                        </Link>
-                      </ListItem>
-                    ))}
+                          </Link>
+                        </ListItem>
+                      );
+                    })}
                   </List>
                 </section>
               )}

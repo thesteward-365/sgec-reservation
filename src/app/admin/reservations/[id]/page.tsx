@@ -30,6 +30,11 @@ import { toYMD } from '@/lib/date-utils';
 interface Reservation extends BaseReservation {
   isCancelled?: boolean;
   googleEventUrl?: string | null;
+  googleSync?: {
+    status: 'synced' | 'pending' | 'missing_event';
+    label: string;
+    lastSyncedAt: string | null;
+  } | null;
 }
 
 export default function ReservationDetailPage({

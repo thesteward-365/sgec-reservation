@@ -528,13 +528,13 @@ DB 마이그레이션 적용
   - 완료 기준: 과거 데이터 처리 전략이 문서 또는 코드로 확정된다.
   - 테스트 수행 방법: 없음
 
-- [ ] 7. sync_logs 실행 단위 연결 고도화
+- [x] 7. sync_logs 실행 단위 연결 고도화
   - 필요 시 `sync_logs`에 `runId`를 추가한다.
   - 실행 단위 상세 페이지에서 run 기반 로그 조회가 가능하도록 확장한다.
   - 완료 기준: run 단위 상세 로그 복원이 가능해진다.
-  - 테스트 수행 방법: 구현 범위 확정 후 별도 기록
+  - 테스트 수행 방법: `npm test -- --run src/tests/calendar-service.test.ts src/tests/calendar-sync-history-route.test.ts src/tests/calendar-sync-route.test.ts`
 
-- [ ] 8. 행사 캘린더 동기화 이력 action 정교화
+- [x] 8. 행사 캘린더 동기화 이력 action 정교화
   - 현재 `pullExternalEventsDetailed()`는 행사 캘린더를 매번 다시 읽고, 기존에 있던 행사도 이력에 모두 `created`로 기록하고 있다.
   - `external_events` upsert 전에 기존 로컬 데이터 존재 여부를 확인해서, 신규 항목은 `created`, 기존 항목은 `updated` 또는 별도 `synced` 성격으로 기록하는 방안을 구현한다.
   - 동기화 이력 상세에서 “이전에 있던 행사인데 새로 생성된 것처럼 보이는 문제”를 해소한다.
@@ -542,15 +542,15 @@ DB 마이그레이션 적용
   - 테스트 수행 방법: `npm test -- --run src/tests/calendar-service.test.ts`
   - 수동 테스트: 연속 2회 동기화 후 `/admin/calendar/history/[runId]`에서 행사 항목 action이 실제 상태와 맞게 보이는지 확인한다.
 
-- [ ] 9. skipped 상태 UI 표현 수정
+- [x] 9. skipped 상태 UI 표현 수정
   - 현재 서비스 레벨에서는 처리할 예약이 없으면 `skipped`로 계산하지만, 상세 페이지에서 이를 강제로 `failed`로 변환하고 있다.
   - `/admin/calendar/history/[runId]`와 최근 이력 요약에서 `skipped`를 실패가 아닌 “변경 없음” 또는 “건너뜀”으로 표시하도록 정리한다.
   - 필요하면 `CalendarSyncHistoryDetail`의 상태 타입/배지 문구를 `success | failed`에서 `success | skipped | failed`로 확장한다.
   - 완료 기준: 예약 캘린더에 반영할 변경이 없는 동기화가 실패처럼 보이지 않는다.
-  - 테스트 수행 방법: `npm test -- --run src/tests/calendar-sync-history-route.test.ts`
+  - 테스트 수행 방법: `npm test -- --run src/tests/calendar-service.test.ts src/tests/calendar-sync-history-route.test.ts src/tests/calendar-sync-route.test.ts`
   - 수동 테스트: 변경 없는 상태에서 동기화 후 최근 이력과 상세 이력에서 예약 캘린더 상태가 실패가 아닌 문구로 보이는지 확인한다.
 
-- [ ] 10. 관리자 예약 상세에 Google 동기화 상태 표시
+- [x] 10. 관리자 예약 상세에 Google 동기화 상태 표시
   - 관리자 예약 상세 페이지에서 현재는 Google 이벤트 링크만 제공하고, 최신 정보 반영 여부는 확인할 수 없다.
   - 예약 상세 API 응답에 Google 동기화 상태 계산에 필요한 정보가 부족하면 확장한다.
   - 최소 표시안:
@@ -560,7 +560,7 @@ DB 마이그레이션 적용
     - 필요 시 `마지막 반영 시각`
   - 상태 계산 기준은 예약의 최신 변경 시점과 해당 예약이 마지막으로 성공 처리된 calendar sync item 또는 run 시점을 비교하는 쪽을 우선 검토한다.
   - 완료 기준: 관리자 예약 상세에서 해당 예약이 Google Calendar에 최신 상태로 반영되었는지 한눈에 확인할 수 있다.
-  - 테스트 수행 방법: `npx eslint src/app/admin/reservations/[id]/page.tsx src/app/api/admin/reservations/[id]/route.ts`
+  - 테스트 수행 방법: `npm test -- --run src/tests/admin-reservation-route.test.ts`
   - 수동 테스트: 생성 직후, 수정 후 미동기화 상태, 동기화 완료 상태, 취소 상태 각각에서 배지/문구가 기대대로 보이는지 확인한다.
 
 - [ ] 11. 행사 일정 전용 목록 화면 추가

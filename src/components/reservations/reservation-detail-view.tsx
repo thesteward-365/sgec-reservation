@@ -17,6 +17,11 @@ export interface Reservation {
   startTime: string | null;
   endTime: string | null;
   googleEventUrl?: string | null;
+  googleSync?: {
+    status: 'synced' | 'pending' | 'missing_event';
+    label: string;
+    lastSyncedAt: string | null;
+  } | null;
 }
 
 interface Props {
@@ -47,6 +52,17 @@ export function ReservationDetailView({
     { label: '시간', value: reservation.startTime && reservation.endTime ? `${formatTime(reservation.startTime)} – ${formatTime(reservation.endTime)}` : '–' },
     { label: '목적', value: reservation.purpose },
     { label: '예약자', value: reservation.userName ?? '–' },
+    ...(reservation.googleSync
+      ? [{ label: 'Google 동기화', value: reservation.googleSync.label }]
+      : []),
+    ...(reservation.googleSync?.lastSyncedAt
+      ? [
+          {
+            label: '마지막 반영',
+            value: `${formatKoreanDate(reservation.googleSync.lastSyncedAt)} ${formatTime(reservation.googleSync.lastSyncedAt)}`,
+          },
+        ]
+      : []),
   ];
 
   return (

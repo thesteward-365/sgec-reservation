@@ -18,7 +18,7 @@ type SyncItemStatus = 'success' | 'failed';
 type SyncItemCategory = 'reservation' | 'event';
 type SyncItemAction = 'created' | 'updated' | 'cancelled';
 type LogLevel = 'info' | 'warning' | 'error';
-type CalendarResultStatus = 'success' | 'failed';
+type CalendarResultStatus = 'success' | 'skipped' | 'failed';
 type ItemFilterKey = 'reservation' | 'event';
 type ItemViewMode = 'title' | 'summary';
 
@@ -72,6 +72,7 @@ const statusBadgeMap = {
 
 const resultStatusMap = {
   success: { label: '성공', color: 'green' as const },
+  skipped: { label: '변경 없음', color: 'neutral' as const },
   failed: { label: '실패', color: 'red' as const },
 };
 

@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { List, ListItem } from '@/components/ui/list';
 
-type RecentSyncStatus = 'success' | 'failed';
+type RecentSyncStatus = 'success' | 'skipped' | 'failed';
 
 export type RecentSyncHistory = {
   id: string;
@@ -23,6 +23,32 @@ export type RecentSyncHistory = {
   eventStatus: RecentSyncStatus;
   href: string;
 };
+
+function formatSyncStatus(status: RecentSyncStatus) {
+  switch (status) {
+    case 'success':
+      return '성공';
+    case 'skipped':
+      return '변경 없음';
+    case 'failed':
+      return '실패';
+  }
+}
+
+function getHistoryBadge(history: RecentSyncHistory) {
+  if (hasFailure(history)) {
+    return { label: '실패', color: 'red' as const };
+  }
+
+  if (
+    history.reservationStatus === 'skipped' &&
+    history.eventStatus === 'skipped'
+  ) {
+    return { label: '변경 없음', color: 'neutral' as const };
+  }
+
+  return null;
+}
 
 export type CalendarSettingsOverviewProps = {
   connection: {
@@ -146,33 +172,40 @@ export function CalendarSettingsOverview({
           </div>
 
           <List emptyMessage="최근 동기화 이력이 없습니다.">
-            {recentHistories.map((history) => (
-              <ListItem key={history.id} className="p-0">
-                <Link
-                  href={history.href}
-                  className="block px-5 py-4 no-underline hover:no-underline"
-                >
+            {recentHistories.map((history) => {
+              const badge = getHistoryBadge(history);
+
+              return (
+                <ListItem key={history.id} className="p-0">
+                  <Link
+                    href={history.href}
+                    className="block px-5 py-4 no-underline hover:no-underline"
+                  >
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="text-body text-foreground min-w-0 truncate font-bold">
                           {history.startedAtLabel}
                         </p>
-                        {hasFailure(history) ? (
-                          <Badge color="red" className="shrink-0">
-                            실패
+                        {badge ? (
+                          <Badge color={badge.color} className="shrink-0">
+                            {badge.label}
                           </Badge>
                         ) : null}
                       </div>
                       <p className="text-caption text-muted-foreground mt-1">
                         {history.relativeTimeLabel}
                       </p>
+                      <p className="text-caption text-muted-foreground mt-1">
+                        {`예약 ${formatSyncStatus(history.reservationStatus)} · 행사 ${formatSyncStatus(history.eventStatus)}`}
+                      </p>
                     </div>
                     <ChevronRightIcon className="text-muted-foreground size-4 shrink-0" />
                   </div>
-                </Link>
-              </ListItem>
-            ))}
+                  </Link>
+                </ListItem>
+              );
+            })}
           </List>
         </section>
       </main>
