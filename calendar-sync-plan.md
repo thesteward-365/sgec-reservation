@@ -508,12 +508,13 @@ DB 마이그레이션 적용
   - 테스트 수행 방법: `npx eslint src/app/admin/reservations/[id]/page.tsx src/app/api/admin/reservations/[id]/route.ts src/components/reservations/reservation-detail-view.tsx`
   - 수동 테스트: 활성 예약 상세 페이지에서 `Google Calendar에서 보기` 버튼이 노출되고, 클릭 시 새 탭에서 해당 Google 이벤트가 열리는지 확인한다. 취소된 예약 또는 미연동 예약에서는 버튼이 숨겨지는지 확인한다.
 
-- [ ] 4. API 테스트 추가
+- [x] 4. API 테스트 추가
   - `src/tests/calendar-sync-route.test.ts`
   - `src/tests/calendar-sync-history-route.test.ts`
   - `/api/admin/calendar` 수동 동기화 응답, `runId`, `status`, `counts`, 최근 이력 목록, 상세 이력, 비관리자 401을 검증한다.
   - 완료 기준: API 레벨 회귀 테스트가 추가된다.
   - 테스트 수행 방법: `npm test -- --run src/tests/calendar-sync-route.test.ts src/tests/calendar-sync-history-route.test.ts`
+  - 수동 테스트: 없음
 
 - [ ] 5. DB 마이그레이션 실제 적용
   - `drizzle-pg/0002_calendar_sync_history.sql`를 실제 DB에 반영한다.
