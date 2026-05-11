@@ -2,6 +2,7 @@ import { google } from 'googleapis';
 import { db } from '@/lib/db';
 import { calendarSettings } from '@/lib/db';
 import { eq } from 'drizzle-orm';
+import { hasGoogleCalendarConnection } from './google-connection-state';
 
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
@@ -29,14 +30,14 @@ export async function getCalendarClient() {
     .limit(1)
     .then((rows) => rows[0]);
 
-  if (!settings?.googleAccessToken || !settings?.googleRefreshToken) {
+  if (!hasGoogleCalendarConnection(settings) || !settings?.googleAccessToken) {
     return null;
   }
 
   const oauth2Client = createOAuthClient();
   oauth2Client.setCredentials({
     access_token: settings.googleAccessToken,
-    refresh_token: settings.googleRefreshToken,
+    refresh_token: settings.googleRefreshToken ?? undefined,
     expiry_date: settings.googleTokenExpiry?.getTime(),
   });
 
@@ -55,7 +56,7 @@ export async function getCalendarClient() {
   });
 
   // 만료 10분 이내면 미리 갱신
-  if (settings.googleTokenExpiry) {
+  if (settings.googleRefreshToken && settings.googleTokenExpiry) {
     const expiryMs = settings.googleTokenExpiry.getTime();
     if (Date.now() > expiryMs - 10 * 60 * 1000) {
       try {

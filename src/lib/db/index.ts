@@ -23,6 +23,8 @@ export const {
   calendarSettings,
   externalEvents,
   syncLogs,
+  calendarSyncRuns,
+  calendarSyncItems,
 } = pgSchema;
 
 export { toDbDate, fromDbDate };

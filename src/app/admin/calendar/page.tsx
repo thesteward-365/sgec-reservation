@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { List, ListItem } from '@/components/ui/list';
 import {
   Dialog,
   DialogContent,
@@ -17,6 +19,7 @@ import {
   ArrowPathIcon,
   ExclamationCircleIcon,
   InformationCircleIcon,
+  ChevronRightIcon,
 } from '@heroicons/react/24/outline';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
@@ -30,6 +33,21 @@ type CalendarStatus = {
 };
 
 type CalendarOption = { id: string; summary: string };
+type SyncRunSummary = {
+  id: string;
+  startedAt: string;
+  finishedAt: string | null;
+  status: 'success' | 'partial' | 'failed';
+  reservationSyncStatus: 'success' | 'failed' | 'skipped';
+  eventSyncStatus: 'success' | 'failed' | 'skipped';
+  counts: {
+    reservationCreated: number;
+    reservationUpdated: number;
+    reservationDeleted: number;
+    eventPulled: number;
+    failed: number;
+  };
+};
 
 function formatLastSync(iso: string | null): string {
   if (!iso) return '없음';
@@ -37,6 +55,15 @@ function formatLastSync(iso: string | null): string {
   const diffMin = Math.floor(diffMs / 60000);
   if (diffMin < 60) return `${diffMin}분 전`;
   return `${Math.floor(diffMin / 60)}시간 전`;
+}
+
+function formatRunDate(iso: string): string {
+  return new Intl.DateTimeFormat('ko-KR', {
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date(iso));
 }
 
 function CalendarPageContent() {
@@ -48,53 +75,73 @@ function CalendarPageContent() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showSyncInfo, setShowSyncInfo] = useState(false);
+  const [recentRuns, setRecentRuns] = useState<SyncRunSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchStatus = useCallback(async () => {
-    const res = await fetch('/api/admin/calendar');
+    const res = await fetch('/api/admin/calendar', { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
       setStatus(data);
+      setSelectedCalendar(data.calendarId ?? '');
+      setSelectedEventCalendar(data.eventCalendarId ?? '');
     }
   }, []);
 
-  const fetchCalendars = useCallback(async () => {
-    const res = await fetch('/api/admin/calendar/calendars');
+  const fetchRecentRuns = useCallback(async () => {
+    const res = await fetch('/api/admin/calendar/history?limit=10', {
+      cache: 'no-store',
+    });
     if (res.ok) {
       const data = await res.json();
-      setCalendars(data.calendars ?? []);
+      setRecentRuns(data.runs ?? []);
     }
   }, []);
 
   useEffect(() => {
     (async () => {
       await fetchStatus();
+      await fetchRecentRuns();
       setLoading(false);
     })();
-  }, [fetchStatus]);
+  }, [fetchStatus, fetchRecentRuns]);
 
   useEffect(() => {
-    if (status?.connected) {
-      fetchCalendars();
-      setSelectedCalendar(status.calendarId ?? '');
-      setSelectedEventCalendar(status.eventCalendarId ?? '');
-    }
-  }, [
-    status?.connected,
-    status?.calendarId,
-    status?.eventCalendarId,
-    fetchCalendars,
-  ]);
+    if (!status?.connected) return;
+
+    let cancelled = false;
+
+    (async () => {
+      const res = await fetch('/api/admin/calendar/calendars', {
+        cache: 'no-store',
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!cancelled) {
+        setCalendars(data.calendars ?? []);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [status?.connected]);
 
   useEffect(() => {
     const connected = searchParams.get('connected');
     const error = searchParams.get('error');
-    if (connected === 'true') toast.success('Google 계정이 연결되었습니다!');
+    if (connected === 'true') {
+      toast.success('Google 계정이 연결되었습니다!');
+      queueMicrotask(() => {
+        void fetchStatus();
+        void fetchRecentRuns();
+      });
+    }
     if (error === 'access_denied') toast.error('Google 연동이 취소되었습니다.');
     if (error === 'token_error')
       toast.error('토큰 발급에 실패했습니다. 다시 시도해주세요.');
     if (error === 'callback_error') toast.error('연동 중 오류가 발생했습니다.');
-  }, [searchParams]);
+  }, [fetchRecentRuns, fetchStatus, searchParams]);
 
   const handleSync = async () => {
     setIsSyncing(true);
@@ -108,6 +155,7 @@ function CalendarPageContent() {
       if (res.ok) {
         toast.success(data.message);
         await fetchStatus();
+        await fetchRecentRuns();
       } else {
         toast.error(data.error ?? '동기화에 실패했습니다.');
       }
@@ -420,6 +468,43 @@ function CalendarPageContent() {
                       </Button>
                     </div>
                   </Card>
+                </section>
+              )}
+
+              {calendarSaved && (
+                <section className="space-y-2">
+                  <p className="text-caption text-muted-foreground px-1 font-bold">
+                    최근 동기화 이력
+                  </p>
+                  <List emptyMessage="최근 동기화 이력이 없습니다.">
+                    {recentRuns.map((run) => (
+                      <ListItem key={run.id} className="p-0">
+                        <Link
+                          href={`/admin/calendar/history/${run.id}`}
+                          className="text-foreground block px-5 py-4"
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="text-body text-foreground min-w-0 truncate font-bold">
+                                  {formatRunDate(run.startedAt)}
+                                </p>
+                                {run.counts.failed > 0 ? (
+                                  <Badge color="red" className="shrink-0">
+                                    실패
+                                  </Badge>
+                                ) : null}
+                              </div>
+                              <p className="text-caption text-muted-foreground mt-1">
+                                {formatLastSync(run.startedAt)}
+                              </p>
+                            </div>
+                            <ChevronRightIcon className="text-muted-foreground size-4 shrink-0" />
+                          </div>
+                        </Link>
+                      </ListItem>
+                    ))}
+                  </List>
                 </section>
               )}
 

@@ -13,7 +13,7 @@ import { Chip } from '@/components/ui/chip';
 import { cn } from '@/lib/utils';
 
 type SyncStatus = 'success' | 'partial' | 'failed';
-type SyncTrigger = 'manual' | 'scheduled';
+type SyncTrigger = 'manual' | 'system';
 type SyncItemStatus = 'success' | 'failed';
 type SyncItemCategory = 'reservation' | 'event';
 type SyncItemAction = 'created' | 'updated' | 'cancelled';
@@ -325,7 +325,7 @@ function SyncHistoryListItem({
   compact: boolean;
 }) {
   const content = (
-    <div className="rounded-2xl bg-white p-4 shadow-(--shadow-1)">
+    <div className="text-foreground rounded-2xl bg-white p-4 shadow-(--shadow-1)">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex min-w-0 items-center gap-2 overflow-hidden text-body">
           <span
@@ -375,7 +375,7 @@ function SyncHistoryListItem({
   if (!item.href) return content;
 
   return (
-    <Link href={item.href} className="block">
+    <Link href={item.href} className="text-foreground block">
       {content}
     </Link>
   );
