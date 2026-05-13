@@ -292,7 +292,7 @@ function SummaryResultButton({
 }: {
   label: string;
   statusLabel: string;
-  statusColor: 'green' | 'red';
+  statusColor: 'green' | 'red' | 'neutral';
   active: boolean;
   onClick: () => void;
 }) {

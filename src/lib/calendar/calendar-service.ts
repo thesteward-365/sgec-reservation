@@ -548,7 +548,7 @@ async function pushReservationsDetailed(
           action: 'created',
           status: 'success',
           reservationId: row.id,
-          externalEventId: eventId,
+          externalEventId: eventId ?? undefined,
           title,
           payload:
             (await getLatestReservationHistoryPayload(row.id, 'created')) ??
@@ -634,8 +634,8 @@ async function syncCancellationsDetailed(runId: string): Promise<SyncScopeResult
     const snapshot = parsedChanges?.snapshot ?? parsedChanges?.cancelled?.from;
     const title = reservationTitle({
       id: row.reservationId,
-      placeName: row.placeName ?? snapshot?.placeName,
-      purpose: row.purpose ?? snapshot?.purpose,
+      placeName: (row.placeName ?? snapshot?.placeName) as string | undefined,
+      purpose: (row.purpose ?? snapshot?.purpose) as string | undefined,
     });
     const payload = snapshot
       ? snapshot
@@ -1040,8 +1040,8 @@ export async function listCalendars(): Promise<
   try {
     const res = await calendar.calendarList.list();
     return (res.data.items ?? [])
-      .filter((c) => c.id && c.summary)
-      .map((c) => ({ id: c.id!, summary: c.summary! }));
+      .filter((c: calendar_v3.Schema$CalendarListEntry) => c.id && c.summary)
+      .map((c: calendar_v3.Schema$CalendarListEntry) => ({ id: c.id!, summary: c.summary! }));
   } catch {
     return [];
   }
