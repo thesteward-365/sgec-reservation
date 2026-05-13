@@ -45,3 +45,6 @@ storybook-static
 sqlite.*
 reference/
 postgres_data/
+test-results/
+playwright-report/
+playwright-debug.log

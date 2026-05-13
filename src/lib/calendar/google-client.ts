@@ -24,6 +24,21 @@ export function getAuthUrl() {
 }
 
 export async function getCalendarClient() {
+  if (process.env.MOCK_GOOGLE_CALENDAR === 'true') {
+    return {
+      events: {
+        insert: async () => ({ data: { id: 'mock-event-id' } }),
+        update: async () => ({ data: { id: 'mock-event-id' } }),
+        delete: async () => ({ data: {} }),
+        list: async () => ({ data: { items: [] } }),
+        get: async () => ({ data: { htmlLink: 'https://calendar.google.com/mock' } }),
+      },
+      calendarList: {
+        list: async () => ({ data: { items: [{ id: 'mock-calendar', summary: 'Mock Calendar' }] } }),
+      },
+    } as any;
+  }
+
   const settings = await db
     .select()
     .from(calendarSettings)
