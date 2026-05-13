@@ -1,13 +1,35 @@
+version: '3.8'
+
 services:
-  db:
-    image: postgres:15-alpine
-    container_name: postgres-local
-    restart: always
-    environment:
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypassword
-      POSTGRES_DB: mydatabase
+  # 1. Application: Next.js Standalone 빌드 및 실행
+  app:
+    build: .
+    image: ghcr.io/${GITHUB_ID:-user}/${REPO_NAME:-sgec-reservation}:latest
+    container_name: nextjs-app
+    env_file: .env
     ports:
-      - '5432:5432'
+      - '3000:3000'
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: always
+
+  # 2. Watchtower: GHCR 이미지 갱신 확인 및 자동 재시작
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
     volumes:
-      - ./postgres_data:/var/lib/postgresql/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 300 --cleanup nextjs-app
+    environment:
+      - DOCKER_API_VERSION=1.44
+    restart: always
+
+  # 3. Uptime Kuma: 서비스 상태 모니터링 (배포작업.md 5.3 반영)
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: uptime-kuma
+    volumes:
+      - ./uptime-kuma-data:/app/data
+    ports:
+      - '3001:3001'
+    restart: always

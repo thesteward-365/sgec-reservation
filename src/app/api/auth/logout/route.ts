@@ -4,7 +4,15 @@ import { sessionOptions, SessionData } from '@/lib/session';
 import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
-  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  const session = await getIronSession<SessionData>(
+    await cookies(),
+    sessionOptions
+  );
   session.destroy();
-  return NextResponse.redirect(new URL('/login', request.url), { status: 303 });
+  return new NextResponse(null, {
+    status: 303,
+    headers: {
+      Location: '/login',
+    },
+  });
 }
