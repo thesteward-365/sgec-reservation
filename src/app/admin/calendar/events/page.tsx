@@ -15,6 +15,7 @@ type ExternalEventResponse = {
   title: string;
   startTime: string;
   endTime: string;
+  isAllDay: boolean;
   description: string | null;
 };
 
@@ -37,9 +38,11 @@ function formatDateLabel(iso: string) {
   }).format(new Date(iso));
 }
 
-function formatTimeRange(startIso: string, endIso: string) {
-  const start = new Date(startIso);
-  const end = new Date(endIso);
+function formatTimeRange(event: ExternalEventResponse) {
+  if (event.isAllDay) return '종일';
+
+  const start = new Date(event.startTime);
+  const end = new Date(event.endTime);
   const startLabel = new Intl.DateTimeFormat('ko-KR', {
     hour: 'numeric',
     minute: '2-digit',
@@ -49,14 +52,7 @@ function formatTimeRange(startIso: string, endIso: string) {
     minute: '2-digit',
   }).format(end);
 
-  const isAllDay =
-    start.getHours() === 0 &&
-    start.getMinutes() === 0 &&
-    end.getHours() === 0 &&
-    end.getMinutes() === 0 &&
-    end.getTime() - start.getTime() >= 24 * 60 * 60 * 1000;
-
-  return isAllDay ? '종일' : `${startLabel} - ${endLabel}`;
+  return `${startLabel} - ${endLabel}`;
 }
 
 export default function AdminCalendarEventsPage() {
@@ -186,7 +182,7 @@ export default function AdminCalendarEventsPage() {
                         {event.title}
                       </p>
                       <p className="text-caption text-muted-foreground">
-                        {formatTimeRange(event.startTime, event.endTime)}
+                        {formatTimeRange(event)}
                       </p>
                     </div>
                     {event.description ? (

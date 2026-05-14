@@ -10,7 +10,7 @@ services:
     ports:
       - '3000:3000'
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - 'host.docker.internal:host-gateway'
     restart: always
 
   # 2. Watchtower: GHCR 이미지 갱신 확인 및 자동 재시작
@@ -33,3 +33,16 @@ services:
     ports:
       - '3001:3001'
     restart: always
+
+  db:
+    image: postgres:15-alpine
+    container_name: postgres-local
+    restart: always
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydatabase
+    ports:
+      - '5432:5432'
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data

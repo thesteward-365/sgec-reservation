@@ -149,6 +149,7 @@ export const externalEvents = pgTable('external_events', {
   title: text('title').notNull(),
   startTime: timestamp('start_time', { withTimezone: true }).notNull(),
   endTime: timestamp('end_time', { withTimezone: true }).notNull(),
+  isAllDay: boolean('is_all_day').notNull().default(false),
   description: text('description'),
   syncedAt: timestamp('synced_at', { withTimezone: true })
     .notNull()
