@@ -906,9 +906,14 @@ async function pullExternalEventsDetailed(
     if (googleIds.length > 0) {
       await db
         .delete(externalEvents)
-        .where(sql`${externalEvents.googleEventId} NOT IN ${googleIds}`);
+        .where(
+          and(
+            sql`${externalEvents.googleEventId} NOT IN ${googleIds}`,
+            gte(externalEvents.startTime, now)
+          )
+        );
     } else {
-      await db.delete(externalEvents);
+      await db.delete(externalEvents).where(gte(externalEvents.startTime, now));
     }
 
     result.status = computeScopeStatus(result.counts, result.errors);
