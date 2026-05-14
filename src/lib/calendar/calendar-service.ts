@@ -36,6 +36,7 @@ type ExternalEventRow = {
   title: string;
   startTime: Date;
   endTime: Date;
+  isAllDay: boolean;
   description: string | null;
 };
 
@@ -187,6 +188,7 @@ function hasExternalEventChanged(
     title: string;
     startTime: Date;
     endTime: Date;
+    isAllDay: boolean;
     description: string | null;
   }
 ) {
@@ -196,6 +198,7 @@ function hasExternalEventChanged(
     existing.title !== next.title ||
     existing.startTime.toISOString() !== next.startTime.toISOString() ||
     existing.endTime.toISOString() !== next.endTime.toISOString() ||
+    existing.isAllDay !== next.isAllDay ||
     (existing.description ?? null) !== (next.description ?? null)
   );
 }
@@ -805,6 +808,7 @@ async function pullExternalEventsDetailed(
         title: externalEvents.title,
         startTime: externalEvents.startTime,
         endTime: externalEvents.endTime,
+        isAllDay: externalEvents.isAllDay,
         description: externalEvents.description,
       })
       .from(externalEvents);
@@ -832,17 +836,25 @@ async function pullExternalEventsDetailed(
     for (const item of allItems) {
       if (!item.id || !item.summary) continue;
 
+      const isAllDay = !!(item.start?.date && item.end?.date);
       const startStr = item.start?.dateTime ?? item.start?.date;
       const endStr = item.end?.dateTime ?? item.end?.date;
       if (!startStr || !endStr) continue;
 
-      const startTime = new Date(startStr);
-      const endTime = new Date(endStr);
+      // 종일 일정인 경우 KST 00:00:00으로 강제 보정
+      const startTime = isAllDay
+        ? new Date(`${item.start!.date}T00:00:00+09:00`)
+        : new Date(startStr);
+      const endTime = isAllDay
+        ? new Date(`${item.end!.date}T00:00:00+09:00`)
+        : new Date(endStr);
+
       googleIds.push(item.id);
       const nextEvent = {
         title: item.summary,
         startTime,
         endTime,
+        isAllDay,
         description: item.description ?? null,
       };
       const existingEvent = existingEventsById.get(item.id);
@@ -876,6 +888,7 @@ async function pullExternalEventsDetailed(
             title: item.summary,
             startTime: startTime.toISOString(),
             endTime: endTime.toISOString(),
+            isAllDay,
             description: item.description ?? null,
           },
         });

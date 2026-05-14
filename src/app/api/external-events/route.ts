@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
       title: externalEvents.title,
       startTime: externalEvents.startTime,
       endTime: externalEvents.endTime,
+      isAllDay: externalEvents.isAllDay,
       description: externalEvents.description,
     })
     .from(externalEvents)
@@ -45,9 +46,12 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json(
     rows.map((r) => ({
-      ...r,
+      id: r.id,
+      title: r.title,
       startTime: fromDbDate(r.startTime).toISOString(),
       endTime: fromDbDate(r.endTime).toISOString(),
+      isAllDay: !!r.isAllDay, // 확실히 불리언으로 강제 변환하여 포함
+      description: r.description,
     }))
   );
 }
