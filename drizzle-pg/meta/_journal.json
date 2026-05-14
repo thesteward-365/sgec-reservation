@@ -15,6 +15,13 @@
       "when": 1778233691370,
       "tag": "0001_wandering_madelyne_pryor",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778729324267,
+      "tag": "0002_material_taskmaster",
+      "breakpoints": true
     }
   ]
 }

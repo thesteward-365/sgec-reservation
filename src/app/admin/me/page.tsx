@@ -12,11 +12,12 @@ import {
   CalendarDaysIcon,
   ArrowRightStartOnRectangleIcon,
   ChevronRightIcon,
-  PencilSquareIcon,
 } from '@heroicons/react/24/outline';
 import { formatPhoneNumber, normalizePhoneNumber } from '@/lib/utils';
 import { AccountDialog } from '@/app/(user)/settings/_components/settings-dialogs';
 import Link from 'next/link';
+import pkg from '../../../../package.json';
+import { AppVersion } from '@/components/layout/app-version';
 
 interface Me {
   id: number;
@@ -188,11 +189,7 @@ export default function AdminMePage() {
           </List>
 
           {/* 버전 */}
-          <div className="pt-2 text-center">
-            <span className="text-muted-foreground block text-[12px]">
-              v1.0.0 · 샘깊은교회 문화사역 장소방
-            </span>
-          </div>
+          <AppVersion />
         </div>
       </main>
 

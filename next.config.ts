@@ -3,6 +3,7 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   output: 'standalone',
   allowedDevOrigins: [
+    'http://0.0.0.0:3000',
     'http://localhost:3000',
     '192.168.0.100',
     '*.ngrok-free.app',

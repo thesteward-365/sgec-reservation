@@ -5,6 +5,7 @@ import { sessionOptions, SessionData } from '@/lib/session';
 import { createOAuthClient } from '@/lib/calendar/google-client';
 import { db } from '@/lib/db';
 import { calendarSettings } from '@/lib/db';
+import { eq } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
@@ -24,10 +25,6 @@ export async function GET(request: NextRequest) {
     const oauth2Client = createOAuthClient();
     const { tokens } = await oauth2Client.getToken(code);
 
-    if (!tokens.access_token || !tokens.refresh_token) {
-      return NextResponse.redirect(new URL('/admin/calendar?error=token_error', request.url));
-    }
-
     // id_token에서 이메일 파싱 (추가 API 호출 없음)
     let email: string | null = null;
     if (tokens.id_token) {
@@ -42,19 +39,34 @@ export async function GET(request: NextRequest) {
     // calendarSettings 행이 없으면 생성, 있으면 업데이트
     const existing = await db.select().from(calendarSettings).limit(1).then((rows) => rows[0]);
 
+    if (!tokens.access_token) {
+      return NextResponse.redirect(
+        new URL('/admin/calendar?error=token_error', request.url)
+      );
+    }
+
+    const refreshToken = tokens.refresh_token ?? existing?.googleRefreshToken ?? null;
+
+    if (!refreshToken) {
+      return NextResponse.redirect(
+        new URL('/admin/calendar?error=token_error', request.url)
+      );
+    }
+
     const values = {
       googleAccessToken: tokens.access_token,
-      googleRefreshToken: tokens.refresh_token,
+      googleRefreshToken: refreshToken,
       googleTokenExpiry: tokens.expiry_date
         ? new Date(tokens.expiry_date)
-        : null,
-      connectedEmail: email,
+        : existing?.googleTokenExpiry ?? null,
+      connectedEmail: email ?? existing?.connectedEmail ?? null,
     };
 
     if (existing) {
-      await db.update(calendarSettings).set(values).where(
-        (await import('drizzle-orm')).eq(calendarSettings.id, existing.id)
-      );
+      await db
+        .update(calendarSettings)
+        .set(values)
+        .where(eq(calendarSettings.id, existing.id));
     } else {
       await db.insert(calendarSettings).values(values);
     }

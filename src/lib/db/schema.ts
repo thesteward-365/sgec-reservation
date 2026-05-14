@@ -8,7 +8,6 @@ import {
   timestamp, // 추가
   boolean, // 추가
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 
 // Enum 정의
 export const userRoleEnum = pgEnum('user_role', ['user', 'admin']);
@@ -20,6 +19,27 @@ export const userStatusEnum = pgEnum('user_status', [
 export const reservationStatusEnum = pgEnum('reservation_status', [
   'active',
   'cancelled',
+]);
+export const syncRunStatusEnum = pgEnum('sync_run_status', [
+  'success',
+  'partial',
+  'failed',
+  'skipped',
+]);
+export const syncCategoryEnum = pgEnum('sync_category', [
+  'reservation',
+  'event',
+]);
+export const syncActionEnum = pgEnum('sync_action', [
+  'created',
+  'updated',
+  'cancelled',
+]);
+export const syncTriggerEnum = pgEnum('sync_trigger', ['manual', 'system']);
+export const syncCalendarStatusEnum = pgEnum('sync_calendar_status', [
+  'success',
+  'failed',
+  'skipped',
 ]);
 
 // 1. 유저 테이블
@@ -92,6 +112,9 @@ export const reservations = pgTable('reservations', {
   createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
     .defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });
 
 // 6. 예약 이력
@@ -126,6 +149,7 @@ export const externalEvents = pgTable('external_events', {
   title: text('title').notNull(),
   startTime: timestamp('start_time', { withTimezone: true }).notNull(),
   endTime: timestamp('end_time', { withTimezone: true }).notNull(),
+  isAllDay: boolean('is_all_day').notNull().default(false),
   description: text('description'),
   syncedAt: timestamp('synced_at', { withTimezone: true })
     .notNull()
@@ -135,9 +159,58 @@ export const externalEvents = pgTable('external_events', {
 // 9. 동기화 로그
 export const syncLogs = pgTable('sync_logs', {
   id: serial('id').primaryKey(),
+  runId: text('run_id').references(() => calendarSyncRuns.id, {
+    onDelete: 'cascade',
+  }),
   level: text('level').notNull().default('info'),
   message: text('message').notNull(),
   timestamp: timestamp('timestamp', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// 10. 동기화 실행 단위
+export const calendarSyncRuns = pgTable('calendar_sync_runs', {
+  id: text('id').primaryKey(),
+  triggeredBy: syncTriggerEnum('triggered_by').notNull().default('manual'),
+  startedAt: timestamp('started_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  finishedAt: timestamp('finished_at', { withTimezone: true }),
+  status: syncRunStatusEnum('status').notNull().default('success'),
+  reservationSyncStatus: syncCalendarStatusEnum(
+    'reservation_sync_status'
+  ).notNull(),
+  eventSyncStatus: syncCalendarStatusEnum('event_sync_status').notNull(),
+  reservationCreatedCount: integer('reservation_created_count')
+    .notNull()
+    .default(0),
+  reservationUpdatedCount: integer('reservation_updated_count')
+    .notNull()
+    .default(0),
+  reservationDeletedCount: integer('reservation_deleted_count')
+    .notNull()
+    .default(0),
+  eventPulledCount: integer('event_pulled_count').notNull().default(0),
+  failedCount: integer('failed_count').notNull().default(0),
+  errorSummary: text('error_summary'),
+});
+
+// 11. 동기화 실행 내 개별 항목
+export const calendarSyncItems = pgTable('calendar_sync_items', {
+  id: serial('id').primaryKey(),
+  runId: text('run_id')
+    .notNull()
+    .references(() => calendarSyncRuns.id, { onDelete: 'cascade' }),
+  category: syncCategoryEnum('category').notNull(),
+  action: syncActionEnum('action').notNull(),
+  status: syncRunStatusEnum('status').notNull(),
+  reservationId: integer('reservation_id'),
+  externalEventId: text('external_event_id'),
+  title: text('title').notNull(),
+  payload: text('payload'),
+  errorMessage: text('error_message'),
+  processedAt: timestamp('processed_at', { withTimezone: true })
     .notNull()
     .defaultNow(),
 });

@@ -47,7 +47,7 @@ function AdminBottomNav() {
   const pathname = usePathname();
 
   // 하단 탭을 숨길 경로들
-  const hideNavPaths = ['/admin/places', '/admin/calendar', '/admin/activities'];
+  const hideNavPaths = ['/admin/places', '/admin/calendar', '/admin/activities', '/admin/changelog'];
   const isReservationDetail = /^\/admin\/reservations\/\d+$/.test(pathname || '');
 
   if (hideNavPaths.includes(pathname || '') || isReservationDetail) {

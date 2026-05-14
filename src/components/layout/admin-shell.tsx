@@ -15,7 +15,7 @@ function AdminShell({ children, className, hideNav: hideNavProp }: AdminShellPro
   const pathname = usePathname();
   
   // 하단 탭을 숨길 경로들 (AdminBottomNav와 동일한 로직)
-  const hideNavPaths = ['/admin/places', '/admin/calendar', '/admin/activities'];
+  const hideNavPaths = ['/admin/places', '/admin/calendar', '/admin/activities', '/admin/changelog'];
   const isReservationDetail = /^\/admin\/reservations\/\d+$/.test(pathname || '');
   
   const shouldHideNav = hideNavProp ?? (hideNavPaths.includes(pathname || '') || isReservationDetail);
