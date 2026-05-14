@@ -26,6 +26,7 @@ import { Suspense } from 'react';
 
 type CalendarStatus = {
   connected: boolean;
+  needsReauth: boolean;
   email: string | null;
   calendarId: string | null;
   eventCalendarId: string | null;
@@ -319,6 +320,22 @@ function CalendarPageContent() {
                 <p className="text-caption text-muted-foreground px-1 font-bold">
                   Google 계정
                 </p>
+                
+                {status.needsReauth && (
+                  <div className="mb-4 flex items-start gap-3 rounded-2xl bg-red-50 p-4 border border-red-100 shadow-sm">
+                    <ExclamationCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
+                    <div className="flex-1">
+                      <p className="text-[14px] font-bold text-red-900 leading-tight">연동 정보가 만료되었습니다</p>
+                      <p className="text-[13px] text-red-700 mt-1 leading-relaxed">
+                        보안 정책이나 비밀번호 변경으로 인해 Google 연결이 끊어졌습니다. 정상적인 동기화를 위해 다시 로그인이 필요합니다.
+                      </p>
+                      <a href="/api/auth/google" className="mt-3 inline-block px-4 py-1.5 bg-red-600 text-white text-[13px] font-bold rounded-full hover:bg-red-700 transition-colors shadow-sm">
+                        다시 로그인하기
+                      </a>
+                    </div>
+                  </div>
+                )}
+
                 <Card className="p-4 shadow-(--shadow-1)">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
