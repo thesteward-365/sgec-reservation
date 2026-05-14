@@ -4,6 +4,9 @@ import { useState } from 'react';
 import {
   ChevronLeftIcon,
   QueueListIcon,
+  CheckIcon,
+  XMarkIcon,
+  MinusIcon,
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 
@@ -14,7 +17,7 @@ import { cn } from '@/lib/utils';
 
 type SyncStatus = 'success' | 'partial' | 'failed';
 type SyncTrigger = 'manual' | 'system';
-type SyncItemStatus = 'success' | 'failed';
+type SyncItemStatus = 'success' | 'failed' | 'skipped';
 type SyncItemCategory = 'reservation' | 'event';
 type SyncItemAction = 'created' | 'updated' | 'cancelled';
 type LogLevel = 'info' | 'warning' | 'error';
@@ -104,6 +107,7 @@ function getActionLabel(action: SyncItemAction) {
 
 function getActionTone(action: SyncItemAction, status: SyncItemStatus) {
   if (status === 'failed') return 'bg-red-500';
+  if (status === 'skipped') return 'bg-neutral-400';
 
   switch (action) {
     case 'created':
@@ -113,6 +117,48 @@ function getActionTone(action: SyncItemAction, status: SyncItemStatus) {
     case 'cancelled':
       return 'bg-red-500';
   }
+}
+
+function parseAndFormatLogMessage(message: string) {
+  if (!message.includes(':')) return <p>{message}</p>;
+
+  const [title, details] = message.split(':');
+  const sections = details.split(',').map(s => s.trim());
+
+  // 성공/실패 카운트가 있는 경우 별도로 추출
+  let resultLine = '';
+  const counts = sections.filter(s => {
+    if (s.includes('성공') || s.includes('실패')) {
+      resultLine = s;
+      return false;
+    }
+    return true;
+  });
+
+  return (
+    <div className="space-y-1">
+      <p className="font-bold">{title.trim()}</p>
+      <p className="text-muted-foreground text-[13px]">{counts.join(', ')}</p>
+      {resultLine && (
+        <p className="text-[13px] font-medium border-t border-neutral-100 pt-1 mt-1">
+          {resultLine.split(' ').map((part, i) => {
+             if (part.includes('실패')) {
+               const match = part.match(/실패\s*(\d+)건/);
+               if (match) {
+                 return (
+                   <span key={i}>
+                     실패 <span className="text-red-600 font-bold">{match[1]}건</span>
+                     {i < resultLine.split(' ').length - 1 ? ' ' : ''}
+                   </span>
+                 );
+               }
+             }
+             return part + (i < resultLine.split(' ').length - 1 ? ' ' : '');
+          })}
+        </p>
+      )}
+    </div>
+  );
 }
 
 export function CalendarSyncHistoryDetail({
@@ -125,7 +171,22 @@ export function CalendarSyncHistoryDetail({
   const [activeFilter, setActiveFilter] = useState<ItemFilterKey>(selectedItemFilter);
   const [itemViewMode, setItemViewMode] =
     useState<ItemViewMode>(initialItemViewMode);
-  const filteredItems = run.items.filter((item) => item.category === activeFilter);
+  
+  const [statusFilters, setStatusFilters] = useState<SyncItemStatus[]>(['success', 'failed']);
+
+  const filteredItems = run.items.filter((item) => 
+    item.category === activeFilter && 
+    statusFilters.includes(item.status)
+  );
+
+  const toggleStatusFilter = (status: SyncItemStatus) => {
+    setStatusFilters(prev => 
+      prev.includes(status) 
+        ? prev.filter(s => s !== status) 
+        : [...prev, status]
+    );
+  };
+
   const reservationStatus = resultStatusMap[run.summary.reservationSyncStatus];
   const eventStatus = resultStatusMap[run.summary.eventSyncStatus];
 
@@ -227,6 +288,36 @@ export function CalendarSyncHistoryDetail({
             </button>
           </div>
 
+          <div className="flex gap-2 px-1 pb-1">
+            <Chip 
+              variant={statusFilters.includes('success') ? 'active' : 'inactive'}
+              size="sm"
+              onClick={() => toggleStatusFilter('success')}
+              className="gap-1"
+            >
+              <CheckIcon className="h-3.5 w-3.5" />
+              성공
+            </Chip>
+            <Chip 
+              variant={statusFilters.includes('failed') ? 'active' : 'inactive'}
+              size="sm"
+              onClick={() => toggleStatusFilter('failed')}
+              className="gap-1"
+            >
+              <XMarkIcon className="h-3.5 w-3.5" />
+              실패
+            </Chip>
+            <Chip 
+              variant={statusFilters.includes('skipped') ? 'active' : 'inactive'}
+              size="sm"
+              onClick={() => toggleStatusFilter('skipped')}
+              className="gap-1"
+            >
+              <MinusIcon className="h-3.5 w-3.5" />
+              변경 없음
+            </Chip>
+          </div>
+
           <div className="space-y-3">
             {filteredItems.length > 0 ? (
               filteredItems.map((item) => (
@@ -263,9 +354,9 @@ export function CalendarSyncHistoryDetail({
                         {log.timestampLabel}
                       </span>
                     </div>
-                    <p className="text-body text-foreground leading-6">
-                      {log.message}
-                    </p>
+                    <div className="text-body text-foreground leading-6">
+                      {parseAndFormatLogMessage(log.message)}
+                    </div>
                   </Card>
                 );
               })
@@ -326,7 +417,10 @@ function SyncHistoryListItem({
   compact: boolean;
 }) {
   const content = (
-    <div className="text-foreground rounded-2xl bg-white p-4 shadow-(--shadow-1)">
+    <div className={cn(
+      "text-foreground rounded-2xl bg-white p-4 shadow-(--shadow-1) transition-opacity",
+      item.status === 'skipped' && "opacity-70"
+    )}>
       <div className="mb-3 flex items-center justify-between">
         <div className="flex min-w-0 items-center gap-2 overflow-hidden text-body">
           <span
@@ -337,14 +431,16 @@ function SyncHistoryListItem({
           >
             {getActionLabel(item.action)}
           </span>
-          <span className="font-bold truncate">{item.title}</span>
+          <span className={cn("font-bold truncate", item.status === 'skipped' && "text-muted-foreground")}>
+            {item.title}
+          </span>
         </div>
         <span className="text-caption text-muted-foreground ml-2 shrink-0">
           {item.timeLabel}
         </span>
       </div>
 
-      {!compact ? (
+      {!compact && item.status !== 'skipped' ? (
         <div className="space-y-1.5 border-t border-neutral-50 pt-3">
           {item.fields.map((field) => (
             <div key={`${field.label}-${field.value}`} className="flex items-center gap-3 text-sm">
@@ -368,6 +464,10 @@ function SyncHistoryListItem({
               )}
             </div>
           ))}
+        </div>
+      ) : !compact && item.status === 'skipped' ? (
+        <div className="border-t border-neutral-50 pt-3">
+          <p className="text-[12px] text-muted-foreground italic">변경 사항이 없어 동기화가 생략되었습니다.</p>
         </div>
       ) : null}
     </div>

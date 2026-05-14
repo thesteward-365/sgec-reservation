@@ -19,7 +19,8 @@ type GoogleSyncStatus = 'synced' | 'pending' | 'missing_event';
 
 async function getReservationGoogleSync(
   reservationId: number,
-  googleEventId: string | null
+  googleEventId: string | null,
+  updatedAt: Date
 ): Promise<{
   status: GoogleSyncStatus;
   label: string;
@@ -28,30 +29,14 @@ async function getReservationGoogleSync(
 }> {
   if (!googleEventId) {
     return {
-      status: 'missing_event',
-      label: 'Google 이벤트 없음',
+      status: 'pending',
+      label: '동기화 필요 (이벤트 없음)',
       lastSyncedAt: null,
       runId: null,
     };
   }
 
-  const [latestChangeRows, latestSyncItemRows] = await Promise.all([
-    db
-      .select({
-        createdAt: reservationHistories.createdAt,
-      })
-      .from(reservationHistories)
-      .where(
-        and(
-          eq(reservationHistories.reservationId, reservationId),
-          or(
-            eq(reservationHistories.actionType, 'created'),
-            eq(reservationHistories.actionType, 'updated')
-          )
-        )
-      )
-      .orderBy(desc(reservationHistories.createdAt))
-      .limit(1),
+  const [latestSyncItemRows] = await Promise.all([
     db
       .select({
         processedAt: calendarSyncItems.processedAt,
@@ -73,14 +58,12 @@ async function getReservationGoogleSync(
       .orderBy(desc(calendarSyncItems.processedAt))
       .limit(1),
   ]);
-  const latestChange = latestChangeRows[0];
   const latestSyncItem = latestSyncItemRows[0];
 
-  const changeAt = latestChange?.createdAt ?? null;
   const syncedAt = latestSyncItem?.processedAt ?? null;
   const isOutdated =
     !syncedAt ||
-    !!(changeAt && syncedAt.getTime() < changeAt.getTime()) ||
+    updatedAt.getTime() > syncedAt.getTime() ||
     latestSyncItem?.externalEventId !== googleEventId;
 
   if (isOutdated) {
@@ -127,6 +110,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
         endTime: reservations.endTime,
         status: reservations.status,
         googleEventId: reservations.googleEventId,
+        updatedAt: reservations.updatedAt,
       })
       .from(reservations)
       .leftJoin(places, eq(reservations.placeId, places.id))
@@ -139,7 +123,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
           ? null
           : await getReservationGoogleSync(
               reservationId,
-              reservation.googleEventId
+              reservation.googleEventId,
+              reservation.updatedAt
             );
 
       return NextResponse.json({

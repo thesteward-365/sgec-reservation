@@ -24,6 +24,7 @@ export const syncRunStatusEnum = pgEnum('sync_run_status', [
   'success',
   'partial',
   'failed',
+  'skipped',
 ]);
 export const syncCategoryEnum = pgEnum('sync_category', [
   'reservation',
@@ -109,6 +110,9 @@ export const reservations = pgTable('reservations', {
   status: reservationStatusEnum('status').notNull().default('active'),
   googleEventId: text('google_event_id'),
   createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
     .notNull()
     .defaultNow(),
 });

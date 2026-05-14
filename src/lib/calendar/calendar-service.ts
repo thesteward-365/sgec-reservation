@@ -13,7 +13,7 @@ import {
   calendarSyncRuns,
   calendarSyncItems,
 } from '@/lib/db';
-import { eq, and, gte, sql, isNotNull, desc } from 'drizzle-orm';
+import { eq, and, gte, sql, isNotNull, desc, or } from 'drizzle-orm';
 import { calendar_v3 } from 'googleapis';
 
 type ReservationRow = {
@@ -26,7 +26,7 @@ type ReservationRow = {
   googleEventId: string | null;
 };
 
-type SyncRunStatus = 'success' | 'partial' | 'failed';
+type SyncRunStatus = 'success' | 'partial' | 'failed' | 'skipped';
 type SyncCalendarStatus = 'success' | 'failed' | 'skipped';
 type SyncTrigger = 'manual' | 'system';
 type SyncCategory = 'reservation' | 'event';
@@ -42,7 +42,7 @@ type ExternalEventRow = {
 export type SyncItemResult = {
   category: SyncCategory;
   action: SyncAction;
-  status: 'success' | 'failed';
+  status: 'success' | 'failed' | 'skipped';
   reservationId?: number;
   externalEventId?: string;
   title: string;
@@ -102,7 +102,7 @@ export type CalendarSyncRunDetail = CalendarSyncRunSummary & {
     id: number;
     category: SyncCategory;
     action: SyncAction;
-    status: 'success' | 'failed';
+    status: 'success' | 'failed' | 'skipped';
     reservationId: number | null;
     externalEventId: string | null;
     title: string;
@@ -254,45 +254,24 @@ function parseHistoryChanges(
   }
 }
 
-async function getLatestReservationSyncCursor(): Promise<Date | null> {
-  const runs = await db
+async function getLatestSyncItemForReservation(reservationId: number) {
+  const [item] = await db
     .select({
-      startedAt: calendarSyncRuns.startedAt,
-      finishedAt: calendarSyncRuns.finishedAt,
-      reservationSyncStatus: calendarSyncRuns.reservationSyncStatus,
+      processedAt: calendarSyncItems.processedAt,
+      status: calendarSyncItems.status,
+      action: calendarSyncItems.action,
     })
-    .from(calendarSyncRuns)
-    .orderBy(desc(calendarSyncRuns.startedAt));
-
-  const latestRun = runs.find(
-    (run) =>
-      run.reservationSyncStatus !== 'failed' &&
-      (run.finishedAt instanceof Date || run.startedAt instanceof Date)
-  );
-
-  if (!latestRun) return null;
-
-  return latestRun.finishedAt ?? latestRun.startedAt;
-}
-
-async function getUpdatedReservationIdsSince(
-  since: Date | null
-): Promise<Set<number>> {
-  if (!since) return new Set();
-
-  const rows = await db
-    .select({
-      reservationId: reservationHistories.reservationId,
-    })
-    .from(reservationHistories)
+    .from(calendarSyncItems)
     .where(
       and(
-        eq(reservationHistories.actionType, 'updated'),
-        gte(reservationHistories.createdAt, since)
+        eq(calendarSyncItems.reservationId, reservationId),
+        eq(calendarSyncItems.category, 'reservation'),
+        eq(calendarSyncItems.status, 'success')
       )
-    );
-
-  return new Set(rows.map((row) => row.reservationId));
+    )
+    .orderBy(desc(calendarSyncItems.processedAt))
+    .limit(1);
+  return item;
 }
 
 async function getLatestReservationHistoryPayload(
@@ -311,14 +290,21 @@ async function getLatestReservationHistoryPayload(
     .orderBy(desc(reservationHistories.createdAt))
     .limit(1);
 
-  const parsed = parseHistoryChanges(history?.changes) as
-    | Record<string, unknown>
-    | null;
+  const parsed = parseHistoryChanges(history?.changes) as Record<
+    string,
+    unknown
+  > | null;
   if (!parsed) return null;
 
   if (actionType === 'created') {
-    const created = parsed.created as { to?: Record<string, unknown> } | undefined;
-    return created?.to ?? (parsed.snapshot as Record<string, unknown> | undefined) ?? parsed;
+    const created = parsed.created as
+      | { to?: Record<string, unknown> }
+      | undefined;
+    return (
+      created?.to ??
+      (parsed.snapshot as Record<string, unknown> | undefined) ??
+      parsed
+    );
   }
 
   return parsed;
@@ -438,8 +424,140 @@ export async function deleteGoogleEvent(googleEventId: string): Promise<void> {
   }
 }
 
+export async function syncReservation(
+  reservationId: number,
+  runId?: string
+): Promise<SyncItemResult> {
+  const calendar = await getCalendarClient();
+  const settings = await getCalendarSettings();
+  if (!calendar || !settings?.calendarId) {
+    throw new Error('Google Calendar connection not configured');
+  }
+
+  const [row] = await db
+    .select({
+      id: reservations.id,
+      startTime: reservations.startTime,
+      endTime: reservations.endTime,
+      purpose: reservations.purpose,
+      status: reservations.status,
+      googleEventId: reservations.googleEventId,
+      updatedAt: reservations.updatedAt,
+      placeName: places.name,
+      userName: users.name,
+    })
+    .from(reservations)
+    .innerJoin(places, eq(reservations.placeId, places.id))
+    .innerJoin(users, eq(reservations.userId, users.id))
+    .where(eq(reservations.id, reservationId))
+    .limit(1);
+
+  if (!row) throw new Error(`Reservation #${reservationId} not found`);
+
+  const title = reservationTitle(row);
+  const action: SyncAction =
+    row.status === 'cancelled'
+      ? 'cancelled'
+      : row.googleEventId
+        ? 'updated'
+        : 'created';
+
+  try {
+    let eventId = row.googleEventId;
+
+    if (row.status === 'cancelled') {
+      if (row.googleEventId) {
+        try {
+          await calendar.events.delete({
+            calendarId: settings.calendarId,
+            eventId: row.googleEventId,
+          });
+        } catch (error) {
+          const status = getErrorStatus(error);
+          if (status !== 404 && status !== 410) throw error;
+        }
+        await db
+          .update(reservations)
+          .set({ googleEventId: null })
+          .where(eq(reservations.id, row.id));
+      }
+      return {
+        category: 'reservation',
+        action: 'cancelled',
+        status: 'success',
+        reservationId: row.id,
+        externalEventId: row.googleEventId ?? undefined,
+        title,
+      };
+    }
+
+    // Active reservation
+    if (row.googleEventId) {
+      try {
+        await calendar.events.update({
+          calendarId: settings.calendarId,
+          eventId: row.googleEventId,
+          requestBody: buildEventBody(row as ReservationRow),
+        });
+      } catch (error) {
+        const status = getErrorStatus(error);
+        if (status === 404 || status === 410) {
+          const recreated = await calendar.events.insert({
+            calendarId: settings.calendarId,
+            requestBody: buildEventBody(row as ReservationRow),
+          });
+          eventId = recreated.data.id!;
+          await db
+            .update(reservations)
+            .set({ googleEventId: eventId })
+            .where(eq(reservations.id, row.id));
+        } else {
+          throw error;
+        }
+      }
+    } else {
+      const event = await calendar.events.insert({
+        calendarId: settings.calendarId,
+        requestBody: buildEventBody(row as ReservationRow),
+      });
+      eventId = event.data.id!;
+      await db
+        .update(reservations)
+        .set({ googleEventId: eventId })
+        .where(eq(reservations.id, row.id));
+    }
+
+    const payload =
+      (await getLatestReservationHistoryPayload(
+        row.id,
+        action === 'updated' ? 'updated' : 'created'
+      )) ?? buildReservationPayload(row as ReservationRow);
+
+    return {
+      category: 'reservation',
+      action,
+      status: 'success',
+      reservationId: row.id,
+      externalEventId: eventId ?? undefined,
+      title,
+      payload,
+    };
+  } catch (error) {
+    const message = `예약 #${row.id} 동기화 실패: ${formatError(error)}`;
+    await logSync('error', message, runId);
+    return {
+      category: 'reservation',
+      action,
+      status: 'failed',
+      reservationId: row.id,
+      externalEventId: row.googleEventId ?? undefined,
+      title,
+      errorMessage: message,
+    };
+  }
+}
+
 async function pushReservationsDetailed(
-  lastReservationSyncAt: Date | null,
   runId: string
 ): Promise<SyncScopeResult> {
   const calendar = await getCalendarClient();
@@ -453,167 +571,32 @@ async function pushReservationsDetailed(
     };
   }
 
-  const [candidateRows] = await Promise.all([
-    db
-      .select({
-        id: reservations.id,
-        startTime: reservations.startTime,
-        endTime: reservations.endTime,
-        purpose: reservations.purpose,
-        googleEventId: reservations.googleEventId,
-        placeName: places.name,
-        userName: users.name,
-      })
-      .from(reservations)
-      .innerJoin(places, eq(reservations.placeId, places.id))
-      .innerJoin(users, eq(reservations.userId, users.id))
-      .where(
+  // 대상 선정: 종료되지 않은 모든 활성 예약 + Google ID가 남아있는 취소 예약
+  const candidateRows = await db
+    .select({
+      id: reservations.id,
+      startTime: reservations.startTime,
+      endTime: reservations.endTime,
+      purpose: reservations.purpose,
+      status: reservations.status,
+      googleEventId: reservations.googleEventId,
+      updatedAt: reservations.updatedAt,
+      placeName: places.name,
+      userName: users.name,
+    })
+    .from(reservations)
+    .innerJoin(places, eq(reservations.placeId, places.id))
+    .innerJoin(users, eq(reservations.userId, users.id))
+    .where(
+      or(
         and(
           eq(reservations.status, 'active'),
           gte(reservations.endTime, sql`now()`)
+        ),
+        and(
+          eq(reservations.status, 'cancelled'),
+          isNotNull(reservations.googleEventId)
         )
-      ),
-  ]);
-  const updatedReservationIds =
-    await getUpdatedReservationIdsSince(lastReservationSyncAt);
-  const pending = candidateRows.filter(
-    (row) => !row.googleEventId || updatedReservationIds.has(row.id)
-  );
-
-  const result: SyncScopeResult = {
-    status: 'skipped',
-    counts: { created: 0, updated: 0, deleted: 0, pulled: 0, failed: 0 },
-    items: [],
-    errors: [],
-  };
-
-  for (const row of pending) {
-    const title = reservationTitle(row);
-    const action: SyncAction = row.googleEventId ? 'updated' : 'created';
-
-    try {
-      let eventId = row.googleEventId;
-
-      if (row.googleEventId) {
-        try {
-          await calendar.events.update({
-            calendarId: settings.calendarId,
-            eventId: row.googleEventId,
-            requestBody: buildEventBody(row),
-          });
-        } catch (error) {
-          const status = getErrorStatus(error);
-
-          if (status === 404 || status === 410) {
-            const recreated = await calendar.events.insert({
-              calendarId: settings.calendarId,
-              requestBody: buildEventBody(row),
-            });
-            eventId = recreated.data.id!;
-            await db
-              .update(reservations)
-              .set({ googleEventId: eventId })
-              .where(eq(reservations.id, row.id));
-          } else {
-            throw error;
-          }
-        }
-
-        result.counts.updated += 1;
-        result.items.push({
-          category: 'reservation',
-          action: 'updated',
-          status: 'success',
-          reservationId: row.id,
-          externalEventId: eventId ?? undefined,
-          title,
-          payload:
-            (await getLatestReservationHistoryPayload(row.id, 'updated')) ??
-            buildReservationPayload(row),
-        });
-      } else {
-        const event = await calendar.events.insert({
-          calendarId: settings.calendarId,
-          requestBody: buildEventBody(row),
-        });
-        eventId = event.data.id!;
-        await db
-          .update(reservations)
-          .set({ googleEventId: eventId })
-          .where(eq(reservations.id, row.id));
-
-        result.counts.created += 1;
-        result.items.push({
-          category: 'reservation',
-          action: 'created',
-          status: 'success',
-          reservationId: row.id,
-          externalEventId: eventId ?? undefined,
-          title,
-          payload:
-            (await getLatestReservationHistoryPayload(row.id, 'created')) ??
-            buildReservationPayload(row),
-        });
-      }
-    } catch (error) {
-      const payload = buildReservationPayload(row);
-      const message = `예약 #${row.id} ${action === 'created' ? '생성' : '수정'} 실패: ${formatError(error)}`;
-      result.counts.failed += 1;
-      result.errors.push(message);
-      result.items.push({
-        category: 'reservation',
-        action,
-        status: 'failed',
-        reservationId: row.id,
-        externalEventId: row.googleEventId ?? undefined,
-        title,
-        payload,
-        errorMessage: message,
-      });
-      await logSync('error', message, runId);
-    }
-  }
-
-  result.status = computeScopeStatus(result.counts, result.errors);
-  await logSync(
-    'info',
-    `예약 push 완료: 생성 ${result.counts.created}건, 수정 ${result.counts.updated}건, 실패 ${result.counts.failed}건`,
-    runId
-  );
-  return result;
-}
-
-async function syncCancellationsDetailed(runId: string): Promise<SyncScopeResult> {
-  const calendar = await getCalendarClient();
-  const settings = await getCalendarSettings();
-  if (!calendar || !settings?.calendarId) {
-    return {
-      status: 'skipped',
-      counts: { created: 0, updated: 0, deleted: 0, pulled: 0, failed: 0 },
-      items: [],
-      errors: [],
-    };
-  }
-
-  const pending = await db
-    .select({
-      id: reservationHistories.id,
-      reservationId: reservationHistories.reservationId,
-      googleEventId: reservationHistories.googleEventId,
-      changes: reservationHistories.changes,
-      placeName: places.name,
-      purpose: reservations.purpose,
-    })
-    .from(reservationHistories)
-    .leftJoin(
-      reservations,
-      eq(reservationHistories.reservationId, reservations.id)
-    )
-    .leftJoin(places, eq(reservations.placeId, places.id))
-    .where(
-      and(
-        eq(reservationHistories.actionType, 'cancelled'),
-        isNotNull(reservationHistories.googleEventId)
       )
     );
 
@@ -624,93 +607,170 @@ async function syncCancellationsDetailed(runId: string): Promise<SyncScopeResult
     errors: [],
   };
 
-  for (const row of pending) {
-    const parsedChanges = parseHistoryChanges(row.changes) as
-      | {
-          snapshot?: Record<string, unknown>;
-          cancelled?: { from?: Record<string, unknown> };
-        }
-      | null;
-    const snapshot = parsedChanges?.snapshot ?? parsedChanges?.cancelled?.from;
-    const title = reservationTitle({
-      id: row.reservationId,
-      placeName: (row.placeName ?? snapshot?.placeName) as string | undefined,
-      purpose: (row.purpose ?? snapshot?.purpose) as string | undefined,
-    });
-    const payload = snapshot
-      ? snapshot
-      : {
-          reservationId: row.reservationId,
-        };
+  for (const row of candidateRows) {
+    const title = reservationTitle(row);
+    const lastSync = await getLatestSyncItemForReservation(row.id);
 
-    try {
-      await calendar.events.delete({
-        calendarId: settings.calendarId,
-        eventId: row.googleEventId!,
-      });
-      await db
-        .update(reservationHistories)
-        .set({ googleEventId: null })
-        .where(eq(reservationHistories.id, row.id));
-      result.counts.deleted += 1;
-      result.items.push({
-        category: 'reservation',
-        action: 'cancelled',
-        status: 'success',
-        reservationId: row.reservationId,
-        externalEventId: row.googleEventId!,
-        title,
-        payload,
-      });
-    } catch (error: unknown) {
-      const status = getErrorStatus(error);
+    // 1. 활성 예약 처리
+    if (row.status === 'active') {
+      const action: SyncAction = row.googleEventId ? 'updated' : 'created';
 
-      if (status === 404 || status === 410) {
-        await db
-          .update(reservationHistories)
-          .set({ googleEventId: null })
-          .where(eq(reservationHistories.id, row.id));
-        result.counts.deleted += 1;
+      // 변경 사항 여부 확인 (Google ID가 없거나, updatedAt이 마지막 동기화보다 뒤인 경우)
+      const isOutdated =
+        !row.googleEventId ||
+        !lastSync ||
+        row.updatedAt.getTime() > lastSync.processedAt.getTime();
+
+      if (!isOutdated) {
         result.items.push({
           category: 'reservation',
-          action: 'cancelled',
-          status: 'success',
-          reservationId: row.reservationId,
-          externalEventId: row.googleEventId!,
+          action,
+          status: 'skipped',
+          reservationId: row.id,
+          externalEventId: row.googleEventId ?? undefined,
           title,
-          payload,
         });
-      } else {
-        const message = `취소 이벤트 삭제 실패 (${row.googleEventId}): ${formatError(error)}`;
+        continue;
+      }
+
+      try {
+        let eventId = row.googleEventId;
+        if (row.googleEventId) {
+          try {
+            await calendar.events.update({
+              calendarId: settings.calendarId,
+              eventId: row.googleEventId,
+              requestBody: buildEventBody(row as ReservationRow),
+            });
+            result.counts.updated += 1;
+          } catch (error) {
+            const status = getErrorStatus(error);
+            if (status === 404 || status === 410) {
+              const recreated = await calendar.events.insert({
+                calendarId: settings.calendarId,
+                requestBody: buildEventBody(row as ReservationRow),
+              });
+              eventId = recreated.data.id!;
+              await db
+                .update(reservations)
+                .set({ googleEventId: eventId })
+                .where(eq(reservations.id, row.id));
+              result.counts.created += 1;
+            } else {
+              throw error;
+            }
+          }
+        } else {
+          const event = await calendar.events.insert({
+            calendarId: settings.calendarId,
+            requestBody: buildEventBody(row as ReservationRow),
+          });
+          eventId = event.data.id!;
+          await db
+            .update(reservations)
+            .set({ googleEventId: eventId })
+            .where(eq(reservations.id, row.id));
+          result.counts.created += 1;
+        }
+
+        result.items.push({
+          category: 'reservation',
+          action,
+          status: 'success',
+          reservationId: row.id,
+          externalEventId: eventId ?? undefined,
+          title,
+          payload:
+            (await getLatestReservationHistoryPayload(
+              row.id,
+              action === 'updated' ? 'updated' : 'created'
+            )) ?? buildReservationPayload(row as ReservationRow),
+        });
+      } catch (error) {
+        const message = `예약 #${row.id} ${action === 'created' ? '생성' : '수정'} 실패: ${formatError(error)}`;
         result.counts.failed += 1;
         result.errors.push(message);
         result.items.push({
           category: 'reservation',
-          action: 'cancelled',
+          action,
           status: 'failed',
-          reservationId: row.reservationId,
-          externalEventId: row.googleEventId!,
+          reservationId: row.id,
+          externalEventId: row.googleEventId ?? undefined,
           title,
-          payload,
+          payload: buildReservationPayload(row as ReservationRow),
           errorMessage: message,
         });
         await logSync('error', message, runId);
       }
     }
+    // 2. 취소된 예약 처리
+    else if (row.status === 'cancelled' && row.googleEventId) {
+      try {
+        await calendar.events.delete({
+          calendarId: settings.calendarId,
+          eventId: row.googleEventId,
+        });
+        await db
+          .update(reservations)
+          .set({ googleEventId: null })
+          .where(eq(reservations.id, row.id));
+
+        result.counts.deleted += 1;
+        result.items.push({
+          category: 'reservation',
+          action: 'cancelled',
+          status: 'success',
+          reservationId: row.id,
+          externalEventId: row.googleEventId,
+          title,
+        });
+      } catch (error) {
+        const status = getErrorStatus(error);
+        if (status === 404 || status === 410) {
+          await db
+            .update(reservations)
+            .set({ googleEventId: null })
+            .where(eq(reservations.id, row.id));
+          result.counts.deleted += 1;
+          result.items.push({
+            category: 'reservation',
+            action: 'cancelled',
+            status: 'success',
+            reservationId: row.id,
+            externalEventId: row.googleEventId,
+            title,
+          });
+        } else {
+          const message = `예약 #${row.id} 취소 이벤트 삭제 실패: ${formatError(error)}`;
+          result.counts.failed += 1;
+          result.errors.push(message);
+          result.items.push({
+            category: 'reservation',
+            action: 'cancelled',
+            status: 'failed',
+            reservationId: row.id,
+            externalEventId: row.googleEventId,
+            title,
+            errorMessage: message,
+          });
+          await logSync('error', message, runId);
+        }
+      }
+    }
   }
 
   result.status = computeScopeStatus(result.counts, result.errors);
-  if (result.counts.deleted > 0 || result.counts.failed > 0) {
-    await logSync(
-      'info',
-      `취소 이벤트 Google 삭제 완료: ${result.counts.deleted}건, 실패 ${result.counts.failed}건`,
-      runId
-    );
-  }
+  await logSync(
+    'info',
+    `예약 동기화 완료: 생성 ${result.counts.created}건, 수정 ${result.counts.updated}건, 삭제 ${result.counts.deleted}건, 건너뜀 ${result.items.filter((i) => i.status === 'skipped').length}건, 실패 ${result.counts.failed}건`,
+    runId
+  );
   return result;
 }
 
-async function pullExternalEventsDetailed(runId: string): Promise<SyncScopeResult> {
+async function pullExternalEventsDetailed(
+  runId: string
+): Promise<SyncScopeResult> {
   const calendar = await getCalendarClient();
   const settings = await getCalendarSettings();
   if (!calendar || !settings?.eventCalendarId) {
@@ -789,22 +849,22 @@ async function pullExternalEventsDetailed(runId: string): Promise<SyncScopeResul
       const hasChanged = hasExternalEventChanged(existingEvent, nextEvent);
       const action: SyncAction = existingEvent ? 'updated' : 'created';
 
-      await db
-        .insert(externalEvents)
-        .values({
-          googleEventId: item.id,
-          ...nextEvent,
-          syncedAt: new Date(),
-        })
-        .onConflictDoUpdate({
-          target: externalEvents.googleEventId,
-          set: {
+      if (hasChanged) {
+        await db
+          .insert(externalEvents)
+          .values({
+            googleEventId: item.id,
             ...nextEvent,
             syncedAt: new Date(),
-          },
-        });
+          })
+          .onConflictDoUpdate({
+            target: externalEvents.googleEventId,
+            set: {
+              ...nextEvent,
+              syncedAt: new Date(),
+            },
+          });
 
-      if (hasChanged) {
         result.counts.pulled += 1;
         result.items.push({
           category: 'event',
@@ -819,6 +879,14 @@ async function pullExternalEventsDetailed(runId: string): Promise<SyncScopeResul
             description: item.description ?? null,
           },
         });
+      } else {
+        result.items.push({
+          category: 'event',
+          action,
+          status: 'skipped',
+          externalEventId: item.id,
+          title: item.summary,
+        });
       }
     }
 
@@ -831,7 +899,11 @@ async function pullExternalEventsDetailed(runId: string): Promise<SyncScopeResul
     }
 
     result.status = computeScopeStatus(result.counts, result.errors);
-    await logSync('info', `행사 일정 pull 완료: ${result.counts.pulled}건`, runId);
+    await logSync(
+      'info',
+      `행사 일정 pull 완료: ${result.counts.pulled}건, 건너뜀 ${result.items.filter((i) => i.status === 'skipped').length}건`,
+      runId
+    );
     return result;
   } catch (error) {
     const message = `행사 일정 pull 실패: ${formatError(error)}`;
@@ -900,56 +972,35 @@ export async function syncAll(
 ): Promise<SyncResult> {
   const startedAt = new Date();
   const runId = `sync_${randomUUID()}`;
-  const lastReservationSyncAt = await getLatestReservationSyncCursor();
 
   await createSyncRun(runId, triggeredBy, startedAt);
 
-  const reservationPush = await pushReservationsDetailed(
-    lastReservationSyncAt,
-    runId
-  );
-  const reservationDelete = await syncCancellationsDetailed(runId);
+  const reservationSync = await pushReservationsDetailed(runId);
   const eventPull = await pullExternalEventsDetailed(runId);
-
-  const reservationErrors = [
-    ...reservationPush.errors,
-    ...reservationDelete.errors,
-  ];
-  const reservationCounts = {
-    created: reservationPush.counts.created,
-    updated: reservationPush.counts.updated,
-    deleted: reservationDelete.counts.deleted,
-    pulled: 0,
-    failed: reservationPush.counts.failed + reservationDelete.counts.failed,
-  };
-  const reservationScope: SyncScopeResult = {
-    status: computeScopeStatus(reservationCounts, reservationErrors),
-    counts: reservationCounts,
-    items: [...reservationPush.items, ...reservationDelete.items],
-    errors: reservationErrors,
-  };
 
   const result: SyncResult = {
     runId,
-    status: computeRunStatus(reservationScope, eventPull),
-    reservationSyncStatus: reservationScope.status,
+    status: computeRunStatus(reservationSync, eventPull),
+    reservationSyncStatus: reservationSync.status,
     eventSyncStatus: eventPull.status,
     counts: {
-      reservationCreated: reservationScope.counts.created,
-      reservationUpdated: reservationScope.counts.updated,
-      reservationDeleted: reservationScope.counts.deleted,
+      reservationCreated: reservationSync.counts.created,
+      reservationUpdated: reservationSync.counts.updated,
+      reservationDeleted: reservationSync.counts.deleted,
       eventPulled: eventPull.counts.pulled,
-      failed: reservationScope.counts.failed + eventPull.counts.failed,
+      failed: reservationSync.counts.failed + eventPull.counts.failed,
     },
-    items: [...reservationScope.items, ...eventPull.items],
-    errors: [...reservationScope.errors, ...eventPull.errors],
+    items: [...reservationSync.items, ...eventPull.items],
+    errors: [...reservationSync.errors, ...eventPull.errors],
   };
 
   await finalizeSyncRun(result);
   return result;
 }
 
-export async function listRecentSyncRuns(limit = 20): Promise<CalendarSyncRunSummary[]> {
+export async function listRecentSyncRuns(
+  limit = 20
+): Promise<CalendarSyncRunSummary[]> {
   const rows = await db
     .select()
     .from(calendarSyncRuns)
@@ -1012,13 +1063,17 @@ export async function getSyncRunDetail(
     },
     items: items.map((item) => ({
       id: item.id,
-      category: item.category,
-      action: item.action,
-      status: item.status === 'partial' ? 'failed' : (item.status as 'success' | 'failed'),
+      category: item.category as SyncCategory,
+      action: item.action as SyncAction,
+      status: (item.status === 'partial'
+        ? 'failed'
+        : item.status) as 'success' | 'failed' | 'skipped',
       reservationId: item.reservationId,
       externalEventId: item.externalEventId,
       title: item.title,
-      payload: item.payload ? parseHistoryChanges(item.payload) : null,
+      payload: item.payload
+        ? (parseHistoryChanges(item.payload) as Record<string, unknown>)
+        : null,
       errorMessage: item.errorMessage,
       processedAt: item.processedAt.toISOString(),
     })),
@@ -1041,7 +1096,10 @@ export async function listCalendars(): Promise<
     const res = await calendar.calendarList.list();
     return (res.data.items ?? [])
       .filter((c: calendar_v3.Schema$CalendarListEntry) => c.id && c.summary)
-      .map((c: calendar_v3.Schema$CalendarListEntry) => ({ id: c.id!, summary: c.summary! }));
+      .map((c: calendar_v3.Schema$CalendarListEntry) => ({
+        id: c.id!,
+        summary: c.summary!,
+      }));
   } catch {
     return [];
   }

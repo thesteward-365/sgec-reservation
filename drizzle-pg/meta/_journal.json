@@ -29,6 +29,13 @@
       "when": 1778540000000,
       "tag": "0003_sync_logs_run_id",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1778719138340,
+      "tag": "0004_lethal_dark_beast",
+      "breakpoints": true
     }
   ]
 }
