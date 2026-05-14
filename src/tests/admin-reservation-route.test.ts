@@ -114,6 +114,7 @@ describe('/api/admin/reservations/[id] route', () => {
         endTime: new Date('2026-05-20T11:00:00.000Z'),
         status: 'active',
         googleEventId: 'evt-1',
+        updatedAt: new Date('2026-05-20T09:00:00.000Z'),
       },
     ];
     state.historyRows = [
@@ -176,6 +177,7 @@ describe('/api/admin/reservations/[id] route', () => {
         endTime: new Date('2026-05-20T11:00:00.000Z'),
         status: 'active',
         googleEventId: null,
+        updatedAt: new Date('2026-05-20T09:00:00.000Z'),
       },
     ];
     const { GET } = await import('../app/api/admin/reservations/[id]/route');
@@ -187,8 +189,8 @@ describe('/api/admin/reservations/[id] route', () => {
 
     expect(response.status).toBe(200);
     expect(json.googleSync).toMatchObject({
-      status: 'missing_event',
-      label: 'Google 이벤트 없음',
+      status: 'pending',
+      label: '동기화 필요 (이벤트 없음)',
       runId: null,
     });
   });

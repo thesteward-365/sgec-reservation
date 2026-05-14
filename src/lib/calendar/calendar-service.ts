@@ -794,6 +794,14 @@ async function pullExternalEventsDetailed(
 
   try {
     const now = new Date();
+    const threeMonthsAgo = new Date(
+      now.getFullYear(),
+      now.getMonth() - 3,
+      now.getDate(),
+      0,
+      0,
+      0
+    );
     const oneYearLater = new Date(
       now.getFullYear() + 1,
       now.getMonth(),
@@ -819,7 +827,7 @@ async function pullExternalEventsDetailed(
     do {
       const res = await calendar.events.list({
         calendarId: settings.eventCalendarId,
-        timeMin: now.toISOString(),
+        timeMin: threeMonthsAgo.toISOString(),
         timeMax: oneYearLater.toISOString(),
         singleEvents: true,
         orderBy: 'startTime',
@@ -909,11 +917,13 @@ async function pullExternalEventsDetailed(
         .where(
           and(
             sql`${externalEvents.googleEventId} NOT IN ${googleIds}`,
-            gte(externalEvents.startTime, now)
+            gte(externalEvents.startTime, threeMonthsAgo)
           )
         );
     } else {
-      await db.delete(externalEvents).where(gte(externalEvents.startTime, now));
+      await db
+        .delete(externalEvents)
+        .where(gte(externalEvents.startTime, threeMonthsAgo));
     }
 
     result.status = computeScopeStatus(result.counts, result.errors);
