@@ -11,6 +11,8 @@ import {
 } from '@/lib/db/schema';
 import { eq, count, desc } from 'drizzle-orm';
 import { fromDbDate } from '@/lib/db/db-utils';
+import { getCalendarClient, getCalendarSettings } from '@/lib/calendar/google-client';
+import { hasGoogleCalendarConnection } from '@/lib/calendar/google-connection-state';
 
 function getActionLabel(actionType: string) {
   switch (actionType) {
@@ -47,6 +49,16 @@ export async function GET(_request: NextRequest) {
     const totalReservations = await db
       .select({ count: count() })
       .from(reservations);
+
+    // 구글 캘린더 연동 상태 확인
+    const calendarSettings = await getCalendarSettings();
+    let calendarNeedsReauth = false;
+    if (hasGoogleCalendarConnection(calendarSettings)) {
+      const client = await getCalendarClient();
+      if (!client) {
+        calendarNeedsReauth = true;
+      }
+    }
 
     // 최근 활동 항목
     const recentHistory = await db
@@ -105,6 +117,7 @@ export async function GET(_request: NextRequest) {
       totalUsersCount: totalUsers[0]?.count || 0,
       totalPlacesCount: totalPlaces[0]?.count || 0,
       totalReservationsCount: totalReservations[0]?.count || 0,
+      calendarNeedsReauth,
       recentActivities,
     });
   } catch (error) {

@@ -1078,9 +1078,10 @@ export async function getSyncRunDetail(
       id: item.id,
       category: item.category as SyncCategory,
       action: item.action as SyncAction,
-      status: (item.status === 'partial'
-        ? 'failed'
-        : item.status) as 'success' | 'failed' | 'skipped',
+      status: (item.status === 'partial' ? 'failed' : item.status) as
+        | 'success'
+        | 'failed'
+        | 'skipped',
       reservationId: item.reservationId,
       externalEventId: item.externalEventId,
       title: item.title,
@@ -1103,7 +1104,10 @@ export async function listCalendars(): Promise<
   { id: string; summary: string }[]
 > {
   const calendar = await getCalendarClient();
-  if (!calendar) return [];
+  if (!calendar) {
+    console.warn('listCalendars: Google Calendar client not initialized');
+    return [];
+  }
 
   try {
     const res = await calendar.calendarList.list();
@@ -1113,7 +1117,8 @@ export async function listCalendars(): Promise<
         id: c.id!,
         summary: c.summary!,
       }));
-  } catch {
+  } catch (error) {
+    console.error('listCalendars: Failed to fetch calendar list:', error);
     return [];
   }
 }
