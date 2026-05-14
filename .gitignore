@@ -50,4 +50,4 @@ playwright-report/
 playwright-debug.log
 uptime-kuma-data/*
 venv/
-*.sql
+*backup.sql
