@@ -32,6 +32,7 @@ type ExternalEventResponse = {
   title: string;
   startTime: string;
   endTime: string;
+  isAllDay: boolean;
   description: string | null;
 };
 
@@ -83,18 +84,24 @@ function InformationalEventCard({
   title,
   startTime,
   endTime,
+  isAllDay,
 }: {
   title: string;
   startTime: string;
   endTime: string;
+  isAllDay?: boolean;
 }) {
   const startDate = new Date(startTime);
   const endDate = new Date(endTime);
   const isSingleDay = toYMD(startDate) === toYMD(endDate);
 
-  const dateRangeLabel = isSingleDay
+  let dateRangeLabel = isSingleDay
     ? `${startDate.getMonth() + 1}월 ${startDate.getDate()}일`
     : `${startDate.getMonth() + 1}월 ${startDate.getDate()}일 ~ ${endDate.getMonth() + 1}월 ${endDate.getDate()}일`;
+
+  if (isAllDay) {
+    dateRangeLabel += ' (종일)';
+  }
 
   return (
     <div className="border-b border-blue-100/50 bg-blue-50/30 p-4 text-blue-700 last:border-0">
@@ -174,6 +181,8 @@ export function MyReservationsView({ user }: Props) {
             startDate: toEffectiveYMD(ev.startTime, false),
             endDate: toEffectiveYMD(ev.endTime, true),
             variant: 'accent', // 기본 테마색
+            // 원본 데이터 보관 (isAllDay 추출용)
+            _raw: ev,
           }))
         );
       })
@@ -327,12 +336,13 @@ export function MyReservationsView({ user }: Props) {
 
             <div className="bg-card overflow-hidden rounded-xl shadow-(--shadow-1)">
               {/* 행사 안내 카드 (관리자 페이지와 동일) */}
-              {dailyEvents.map((ev) => (
+              {dailyEvents.map((ev: any) => (
                 <InformationalEventCard
                   key={ev.id}
                   title={ev.title}
-                  startTime={ev.startDate}
-                  endTime={ev.endDate}
+                  startTime={ev._raw?.startTime || ev.startDate}
+                  endTime={ev._raw?.endTime || ev.endDate}
+                  isAllDay={ev._raw?.isAllDay}
                 />
               ))}
 

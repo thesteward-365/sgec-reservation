@@ -3,12 +3,85 @@ import { getIronSession } from 'iron-session';
 import { sessionOptions, SessionData } from '@/lib/session';
 import { cookies } from 'next/headers';
 import { db } from '@/lib/db';
-import { reservations, reservationHistories, places, users } from '@/lib/db/schema';
-import { eq, desc, and } from 'drizzle-orm';
-import { deleteGoogleEvent } from '@/lib/calendar/calendar-service';
+import {
+  reservations,
+  reservationHistories,
+  places,
+  users,
+  calendarSyncItems,
+} from '@/lib/db/schema';
+import { eq, desc, and, or } from 'drizzle-orm';
 import { ReservationService } from '@/lib/services/reservation-service';
+import { getGoogleEventUrl } from '@/lib/calendar/calendar-service';
 
 type Params = { params: Promise<{ id: string }> };
+type GoogleSyncStatus = 'synced' | 'pending' | 'missing_event';
+
+async function getReservationGoogleSync(
+  reservationId: number,
+  googleEventId: string | null,
+  updatedAt: Date
+): Promise<{
+  status: GoogleSyncStatus;
+  label: string;
+  lastSyncedAt: string | null;
+  runId: string | null;
+}> {
+  if (!googleEventId) {
+    return {
+      status: 'pending',
+      label: '동기화 필요 (이벤트 없음)',
+      lastSyncedAt: null,
+      runId: null,
+    };
+  }
+
+  const [latestSyncItemRows] = await Promise.all([
+    db
+      .select({
+        processedAt: calendarSyncItems.processedAt,
+        externalEventId: calendarSyncItems.externalEventId,
+        runId: calendarSyncItems.runId,
+      })
+      .from(calendarSyncItems)
+      .where(
+        and(
+          eq(calendarSyncItems.reservationId, reservationId),
+          eq(calendarSyncItems.category, 'reservation'),
+          eq(calendarSyncItems.status, 'success'),
+          or(
+            eq(calendarSyncItems.action, 'created'),
+            eq(calendarSyncItems.action, 'updated')
+          )
+        )
+      )
+      .orderBy(desc(calendarSyncItems.processedAt))
+      .limit(1),
+  ]);
+  const latestSyncItem = latestSyncItemRows[0];
+
+  const syncedAt = latestSyncItem?.processedAt ?? null;
+  const isOutdated =
+    !syncedAt ||
+    updatedAt.getTime() > syncedAt.getTime() ||
+    latestSyncItem?.externalEventId !== googleEventId;
+
+  if (isOutdated) {
+    return {
+      status: 'pending',
+      label: '동기화 필요',
+      lastSyncedAt: syncedAt ? syncedAt.toISOString() : null,
+      runId: latestSyncItem?.runId ?? null,
+    };
+  }
+
+  return {
+    status: 'synced',
+    label: '동기화됨',
+    lastSyncedAt: syncedAt.toISOString(),
+    runId: latestSyncItem.runId,
+  };
+}
 
 export async function GET(_req: NextRequest, { params }: Params) {
   try {
@@ -36,6 +109,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
         startTime: reservations.startTime,
         endTime: reservations.endTime,
         status: reservations.status,
+        googleEventId: reservations.googleEventId,
+        updatedAt: reservations.updatedAt,
       })
       .from(reservations)
       .leftJoin(places, eq(reservations.placeId, places.id))
@@ -43,9 +118,23 @@ export async function GET(_req: NextRequest, { params }: Params) {
       .where(eq(reservations.id, reservationId));
 
     if (reservation) {
-      return NextResponse.json({ 
-        ...reservation, 
-        isCancelled: reservation.status === 'cancelled' 
+      const googleSync =
+        reservation.status === 'cancelled'
+          ? null
+          : await getReservationGoogleSync(
+              reservationId,
+              reservation.googleEventId,
+              reservation.updatedAt
+            );
+
+      return NextResponse.json({
+        ...reservation,
+        googleEventUrl:
+          reservation.status === 'cancelled'
+            ? null
+            : await getGoogleEventUrl(reservation.googleEventId),
+        googleSync,
+        isCancelled: reservation.status === 'cancelled',
       });
     }
 
@@ -71,10 +160,12 @@ export async function GET(_req: NextRequest, { params }: Params) {
           id: reservationId,
           placeId: snapshot.placeId,
           placeName: snapshot.placeName || '삭제된 장소',
-          userName: cancelledHistory.actorUserName,
+          userName: snapshot.userName || '-',
           purpose: snapshot.purpose || '-',
           startTime: snapshot.startTime,
           endTime: snapshot.endTime,
+          googleEventUrl: null,
+          googleSync: null,
           isCancelled: true,
         });
       }
@@ -106,9 +197,11 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     await ReservationService.cancelReservation(reservationId, session.user);
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('DELETE /api/admin/reservations/[id] error:', error);
-    const status = error.message.includes('찾을 수 없거나') ? 404 : 500;
-    return NextResponse.json({ error: error.message }, { status });
+    const message =
+      error instanceof Error ? error.message : 'Internal server error';
+    const status = message.includes('찾을 수 없거나') ? 404 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }

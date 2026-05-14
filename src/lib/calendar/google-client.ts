@@ -2,6 +2,7 @@ import { google } from 'googleapis';
 import { db } from '@/lib/db';
 import { calendarSettings } from '@/lib/db';
 import { eq } from 'drizzle-orm';
+import { hasGoogleCalendarConnection } from './google-connection-state';
 
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
@@ -23,20 +24,35 @@ export function getAuthUrl() {
 }
 
 export async function getCalendarClient() {
+  if (process.env.MOCK_GOOGLE_CALENDAR === 'true') {
+    return {
+      events: {
+        insert: async () => ({ data: { id: 'mock-event-id' } }),
+        update: async () => ({ data: { id: 'mock-event-id' } }),
+        delete: async () => ({ data: {} }),
+        list: async () => ({ data: { items: [] } }),
+        get: async () => ({ data: { htmlLink: 'https://calendar.google.com/mock' } }),
+      },
+      calendarList: {
+        list: async () => ({ data: { items: [{ id: 'mock-calendar', summary: 'Mock Calendar' }] } }),
+      },
+    } as any;
+  }
+
   const settings = await db
     .select()
     .from(calendarSettings)
     .limit(1)
     .then((rows) => rows[0]);
 
-  if (!settings?.googleAccessToken || !settings?.googleRefreshToken) {
+  if (!hasGoogleCalendarConnection(settings) || !settings?.googleAccessToken) {
     return null;
   }
 
   const oauth2Client = createOAuthClient();
   oauth2Client.setCredentials({
     access_token: settings.googleAccessToken,
-    refresh_token: settings.googleRefreshToken,
+    refresh_token: settings.googleRefreshToken ?? undefined,
     expiry_date: settings.googleTokenExpiry?.getTime(),
   });
 
@@ -55,7 +71,7 @@ export async function getCalendarClient() {
   });
 
   // 만료 10분 이내면 미리 갱신
-  if (settings.googleTokenExpiry) {
+  if (settings.googleRefreshToken && settings.googleTokenExpiry) {
     const expiryMs = settings.googleTokenExpiry.getTime();
     if (Date.now() > expiryMs - 10 * 60 * 1000) {
       try {

@@ -6,6 +6,7 @@ import {
   ChevronLeftIcon,
   ShareIcon,
   ArrowPathIcon,
+  ArrowTopRightOnSquareIcon,
   PencilIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
@@ -22,13 +23,20 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { shareReservation } from '@/lib/share-utils';
 import { formatKoreanDate, formatTime, toYMD } from '@/lib/date-utils';
+import { cn } from '@/lib/utils';
 
 interface Reservation extends BaseReservation {
   isCancelled?: boolean;
+  googleEventUrl?: string | null;
+  googleSync?: {
+    status: 'synced' | 'pending' | 'missing_event';
+    label: string;
+    lastSyncedAt: string | null;
+    runId: string | null;
+  } | null;
 }
 
 export default function ReservationDetailPage({
@@ -44,6 +52,7 @@ export default function ReservationDetailPage({
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -126,6 +135,45 @@ export default function ReservationDetailPage({
     router.push(`/reserve/${reservation.placeId}`);
   };
 
+  const handleOpenGoogleEvent = () => {
+    if (!reservation?.googleEventUrl) return;
+    window.open(reservation.googleEventUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleOpenSyncRun = () => {
+    const runId = reservation?.googleSync?.runId;
+    if (!runId) return;
+    const params = new URLSearchParams({
+      backHref: `/admin/reservations/${reservation?.id}`,
+    });
+    router.push(`/admin/calendar/history/${runId}?${params.toString()}`);
+  };
+
+  const handleSync = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (syncing) return;
+    setSyncing(true);
+    try {
+      const res = await fetch(`/api/admin/reservations/${params.id}/sync`, {
+        method: 'POST',
+      });
+      if (res.ok) {
+        toast.success('동기화가 완료되었습니다.');
+        const refreshRes = await fetch(`/api/admin/reservations/${params.id}`);
+        if (refreshRes.ok) {
+          const data = await refreshRes.json();
+          setReservation(data);
+        }
+      } else {
+        throw new Error();
+      }
+    } catch {
+      toast.error('동기화에 실패했습니다.');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="bg-neutral-150 flex min-h-screen items-center justify-center">
@@ -138,14 +186,16 @@ export default function ReservationDetailPage({
 
   return (
     <div className="bg-neutral-150 flex min-h-screen flex-col">
-      <header className="bg-neutral-150 sticky top-0 z-10 flex h-14 items-center justify-between px-4">
-        <button
-          onClick={() => router.back()}
-          className="flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-neutral-200"
-        >
-          <ChevronLeftIcon className="h-6 w-6" />
-        </button>
-        <div className="flex items-center gap-2">
+      <header className="bg-neutral-150 sticky top-0 z-10 grid h-14 grid-cols-[5rem_1fr_5rem] items-center px-4">
+        <div className="flex justify-start">
+          <button
+            onClick={() => router.back()}
+            className="flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-neutral-200"
+          >
+            <ChevronLeftIcon className="h-6 w-6" />
+          </button>
+        </div>
+        <div className="flex items-center justify-center gap-2">
           <h1 className="text-lg font-bold">예약 상세</h1>
           {reservation.isCancelled && (
             <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-medium text-red-600">
@@ -153,16 +203,16 @@ export default function ReservationDetailPage({
             </span>
           )}
         </div>
-        {!reservation.isCancelled ? (
-          <button
-            onClick={handleShare}
-            className="flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-neutral-200"
-          >
-            <ShareIcon className="h-6 w-6" />
-          </button>
-        ) : (
-          <div className="w-10" />
-        )}
+        <div className="flex justify-end gap-1">
+          {!reservation.isCancelled ? (
+            <button
+              onClick={handleShare}
+              className="flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-neutral-200"
+            >
+              <ShareIcon className="h-6 w-6" />
+            </button>
+          ) : null}
+        </div>
       </header>
 
       <main className="flex-1 p-5 pb-32">
@@ -171,6 +221,50 @@ export default function ReservationDetailPage({
           history={history}
           loadingHistory={loadingHistory}
           onTabChange={(tab) => tab === 'history' && fetchHistory()}
+          googleSyncSection={
+            reservation.googleSync ? (
+              <div className="flex w-full flex-col overflow-hidden rounded-3xl bg-white shadow-(--shadow-1) transition hover:bg-neutral-50">
+                <div className="flex w-full items-center justify-between px-6 py-5 text-left disabled:cursor-default">
+                  <div className="min-w-0">
+                    <p className="text-muted-foreground text-sm font-medium">
+                      Google 동기화
+                    </p>
+                    <p className="text-foreground mt-1 truncate text-sm font-semibold">
+                      {reservation.googleSync.lastSyncedAt
+                        ? `${reservation.googleSync.label} · ${formatKoreanDate(reservation.googleSync.lastSyncedAt)} ${formatTime(reservation.googleSync.lastSyncedAt)} 반영`
+                        : reservation.googleSync.label}
+                    </p>
+                  </div>
+                  <div className="ml-2 flex shrink-0 items-center gap-3">
+                    {!reservation.isCancelled && (
+                      <button
+                        onClick={handleSync}
+                        disabled={syncing}
+                        className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 transition-colors hover:bg-neutral-200 disabled:opacity-50"
+                        title="지금 동기화"
+                      >
+                        <ArrowPathIcon
+                          className={cn('h-5 w-5', syncing && 'animate-spin')}
+                        />
+                      </button>
+                    )}
+                    {!reservation.isCancelled && reservation.googleEventUrl ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenGoogleEvent();
+                        }}
+                        className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 transition-colors hover:bg-neutral-200"
+                        title="Google Calendar에서 보기"
+                      >
+                        <ArrowTopRightOnSquareIcon className="h-5 w-5" />
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            ) : null
+          }
           actions={
             !reservation.isCancelled && (
               <div className="mt-4 flex w-full flex-col gap-3">

@@ -6,10 +6,15 @@ import {
   getCalendarSettings,
   createOAuthClient,
 } from '@/lib/calendar/google-client';
-import { syncAll, saveCalendarIds } from '@/lib/calendar/calendar-service';
+import { hasGoogleCalendarConnection } from '@/lib/calendar/google-connection-state';
+import {
+  syncAll,
+  saveCalendarIds,
+  listRecentSyncRuns,
+} from '@/lib/calendar/calendar-service';
 import { db } from '@/lib/db';
-import { calendarSettings, syncLogs } from '@/lib/db';
-import { eq, desc } from 'drizzle-orm';
+import { calendarSettings } from '@/lib/db';
+import { eq } from 'drizzle-orm';
 
 async function requireAdmin() {
   const session = await getIronSession<SessionData>(
@@ -26,24 +31,16 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const settings = await getCalendarSettings();
-  const connected = !!(
-    settings?.googleAccessToken && settings?.googleRefreshToken
-  );
+  const connected = hasGoogleCalendarConnection(settings);
 
-  const [lastSyncLog] = await db
-    .select({ timestamp: syncLogs.timestamp })
-    .from(syncLogs)
-    .orderBy(desc(syncLogs.timestamp))
-    .limit(1);
-
-  const lastSync = lastSyncLog?.timestamp ?? null;
+  const [lastRun] = await listRecentSyncRuns(1);
 
   return NextResponse.json({
     connected,
     email: settings?.connectedEmail ?? null,
     calendarId: settings?.calendarId ?? null,
     eventCalendarId: settings?.eventCalendarId ?? null,
-    lastSync: lastSync ? lastSync.toISOString() : null,
+    lastSync: lastRun?.startedAt ?? null,
   });
 }
 
@@ -56,10 +53,13 @@ export async function POST(request: NextRequest) {
     const { action, calendarId, eventCalendarId } = await request.json();
 
     if (action === 'sync') {
-      const { pushed, pulled, deleted } = await syncAll();
+      const result = await syncAll('manual');
       return NextResponse.json({
         success: true,
-        message: `동기화 완료: 예약 ${pushed}건 업로드, 취소 ${deleted}건 삭제, 행사 ${pulled}건 가져옴`,
+        runId: result.runId,
+        status: result.status,
+        counts: result.counts,
+        message: `동기화 ${result.status === 'success' ? '완료' : result.status === 'partial' ? '부분 실패' : '실패'}: 예약 생성 ${result.counts.reservationCreated}건, 수정 ${result.counts.reservationUpdated}건, 취소 ${result.counts.reservationDeleted}건, 행사 ${result.counts.eventPulled}건, 실패 ${result.counts.failed}건`,
         lastSync: new Date().toISOString(),
       });
     }

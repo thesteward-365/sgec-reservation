@@ -61,7 +61,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 });
     }
 
-    const { placeId, startTime, endTime, purpose } = await request.json();
+    const body = await request.json();
+    console.log('[API] Create Reservation Request:', body);
+    const { placeId, startTime, endTime, purpose } = body;
 
     if (!placeId || !startTime || !endTime || !purpose?.trim()) {
       return NextResponse.json({ error: '필수 항목이 누락되었습니다.' }, { status: 400 });
@@ -87,7 +89,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(created, { status: 201 });
   } catch (error: any) {
-    console.error('POST /api/reservations error:', error);
+    console.error('[API] POST /api/reservations error:', error);
     const status = error.message.includes('이미 예약이 있습니다') ? 409 : 500;
     return NextResponse.json({ error: error.message }, { status });
   }

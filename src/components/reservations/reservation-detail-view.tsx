@@ -16,6 +16,13 @@ export interface Reservation {
   purpose: string;
   startTime: string | null;
   endTime: string | null;
+  googleEventUrl?: string | null;
+  googleSync?: {
+    status: 'synced' | 'pending' | 'missing_event';
+    label: string;
+    lastSyncedAt: string | null;
+    runId: string | null;
+  } | null;
 }
 
 interface Props {
@@ -23,6 +30,7 @@ interface Props {
   history: HistoryItem[];
   loadingHistory?: boolean;
   onTabChange?: (tab: 'info' | 'history') => void;
+  googleSyncSection?: React.ReactNode;
   actions?: React.ReactNode;
 }
 
@@ -31,6 +39,7 @@ export function ReservationDetailView({
   history,
   loadingHistory,
   onTabChange,
+  googleSyncSection,
   actions,
 }: Props) {
   const [activeTab, setActiveTab] = useState<'info' | 'history'>('info');
@@ -78,7 +87,10 @@ export function ReservationDetailView({
 
       {activeTab === 'info' ? (
         <div className="space-y-8">
-          <ReservationDetailsCard rows={detailRows} tone="white" />
+          <div className="space-y-3">
+            <ReservationDetailsCard rows={detailRows} tone="white" />
+            {googleSyncSection}
+          </div>
           {actions && <div className="flex flex-col gap-3">{actions}</div>}
         </div>
       ) : (

@@ -1,6 +1,6 @@
 {
   "name": "sgec-reservation",
-  "version": "0.1.0",
+  "version": "26.05.14",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest",
-    "test:e2e": "playwright test",
+    "test:e2e": "MOCK_GOOGLE_CALENDAR=true playwright test",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "db:generate": "drizzle-kit generate",
@@ -42,6 +42,7 @@
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^5.1.2",
+    "@playwright/test": "^1.60.0",
     "@storybook/addon-a11y": "^10.3.6",
     "@storybook/addon-docs": "^10.3.6",
     "@storybook/addon-onboarding": "^10.3.6",
