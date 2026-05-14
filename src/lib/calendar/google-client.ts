@@ -45,13 +45,13 @@ export async function getCalendarClient() {
     .limit(1)
     .then((rows) => rows[0]);
 
-  if (!hasGoogleCalendarConnection(settings) || !settings?.googleAccessToken) {
+  if (!hasGoogleCalendarConnection(settings)) {
     return null;
   }
 
   const oauth2Client = createOAuthClient();
   oauth2Client.setCredentials({
-    access_token: settings.googleAccessToken,
+    access_token: settings.googleAccessToken ?? undefined,
     refresh_token: settings.googleRefreshToken ?? undefined,
     expiry_date: settings.googleTokenExpiry?.getTime(),
   });
@@ -66,27 +66,37 @@ export async function getCalendarClient() {
     if (tokens.refresh_token) update.googleRefreshToken = tokens.refresh_token;
 
     if (Object.keys(update).length > 0) {
-      await db.update(calendarSettings).set(update).where(eq(calendarSettings.id, settings.id));
+      await db
+        .update(calendarSettings)
+        .set(update)
+        .where(eq(calendarSettings.id, settings.id));
     }
   });
 
-  // 만료 10분 이내면 미리 갱신
-  if (settings.googleRefreshToken && settings.googleTokenExpiry) {
-    const expiryMs = settings.googleTokenExpiry.getTime();
-    if (Date.now() > expiryMs - 10 * 60 * 1000) {
-      try {
-        const { credentials } = await oauth2Client.refreshAccessToken();
-        oauth2Client.setCredentials(credentials);
-        await db.update(calendarSettings).set({
-          googleAccessToken: credentials.access_token ?? settings.googleAccessToken,
+  // 토큰 갱신이 필요한 경우 (만료되었거나, 아직 없는 경우)
+  const isExpired =
+    settings.googleTokenExpiry &&
+    Date.now() > settings.googleTokenExpiry.getTime() - 10 * 60 * 1000;
+  const noAccessToken = !settings.googleAccessToken;
+
+  if (settings.googleRefreshToken && (isExpired || noAccessToken)) {
+    try {
+      const { credentials } = await oauth2Client.refreshAccessToken();
+      oauth2Client.setCredentials(credentials);
+      await db
+        .update(calendarSettings)
+        .set({
+          googleAccessToken:
+            credentials.access_token ?? settings.googleAccessToken,
           googleTokenExpiry: credentials.expiry_date
             ? new Date(credentials.expiry_date)
             : settings.googleTokenExpiry,
-        }).where(eq(calendarSettings.id, settings.id));
-      } catch {
-        // refresh 실패 시 재연동 필요 상태
-        return null;
-      }
+        })
+        .where(eq(calendarSettings.id, settings.id));
+    } catch (e) {
+      console.error('Failed to refresh Google access token:', e);
+      // refresh 실패 시 재연동 필요 상태
+      return null;
     }
   }
 
