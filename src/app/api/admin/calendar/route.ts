@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 import {
   getCalendarSettings,
   createOAuthClient,
+  getCalendarClient,
 } from '@/lib/calendar/google-client';
 import { hasGoogleCalendarConnection } from '@/lib/calendar/google-connection-state';
 import {
@@ -31,12 +32,25 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const settings = await getCalendarSettings();
-  const connected = hasGoogleCalendarConnection(settings);
+  const hasConnection = hasGoogleCalendarConnection(settings);
+  
+  let connected = hasConnection;
+  let needsReauth = false;
+
+  if (hasConnection) {
+    // 실제로 클라이언트를 불러와서 토큰이 유효한지(또는 갱신 가능한지) 확인
+    const client = await getCalendarClient();
+    if (!client) {
+      needsReauth = true;
+      connected = false;
+    }
+  }
 
   const [lastRun] = await listRecentSyncRuns(1);
 
   return NextResponse.json({
     connected,
+    needsReauth,
     email: settings?.connectedEmail ?? null,
     calendarId: settings?.calendarId ?? null,
     eventCalendarId: settings?.eventCalendarId ?? null,

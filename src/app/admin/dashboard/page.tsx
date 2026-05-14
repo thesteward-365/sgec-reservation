@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { BrandHeader } from '@/components/layout/brand-header';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { ActivityList } from '@/components/admin/activity-list';
 import { ActivityListSkeleton } from '@/components/admin/activity-list-skeleton';
 import {
@@ -14,12 +13,14 @@ import {
   CalendarIcon,
   ChevronRightIcon,
 } from '@heroicons/react/24/outline';
+import { cn } from '@/lib/utils';
 
 interface DashboardStats {
   pendingUsersCount: number;
   totalUsersCount: number;
   totalReservationsCount: number;
   totalPlacesCount: number;
+  calendarNeedsReauth: boolean;
   recentActivities: Array<{
     id: number;
     reservationId: number;
@@ -37,7 +38,7 @@ const QUICK_ACTIONS = [
     icon: UsersIcon,
     title: '사용자 관리',
     description: '회원 승인 및 관리',
-    badge: 'pendingUsersCount',
+    badgeKey: 'pendingUsersCount',
   },
   {
     href: '/admin/reservations',
@@ -56,6 +57,7 @@ const QUICK_ACTIONS = [
     icon: CalendarIcon,
     title: 'Calendar 연동',
     description: 'Google Calendar 설정',
+    badgeKey: 'calendarNeedsReauth',
   },
 ];
 
@@ -81,41 +83,57 @@ export default function DashboardPage() {
     fetchStats();
   }, []);
 
-  const now = new Date();
-  const month = now.getMonth() + 1;
-  const day = now.getDate();
-  const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'][now.getDay()];
-
   return (
     <>
       <BrandHeader />
 
       <main className="flex-1 pb-10">
-        <section className="space-y-3 px-5 pb-6">
+        <section className="space-y-4 px-5 pb-6">
+          {!loading && stats?.calendarNeedsReauth && (
+            <Link href="/admin/calendar">
+              <div className="group mb-3 overflow-hidden rounded-xl bg-white">
+                <div
+                  className="flex items-center justify-between gap-3 p-4 transition-colors active:opacity-80"
+                  style={{ backgroundColor: 'var(--color-danger-subtle)' }}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-2.5 w-2.5 shrink-0 rounded-full bg-red-500" />
+                    <div>
+                      <p className="text-body-sm text-foreground font-semibold">
+                        Google 연동이 만료되었어요
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRightIcon
+                    className="h-4 w-4 shrink-0 transition"
+                    style={{ color: 'var(--color-danger)' }}
+                  />
+                </div>
+              </div>
+            </Link>
+          )}
+
           {!loading && stats && stats.pendingUsersCount > 0 && (
             <Link href="/admin/users">
-              <div
-                className="group flex items-center justify-between gap-3 rounded-xl p-4 transition"
-                style={{ backgroundColor: 'var(--color-warning-subtle)' }}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="flex h-2.5 w-2.5 shrink-0 rounded-full bg-orange-400" />
-                  <div>
-                    <p className="text-body-sm text-foreground font-semibold">
-                      {stats.pendingUsersCount}명이 가입 승인을 기다리고 있어요
-                    </p>
-                    <p
-                      className="text-caption"
-                      style={{ color: 'var(--color-warning)' }}
-                    >
-                      탭하여 승인 처리
-                    </p>
+              <div className="group mb-3 overflow-hidden rounded-xl bg-white">
+                <div
+                  className="group flex items-center justify-between gap-3 rounded-xl p-4 transition-colors active:opacity-80"
+                  style={{ backgroundColor: 'var(--color-warning-subtle)' }}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-2.5 w-2.5 shrink-0 rounded-full bg-orange-400" />
+                    <div>
+                      <p className="text-body-sm text-foreground font-semibold">
+                        {stats.pendingUsersCount}명이 가입 승인을 기다리고
+                        있어요
+                      </p>
+                    </div>
                   </div>
+                  <ChevronRightIcon
+                    className="h-4 w-4 shrink-0 transition"
+                    style={{ color: 'var(--color-warning)' }}
+                  />
                 </div>
-                <ChevronRightIcon
-                  className="h-4 w-4 shrink-0 transition"
-                  style={{ color: 'var(--color-warning)' }}
-                />
               </div>
             </Link>
           )}
@@ -129,14 +147,22 @@ export default function DashboardPage() {
           <div className="grid grid-cols-2 gap-3">
             {QUICK_ACTIONS.map((action) => {
               const Icon = action.icon;
-              const badgeValue =
-                action.badge && stats
-                  ? (stats[action.badge as keyof DashboardStats] as number)
-                  : null;
+              const hasBadge =
+                action.badgeKey === 'calendarNeedsReauth'
+                  ? stats?.calendarNeedsReauth
+                  : action.badgeKey &&
+                    stats &&
+                    (stats[action.badgeKey as keyof DashboardStats] as number) >
+                      0;
+
+              const badgeColor =
+                action.badgeKey === 'calendarNeedsReauth'
+                  ? 'bg-red-500'
+                  : 'bg-orange-400';
 
               return (
                 <Link key={action.href} href={action.href}>
-                  <Card className="p-4 transition-shadow hover:shadow-md">
+                  <Card className="relative p-4 transition-shadow hover:shadow-md">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
                         <Icon className="text-foreground size-5" />
@@ -144,15 +170,14 @@ export default function DashboardPage() {
                           {action.title}
                         </span>
                       </div>
-                      {badgeValue && badgeValue > 0 ? (
-                        <Badge
-                          variant="solid"
-                          color="orange"
-                          className="h-5 min-w-5 px-1.5 text-xs"
-                        >
-                          {badgeValue}
-                        </Badge>
-                      ) : null}
+                      {hasBadge && (
+                        <span
+                          className={cn(
+                            'h-2 w-2 shrink-0 rounded-full',
+                            badgeColor
+                          )}
+                        />
+                      )}
                     </div>
                   </Card>
                 </Link>
