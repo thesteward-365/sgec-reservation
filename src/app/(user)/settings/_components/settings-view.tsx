@@ -21,6 +21,7 @@ import { ListSkeleton } from '@/components/ui/list-skeleton';
 import { formatPhoneNumber, normalizePhoneNumber } from '@/lib/utils';
 import { AccountDialog, GuideDialog, PurposeDialog } from './settings-dialogs';
 import { cn } from '@/lib/utils';
+import { AppVersion } from '@/components/layout/app-version';
 
 type Props = {
   name: string;
@@ -303,9 +304,7 @@ export function SettingsView({
           </button>
         </div>
 
-        <p className="text-muted-foreground pt-2 text-center text-[12px]">
-          v{version} · 샘깊은교회 문화사역 장소방
-        </p>
+        <AppVersion />
       </div>
 
       <PurposeDialog
