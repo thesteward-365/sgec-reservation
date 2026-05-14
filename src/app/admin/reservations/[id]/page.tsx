@@ -26,6 +26,7 @@ import {
 import { toast } from 'sonner';
 import { shareReservation } from '@/lib/share-utils';
 import { formatKoreanDate, formatTime, toYMD } from '@/lib/date-utils';
+import { cn } from '@/lib/utils';
 
 interface Reservation extends BaseReservation {
   isCancelled?: boolean;
@@ -51,6 +52,7 @@ export default function ReservationDetailPage({
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -147,6 +149,31 @@ export default function ReservationDetailPage({
     router.push(`/admin/calendar/history/${runId}?${params.toString()}`);
   };
 
+  const handleSync = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (syncing) return;
+    setSyncing(true);
+    try {
+      const res = await fetch(`/api/admin/reservations/${params.id}/sync`, {
+        method: 'POST',
+      });
+      if (res.ok) {
+        toast.success('동기화가 완료되었습니다.');
+        const refreshRes = await fetch(`/api/admin/reservations/${params.id}`);
+        if (refreshRes.ok) {
+          const data = await refreshRes.json();
+          setReservation(data);
+        }
+      } else {
+        throw new Error();
+      }
+    } catch {
+      toast.error('동기화에 실패했습니다.');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="bg-neutral-150 flex min-h-screen items-center justify-center">
@@ -177,15 +204,6 @@ export default function ReservationDetailPage({
           )}
         </div>
         <div className="flex justify-end gap-1">
-          {!reservation.isCancelled && reservation.googleEventUrl ? (
-            <button
-              onClick={handleOpenGoogleEvent}
-              className="flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-neutral-200"
-              aria-label="Google Calendar에서 보기"
-            >
-              <ArrowTopRightOnSquareIcon className="h-6 w-6" />
-            </button>
-          ) : null}
           {!reservation.isCancelled ? (
             <button
               onClick={handleShare}
@@ -205,26 +223,46 @@ export default function ReservationDetailPage({
           onTabChange={(tab) => tab === 'history' && fetchHistory()}
           googleSyncSection={
             reservation.googleSync ? (
-              <button
-                type="button"
-                onClick={handleOpenSyncRun}
-                disabled={!reservation.googleSync.runId}
-                className="bg-white shadow-(--shadow-1) flex w-full items-center justify-between rounded-3xl px-6 py-5 text-left transition hover:bg-neutral-50 disabled:cursor-default disabled:hover:bg-white"
-              >
-                <div className="min-w-0">
-                  <p className="text-muted-foreground text-sm font-medium">
-                    Google 동기화
-                  </p>
-                  <p className="text-foreground mt-1 text-sm font-semibold">
-                    {reservation.googleSync.lastSyncedAt
-                      ? `${reservation.googleSync.label} · ${formatKoreanDate(reservation.googleSync.lastSyncedAt)} ${formatTime(reservation.googleSync.lastSyncedAt)} 반영`
-                      : reservation.googleSync.label}
-                  </p>
+              <div className="flex w-full flex-col overflow-hidden rounded-3xl bg-white shadow-(--shadow-1) transition hover:bg-neutral-50">
+                <div className="flex w-full items-center justify-between px-6 py-5 text-left disabled:cursor-default">
+                  <div className="min-w-0">
+                    <p className="text-muted-foreground text-sm font-medium">
+                      Google 동기화
+                    </p>
+                    <p className="text-foreground mt-1 truncate text-sm font-semibold">
+                      {reservation.googleSync.lastSyncedAt
+                        ? `${reservation.googleSync.label} · ${formatKoreanDate(reservation.googleSync.lastSyncedAt)} ${formatTime(reservation.googleSync.lastSyncedAt)} 반영`
+                        : reservation.googleSync.label}
+                    </p>
+                  </div>
+                  <div className="ml-2 flex shrink-0 items-center gap-3">
+                    {!reservation.isCancelled && (
+                      <button
+                        onClick={handleSync}
+                        disabled={syncing}
+                        className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 transition-colors hover:bg-neutral-200 disabled:opacity-50"
+                        title="지금 동기화"
+                      >
+                        <ArrowPathIcon
+                          className={cn('h-5 w-5', syncing && 'animate-spin')}
+                        />
+                      </button>
+                    )}
+                    {!reservation.isCancelled && reservation.googleEventUrl ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenGoogleEvent();
+                        }}
+                        className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 transition-colors hover:bg-neutral-200"
+                        title="Google Calendar에서 보기"
+                      >
+                        <ArrowTopRightOnSquareIcon className="h-5 w-5" />
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
-                {reservation.googleSync.runId ? (
-                  <ArrowTopRightOnSquareIcon className="text-muted-foreground h-5 w-5 shrink-0" />
-                ) : null}
-              </button>
+              </div>
             ) : null
           }
           actions={

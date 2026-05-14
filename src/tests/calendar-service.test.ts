@@ -14,6 +14,7 @@ const { tables, state } = vi.hoisted(() => ({
       placeId: 'reservations.place_id',
       userId: 'reservations.user_id',
       status: 'reservations.status',
+      updatedAt: 'reservations.updated_at',
     },
     reservationHistories: {
       name: 'reservation_histories',
@@ -40,24 +41,26 @@ const { tables, state } = vi.hoisted(() => ({
       finishedAt: 'calendar_sync_runs.finished_at',
       reservationSyncStatus: 'calendar_sync_runs.reservation_sync_status',
     },
-    calendarSyncItems: { name: 'calendar_sync_items' },
+    calendarSyncItems: {
+      name: 'calendar_sync_items',
+      reservationId: 'calendar_sync_items.reservation_id',
+      processedAt: 'calendar_sync_items.processed_at',
+      status: 'calendar_sync_items.status',
+      category: 'calendar_sync_items.category',
+    },
     places: { tableName: 'places', id: 'places.id', name: 'places.name' },
     users: { tableName: 'users', id: 'users.id', name: 'users.name' },
   },
   state: {
     reservationRows: [] as any[],
-    cancellationRows: [] as any[],
-    updatedHistoryRows: [] as any[],
     latestHistoryRows: [] as any[],
     externalEventRows: [] as any[],
-    runRows: [] as any[],
     itemRows: [] as any[],
     insertedRuns: [] as any[],
     insertedItems: [] as any[],
     logRows: [] as any[],
     externalUpserts: [] as any[],
     reservationUpdates: [] as any[],
-    historyUpdates: [] as any[],
     deleteCalls: [] as any[],
     settings: {
       calendarId: 'reservation-calendar',
@@ -68,12 +71,13 @@ const { tables, state } = vi.hoisted(() => ({
 }));
 
 vi.mock('drizzle-orm', () => ({
-  eq: vi.fn(() => ({})),
-  and: vi.fn(() => ({})),
-  gte: vi.fn(() => ({})),
+  eq: vi.fn((a, b) => ({ table: a, value: b })),
+  and: vi.fn((...args) => ({ type: 'and', args })),
+  or: vi.fn((...args) => ({ type: 'or', args })),
+  gte: vi.fn((a, b) => ({ table: a, op: '>=', value: b })),
   sql: vi.fn(() => ({})),
-  isNotNull: vi.fn(() => ({})),
-  desc: vi.fn(() => ({})),
+  isNotNull: vi.fn((a) => ({ table: a, op: 'isNotNull' })),
+  desc: vi.fn((a) => ({ table: a, op: 'desc' })),
 }));
 
 vi.mock('../lib/calendar/google-client', () => ({
@@ -119,17 +123,8 @@ vi.mock('../lib/db', () => {
       let rows: any[] = [];
 
       if (this.table === tables.reservations) rows = state.reservationRows;
-      if (this.table === tables.reservationHistories) {
-        if (this.shape?.googleEventId) {
-          rows = state.cancellationRows;
-        } else if (this.shape?.reservationId && !this.shape?.changes) {
-          rows = state.updatedHistoryRows;
-        } else if (this.shape?.changes) {
-          rows = state.latestHistoryRows;
-        }
-      }
+      if (this.table === tables.reservationHistories) rows = state.latestHistoryRows;
       if (this.table === tables.externalEvents) rows = state.externalEventRows;
-      if (this.table === tables.calendarSyncRuns) rows = state.runRows;
       if (this.table === tables.calendarSyncItems) rows = state.itemRows;
 
       return Promise.resolve(resolve(rows));
@@ -165,10 +160,7 @@ vi.mock('../lib/db', () => {
         where: vi.fn(() => {
           if (table === tables.reservations) {
             state.reservationUpdates.push(payload);
-          } else if (table === tables.reservationHistories) {
-            state.historyUpdates.push(payload);
           }
-
           return Promise.resolve([]);
         }),
       })),
@@ -200,23 +192,19 @@ vi.mock('../lib/db', () => {
   };
 });
 
-import { syncAll } from '../lib/calendar/calendar-service';
+import { syncAll, syncReservation } from '../lib/calendar/calendar-service';
 
-describe('calendar-service syncAll', () => {
+describe('calendar-service new sync logic', () => {
   beforeEach(() => {
     state.reservationRows = [];
-    state.cancellationRows = [];
-    state.updatedHistoryRows = [];
     state.latestHistoryRows = [];
     state.externalEventRows = [];
-    state.runRows = [];
     state.itemRows = [];
     state.insertedRuns = [];
     state.insertedItems = [];
     state.logRows = [];
     state.externalUpserts = [];
     state.reservationUpdates = [];
-    state.historyUpdates = [];
     state.deleteCalls = [];
     state.settings = {
       calendarId: 'reservation-calendar',
@@ -236,306 +224,169 @@ describe('calendar-service syncAll', () => {
     vi.clearAllMocks();
   });
 
-  it('paginates external events and records pulled items', async () => {
-    vi.mocked(state.calendarClient.events.list)
-      .mockResolvedValueOnce({
-        data: {
-          items: [
-            {
-              id: 'evt-1',
-              summary: '행사 1',
-              start: { dateTime: '2026-05-11T10:00:00.000Z' },
-              end: { dateTime: '2026-05-11T11:00:00.000Z' },
-            },
-          ],
-          nextPageToken: 'next-token',
-        },
-      })
-      .mockResolvedValueOnce({
-        data: {
-          items: [
-            {
-              id: 'evt-2',
-              summary: '행사 2',
-              start: { dateTime: '2026-05-12T10:00:00.000Z' },
-              end: { dateTime: '2026-05-12T11:00:00.000Z' },
-            },
-          ],
-        },
-      });
+  const baseRes = {
+    startTime: new Date('2026-05-20T10:00:00.000Z'),
+    endTime: new Date('2026-05-20T11:00:00.000Z'),
+    purpose: 'Test',
+    placeName: 'Room A',
+    userName: 'User 1',
+  };
 
-    const result = await syncAll('manual');
-
-    expect(state.calendarClient.events.list).toHaveBeenCalledTimes(2);
-    expect(result.counts.eventPulled).toBe(2);
-    expect(result.status).toBe('success');
-    expect(state.insertedRuns).toHaveLength(1);
-    expect(state.insertedItems).toHaveLength(2);
-    expect(state.insertedItems.map((item) => item.action)).toEqual([
-      'created',
-      'created',
-    ]);
-    expect(state.logRows.every((row) => row.runId === result.runId)).toBe(true);
-  });
-
-  it('marks existing external events as updated in sync history items', async () => {
-    state.externalEventRows = [
-      {
-        googleEventId: 'evt-1',
-        title: '이전 행사',
-        startTime: new Date('2026-05-11T10:00:00.000Z'),
-        endTime: new Date('2026-05-11T11:00:00.000Z'),
-        description: null,
-      },
-    ];
-    vi.mocked(state.calendarClient.events.list).mockResolvedValue({
-      data: {
-        items: [
-          {
-            id: 'evt-1',
-            summary: '기존 행사',
-            start: { dateTime: '2026-05-11T10:00:00.000Z' },
-            end: { dateTime: '2026-05-11T11:00:00.000Z' },
-          },
-          {
-            id: 'evt-2',
-            summary: '새 행사',
-            start: { dateTime: '2026-05-12T10:00:00.000Z' },
-            end: { dateTime: '2026-05-12T11:00:00.000Z' },
-          },
-        ],
-      },
-    });
-
-    const result = await syncAll('manual');
-
-    const eventItems = result.items.filter((item) => item.category === 'event');
-    expect(eventItems).toHaveLength(2);
-    expect(eventItems[0]).toMatchObject({
-      externalEventId: 'evt-1',
-      action: 'updated',
-    });
-    expect(eventItems[1]).toMatchObject({
-      externalEventId: 'evt-2',
-      action: 'created',
-    });
-  });
-
-  it('does not create sync items for unchanged external events', async () => {
-    state.externalEventRows = [
-      {
-        googleEventId: 'evt-1',
-        title: '그대로인 행사',
-        startTime: new Date('2026-05-11T10:00:00.000Z'),
-        endTime: new Date('2026-05-11T11:00:00.000Z'),
-        description: '설명',
-      },
-    ];
-    vi.mocked(state.calendarClient.events.list).mockResolvedValue({
-      data: {
-        items: [
-          {
-            id: 'evt-1',
-            summary: '그대로인 행사',
-            start: { dateTime: '2026-05-11T10:00:00.000Z' },
-            end: { dateTime: '2026-05-11T11:00:00.000Z' },
-            description: '설명',
-          },
-        ],
-      },
-    });
-
-    const result = await syncAll('manual');
-
-    expect(result.counts.eventPulled).toBe(0);
-    expect(result.eventSyncStatus).toBe('skipped');
-    expect(result.items.filter((item) => item.category === 'event')).toHaveLength(0);
-  });
-
-  it('deletes local external events when Google returns zero events', async () => {
-    vi.mocked(state.calendarClient.events.list).mockResolvedValue({
-      data: { items: [] },
-    });
-
-    const result = await syncAll('manual');
-
-    expect(result.counts.eventPulled).toBe(0);
-    expect(state.deleteCalls.some((call) => call.table === tables.externalEvents)).toBe(true);
-  });
-
-  it('returns partial when reservation sync fails but event sync succeeds', async () => {
+  it('SyncAll: handles New Active Reservation (Insert)', async () => {
     state.reservationRows = [
       {
+        ...baseRes,
         id: 1,
-        startTime: new Date('2026-05-20T10:00:00.000Z'),
-        endTime: new Date('2026-05-20T11:00:00.000Z'),
-        purpose: '회의',
+        status: 'active',
         googleEventId: null,
-        placeName: '회의실 A',
-        userName: '홍길동',
+        updatedAt: new Date('2026-05-14T10:00:00.000Z'),
       },
     ];
-    state.latestHistoryRows = [
-      {
-        changes: JSON.stringify({
-          created: {
-            to: {
-              placeId: 1,
-              startTime: '2026-05-20T10:00:00.000Z',
-              endTime: '2026-05-20T11:00:00.000Z',
-              purpose: '회의',
-            },
-          },
-        }),
-      },
-    ];
-    vi.mocked(state.calendarClient.events.insert).mockRejectedValueOnce(
-      new Error('insert failed')
-    );
-    vi.mocked(state.calendarClient.events.list).mockResolvedValue({
-      data: {
-        items: [
-          {
-            id: 'evt-1',
-            summary: '행사 1',
-            start: { dateTime: '2026-05-11T10:00:00.000Z' },
-            end: { dateTime: '2026-05-11T11:00:00.000Z' },
-          },
-        ],
-      },
+    vi.mocked(state.calendarClient.events.insert).mockResolvedValue({
+      data: { id: 'new-google-id' },
     });
+    vi.mocked(state.calendarClient.events.list).mockResolvedValue({ data: { items: [] } });
 
     const result = await syncAll('manual');
 
-    expect(result.status).toBe('partial');
-    expect(result.reservationSyncStatus).toBe('failed');
-    expect(result.eventSyncStatus).toBe('success');
-    expect(result.counts.failed).toBe(1);
+    expect(state.calendarClient.events.insert).toHaveBeenCalled();
+    expect(result.counts.reservationCreated).toBe(1);
+    expect(state.reservationUpdates).toContainEqual({ googleEventId: 'new-google-id' });
+    expect(state.insertedItems.find(i => i.reservationId === 1)?.status).toBe('success');
   });
 
-  it('recreates reservation event when update returns 404', async () => {
+  it('SyncAll: handles Updated Active Reservation (Update)', async () => {
     state.reservationRows = [
       {
+        ...baseRes,
         id: 2,
-        startTime: new Date('2026-05-20T10:00:00.000Z'),
-        endTime: new Date('2026-05-20T11:00:00.000Z'),
-        purpose: '리더 모임',
-        googleEventId: 'old-event',
-        placeName: '세미나실',
-        userName: '김민수',
+        status: 'active',
+        googleEventId: 'existing-id',
+        updatedAt: new Date('2026-05-14T11:00:00.000Z'),
       },
     ];
-    state.runRows = [
+    state.itemRows = [
       {
-        startedAt: new Date('2026-05-19T00:00:00.000Z'),
-        finishedAt: new Date('2026-05-19T00:01:00.000Z'),
-        reservationSyncStatus: 'success',
+        processedAt: new Date('2026-05-14T10:00:00.000Z'),
+        status: 'success',
+        action: 'created',
       },
     ];
-    state.updatedHistoryRows = [{ reservationId: 2 }];
-    state.latestHistoryRows = [
-      {
-        changes: JSON.stringify({
-          purpose: { from: '이전 모임', to: '리더 모임' },
-        }),
-      },
-    ];
-    vi.mocked(state.calendarClient.events.update).mockRejectedValueOnce({
-      code: 404,
-    });
-    vi.mocked(state.calendarClient.events.insert).mockResolvedValueOnce({
-      data: { id: 'new-event' },
-    });
-    vi.mocked(state.calendarClient.events.list).mockResolvedValue({
-      data: { items: [] },
-    });
+    vi.mocked(state.calendarClient.events.update).mockResolvedValue({ data: {} });
+    vi.mocked(state.calendarClient.events.list).mockResolvedValue({ data: { items: [] } });
 
     const result = await syncAll('manual');
 
-    expect(result.counts.reservationUpdated).toBe(1);
-    expect(state.reservationUpdates).toContainEqual({ googleEventId: 'new-event' });
-    expect(result.status).toBe('success');
-  });
-
-  it('does not update already-synced reservations without recent history changes', async () => {
-    state.reservationRows = [
-      {
-        id: 3,
-        startTime: new Date('2026-05-21T10:00:00.000Z'),
-        endTime: new Date('2026-05-21T11:00:00.000Z'),
-        purpose: '변경 없음',
-        googleEventId: 'existing-event',
-        placeName: '회의실 B',
-        userName: '박서준',
-      },
-    ];
-    state.runRows = [
-      {
-        startedAt: new Date('2026-05-20T00:00:00.000Z'),
-        finishedAt: new Date('2026-05-20T00:01:00.000Z'),
-        reservationSyncStatus: 'success',
-      },
-    ];
-    vi.mocked(state.calendarClient.events.list).mockResolvedValue({
-      data: { items: [] },
-    });
-
-    const result = await syncAll('manual');
-
-    expect(result.counts.reservationUpdated).toBe(0);
-    expect(vi.mocked(state.calendarClient.events.update)).not.toHaveBeenCalled();
-    expect(result.status).toBe('success');
-  });
-
-  it('updates only reservations changed since the last successful sync', async () => {
-    state.reservationRows = [
-      {
-        id: 4,
-        startTime: new Date('2026-05-22T10:00:00.000Z'),
-        endTime: new Date('2026-05-22T11:00:00.000Z'),
-        purpose: '수정 대상',
-        googleEventId: 'event-4',
-        placeName: '회의실 C',
-        userName: '이수진',
-      },
-      {
-        id: 5,
-        startTime: new Date('2026-05-23T10:00:00.000Z'),
-        endTime: new Date('2026-05-23T11:00:00.000Z'),
-        purpose: '스킵 대상',
-        googleEventId: 'event-5',
-        placeName: '회의실 D',
-        userName: '정우성',
-      },
-    ];
-    state.runRows = [
-      {
-        startedAt: new Date('2026-05-20T00:00:00.000Z'),
-        finishedAt: new Date('2026-05-20T00:01:00.000Z'),
-        reservationSyncStatus: 'success',
-      },
-    ];
-    state.updatedHistoryRows = [{ reservationId: 4 }];
-    state.latestHistoryRows = [
-      {
-        changes: JSON.stringify({
-          purpose: { from: '수정 전', to: '수정 대상' },
-        }),
-      },
-    ];
-    vi.mocked(state.calendarClient.events.update).mockResolvedValue({
-      data: {},
-    } as any);
-    vi.mocked(state.calendarClient.events.list).mockResolvedValue({
-      data: { items: [] },
-    });
-
-    const result = await syncAll('manual');
-
-    expect(result.counts.reservationUpdated).toBe(1);
-    expect(vi.mocked(state.calendarClient.events.update)).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(state.calendarClient.events.update)).toHaveBeenCalledWith(
-      expect.objectContaining({ eventId: 'event-4' })
+    expect(state.calendarClient.events.update).toHaveBeenCalledWith(
+      expect.objectContaining({ eventId: 'existing-id' })
     );
+    expect(result.counts.reservationUpdated).toBe(1);
+    expect(state.insertedItems.find(i => i.reservationId === 2)?.status).toBe('success');
+  });
+
+  it('SyncAll: handles Outdated but not modified (Skip)', async () => {
+    state.reservationRows = [
+      {
+        ...baseRes,
+        id: 3,
+        status: 'active',
+        googleEventId: 'existing-id',
+        updatedAt: new Date('2026-05-14T09:00:00.000Z'),
+      },
+    ];
+    state.itemRows = [
+      {
+        processedAt: new Date('2026-05-14T10:00:00.000Z'),
+        status: 'success',
+        action: 'updated',
+      },
+    ];
+    vi.mocked(state.calendarClient.events.list).mockResolvedValue({ data: { items: [] } });
+
+    const result = await syncAll('manual');
+
+    expect(state.calendarClient.events.update).not.toHaveBeenCalled();
+    expect(result.counts.reservationUpdated).toBe(0);
+    expect(state.insertedItems.find(i => i.reservationId === 3)?.status).toBe('skipped');
+  });
+
+  it('SyncAll: recreates reservation when missing in Google (404)', async () => {
+    state.reservationRows = [
+      {
+        ...baseRes,
+        id: 4,
+        status: 'active',
+        googleEventId: 'missing-id',
+        updatedAt: new Date('2026-05-14T11:00:00.000Z'),
+      },
+    ];
+    state.itemRows = [{ processedAt: new Date('2026-05-14T10:00:00.000Z'), status: 'success' }];
+    vi.mocked(state.calendarClient.events.update).mockRejectedValue({ code: 404 });
+    vi.mocked(state.calendarClient.events.insert).mockResolvedValue({ data: { id: 'recreated-id' } });
+    vi.mocked(state.calendarClient.events.list).mockResolvedValue({ data: { items: [] } });
+
+    const result = await syncAll('manual');
+
+    expect(result.counts.reservationCreated).toBe(1);
+    expect(state.reservationUpdates).toContainEqual({ googleEventId: 'recreated-id' });
+  });
+
+  it('SyncAll: handles Cancelled with Google ID (Delete)', async () => {
+    state.reservationRows = [
+      {
+        ...baseRes,
+        id: 5,
+        status: 'cancelled',
+        googleEventId: 'id-to-delete',
+      },
+    ];
+    vi.mocked(state.calendarClient.events.delete).mockResolvedValue({ data: {} });
+    vi.mocked(state.calendarClient.events.list).mockResolvedValue({ data: { items: [] } });
+
+    const result = await syncAll('manual');
+
+    expect(state.calendarClient.events.delete).toHaveBeenCalledWith(
+      expect.objectContaining({ eventId: 'id-to-delete' })
+    );
+    expect(result.counts.reservationDeleted).toBe(1);
+    expect(state.reservationUpdates).toContainEqual({ googleEventId: null });
+  });
+
+  it('SyncAll: cleans up local ID when Cancelled is already missing in Google', async () => {
+    state.reservationRows = [
+      {
+        ...baseRes,
+        id: 6,
+        status: 'cancelled',
+        googleEventId: 'already-gone-id',
+      },
+    ];
+    vi.mocked(state.calendarClient.events.delete).mockRejectedValue({ code: 404 });
+    vi.mocked(state.calendarClient.events.list).mockResolvedValue({ data: { items: [] } });
+
+    const result = await syncAll('manual');
+
+    expect(result.counts.reservationDeleted).toBe(1);
+    expect(state.reservationUpdates).toContainEqual({ googleEventId: null });
+    expect(state.insertedItems.find(i => i.reservationId === 6)?.status).toBe('success');
+  });
+
+  it('SyncReservation: handles individual active reservation sync', async () => {
+    state.reservationRows = [
+      {
+        ...baseRes,
+        id: 7,
+        status: 'active',
+        googleEventId: null,
+        updatedAt: new Date(),
+      },
+    ];
+    vi.mocked(state.calendarClient.events.insert).mockResolvedValue({ data: { id: 'indiv-id' } });
+
+    const result = await syncReservation(7);
+
+    expect(result.status).toBe('success');
+    expect(result.externalEventId).toBe('indiv-id');
+    expect(state.reservationUpdates).toContainEqual({ googleEventId: 'indiv-id' });
   });
 });
