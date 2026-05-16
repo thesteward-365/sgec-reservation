@@ -1148,10 +1148,12 @@ export async function getGoogleEventUrl(
   if (!calendar || !settings?.calendarId) return null;
 
   try {
-    const event = await calendar.events.get({
-      calendarId: settings.calendarId,
-      eventId: googleEventId,
-    });
+    const event: { data: calendar_v3.Schema$Event } = await calendar.events.get(
+      {
+        calendarId: settings.calendarId,
+        eventId: googleEventId,
+      }
+    );
 
     return event.data.htmlLink ?? null;
   } catch {
