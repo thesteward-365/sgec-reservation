@@ -96,7 +96,7 @@ function LoginContent() {
       </div>
 
       {message && (
-        <div className="mb-6 rounded-lg bg-green-50 p-4 text-sm text-green-700 border border-green-200">
+        <div className="mb-6 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-700">
           {message}
         </div>
       )}
@@ -171,12 +171,20 @@ function LoginContent() {
       </form>
 
       {/* 하단 링크 — 남는 공간이 있으면 하단으로 */}
-      <p className="text-body-sm text-muted-foreground mt-auto pt-10 text-center">
-        아직 계정이 없으신가요?{' '}
-        <Link href="/signup" className="font-semibold">
-          계정만들기
+      <div className="mt-auto flex flex-col gap-2 pt-10 text-center">
+        <p className="text-body-sm text-muted-foreground">
+          아직 계정이 없으신가요?{' '}
+          <Link href="/signup" className="text-foreground font-semibold">
+            계정만들기
+          </Link>
+        </p>
+        <Link
+          href="/privacy"
+          className="text-body-sm text-muted-foreground mt-4"
+        >
+          개인정보 처리방침
         </Link>
-      </p>
+      </div>
     </div>
   );
 }
