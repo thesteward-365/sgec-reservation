@@ -19,7 +19,7 @@ export default async function UserLayout({ children }: { children: React.ReactNo
     where: eq(users.id, session.user.id),
   });
 
-  if (user && !user.username) {
+  if (user && (!user.username || user.username === user.name)) {
     redirect('/setup-account');
   }
 

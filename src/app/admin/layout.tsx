@@ -27,7 +27,7 @@ export default async function AdminLayout({
     where: eq(users.id, session.user.id),
   });
 
-  if (user && !user.username) {
+  if (user && (!user.username || user.username === user.name)) {
     redirect('/setup-account');
   }
 
