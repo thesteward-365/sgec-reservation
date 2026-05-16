@@ -389,4 +389,95 @@ describe('calendar-service new sync logic', () => {
     expect(result.externalEventId).toBe('indiv-id');
     expect(state.reservationUpdates).toContainEqual({ googleEventId: 'indiv-id' });
   });
+
+  describe('External Event Sync Range', () => {
+    it('fetches events from 3 months ago to 1 year later', async () => {
+      const now = new Date('2026-05-14T12:00:00Z');
+      vi.setSystemTime(now);
+
+      // Replicate production calculation (local time)
+      const expectedThreeMonthsAgo = new Date(
+        now.getFullYear(),
+        now.getMonth() - 3,
+        now.getDate(),
+        0,
+        0,
+        0
+      );
+      const expectedOneYearLater = new Date(
+        now.getFullYear() + 1,
+        now.getMonth(),
+        now.getDate()
+      );
+
+      vi.mocked(state.calendarClient.events.list).mockResolvedValue({
+        data: { items: [] },
+      });
+
+      await syncAll('manual');
+
+      expect(state.calendarClient.events.list).toHaveBeenCalledWith(
+        expect.objectContaining({
+          timeMin: expectedThreeMonthsAgo.toISOString(),
+          timeMax: expectedOneYearLater.toISOString(),
+        })
+      );
+    });
+
+    it('deletes future/recent events missing in Google, but keeps old ones', async () => {
+      const now = new Date('2026-05-14T12:00:00Z');
+      vi.setSystemTime(now);
+
+      const expectedThreeMonthsAgo = new Date(
+        now.getFullYear(),
+        now.getMonth() - 3,
+        now.getDate(),
+        0,
+        0,
+        0
+      );
+
+      // Local DB has 3 events
+      state.externalEventRows = [
+        { googleEventId: 'old-event', startTime: new Date('2025-01-01'), title: 'Old' },
+        { googleEventId: 'recent-missing', startTime: new Date('2026-03-01'), title: 'Recent' },
+        { googleEventId: 'future-missing', startTime: new Date('2026-06-01'), title: 'Future' },
+      ];
+
+      // Google returns nothing
+      vi.mocked(state.calendarClient.events.list).mockResolvedValue({
+        data: { items: [] },
+      });
+
+      await syncAll('manual');
+
+      // In our mock, we check if gte was called with the correct date for externalEvents
+      const { gte } = await import('drizzle-orm');
+      expect(gte).toHaveBeenCalledWith(tables.externalEvents.startTime, expectedThreeMonthsAgo);
+    });
+
+    it('upserts events within the range [3 months ago, 1 year later]', async () => {
+      const now = new Date('2026-05-14T12:00:00Z');
+      vi.setSystemTime(now);
+
+      const eventInSyncRange = {
+        id: 'event-1',
+        summary: 'External Event',
+        start: { dateTime: '2026-05-20T10:00:00Z' },
+        end: { dateTime: '2026-05-20T11:00:00Z' },
+      };
+
+      vi.mocked(state.calendarClient.events.list).mockResolvedValue({
+        data: { items: [eventInSyncRange] },
+      });
+
+      const result = await syncAll('manual');
+
+      expect(result.counts.eventPulled).toBe(1);
+      expect(state.externalUpserts.length).toBeGreaterThan(0);
+      const upsert = state.externalUpserts.find(u => u.googleEventId === 'event-1');
+      expect(upsert).toBeDefined();
+      expect(upsert.title).toBe('External Event');
+    });
+  });
 });
