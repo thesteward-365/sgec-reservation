@@ -51,7 +51,9 @@ export default function SignupPage() {
       const result = await res.json();
 
       if (res.ok) {
-        toast.success('회원가입이 완료되었습니다! 관리자 승인 후 이용 가능합니다.');
+        toast.success(
+          '회원가입이 완료되었습니다! 관리자 승인 후 이용 가능합니다.'
+        );
         router.push('/pending');
       } else {
         toast.error(result.error || '회원가입에 실패했습니다.');
@@ -66,7 +68,7 @@ export default function SignupPage() {
   return (
     <div className="flex flex-1 flex-col px-6 pt-14 pb-10">
       {/* 로고 헤더 */}
-      <div className="flex items-center gap-2.5 mb-12">
+      <div className="mb-12 flex items-center gap-2.5">
         <Image
           src="/logos/logo-default.svg"
           alt="샘깊은교회 로고"
@@ -74,14 +76,16 @@ export default function SignupPage() {
           height={40}
           priority
         />
-        <span className="text-body-sm font-bold text-foreground tracking-tight">
+        <span className="text-body-sm text-foreground font-bold tracking-tight">
           샘깊은교회 문화사역
         </span>
       </div>
 
       {/* 인사말 */}
       <div className="mb-8">
-        <h1 className="text-title-1 font-bold text-foreground">가입을 환영합니다.</h1>
+        <h1 className="text-title-1 text-foreground font-bold">
+          가입을 환영합니다.
+        </h1>
       </div>
 
       {/* 폼 */}
@@ -187,7 +191,13 @@ export default function SignupPage() {
             <p className="text-sm text-red-500">{errors.phoneNumber.message}</p>
           )}
         </div>
-
+        <p className="text-body-xs text-muted-foreground mt-4 text-center">
+          가입 시{' '}
+          <Link href="/privacy" className="underline underline-offset-4">
+            개인정보 처리방침
+          </Link>
+          에 동의하는 것으로 간주합니다.
+        </p>
         <Button type="submit" className="mt-2 w-full" disabled={isLoading}>
           {isLoading ? '가입 중...' : '가입하기'}
         </Button>

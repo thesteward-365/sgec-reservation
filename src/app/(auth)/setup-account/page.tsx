@@ -68,7 +68,7 @@ export default function SetupAccountPage() {
   return (
     <div className="flex flex-1 flex-col px-6 pt-14 pb-10">
       {/* 로고 헤더 */}
-      <div className="flex items-center gap-2.5 mb-12">
+      <div className="mb-12 flex items-center gap-2.5">
         <Image
           src="/logos/logo-default.svg"
           alt="샘깊은교회 로고"
@@ -76,19 +76,19 @@ export default function SetupAccountPage() {
           height={40}
           priority
         />
-        <span className="text-body-sm font-bold text-foreground tracking-tight">
+        <span className="text-body-sm text-foreground font-bold tracking-tight">
           샘깊은교회 문화사역
         </span>
       </div>
-
       {/* 인사말 */}
       <div className="mb-8">
-        <h1 className="text-title-1 font-bold text-foreground">계정 정보 설정</h1>
+        <h1 className="text-title-1 text-foreground font-bold">
+          계정 정보 설정
+        </h1>
         <p className="text-body text-muted-foreground mt-2">
           서비스 이용을 위해 아이디와 비밀번호를 설정해주세요.
         </p>
       </div>
-
       {/* 폼 */}
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         {/* 아이디 */}
@@ -161,12 +161,19 @@ export default function SetupAccountPage() {
             </button>
           </div>
           {errors.confirmPassword && (
-            <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>
+            <p className="text-sm text-red-500">
+              {errors.confirmPassword.message}
+            </p>
           )}
         </div>
 
         <Button type="submit" className="mt-2 w-full" disabled={isLoading}>
           {isLoading ? '저장 중...' : '설정 완료'}
+        </Button>
+      </form>
+      <form action="/api/auth/logout" method="POST" className="mt-4 w-full">
+        <Button type="submit" variant="link" className="w-full">
+          로그아웃
         </Button>
       </form>
     </div>
