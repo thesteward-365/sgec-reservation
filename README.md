@@ -1,36 +1,186 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 샘깊은교회 장소 예약 서비스
 
-## Getting Started
+샘깊은교회의 다양한 사역 공간을 보다 편리하게 예약하고 관리할 수 있도록 만든 웹 애플리케이션입니다.  
+모바일 환경에서도 쉽게 사용할 수 있도록 UX를 구성했으며, Google Calendar 연동을 통해 예약 내용을 실시간으로 동기화할 수 있습니다.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 프로젝트 배경
+
+기존에는 카카오톡 단체 채팅방에서 각 장소(연습실) 예약을 관리하고 있었습니다.  
+하지만 예약이 늘어날수록 몇 가지 불편함이 점점 커졌습니다.
+
+- 원하는 시간대가 이미 예약되어 있는지 확인하려면 이전 대화 내용을 직접 찾아봐야 했음
+- 예약 시간이 겹치는지 바로 확인하기 어려웠음
+- 전체 예약 현황을 한눈에 보기 힘들었음
+
+이러한 불편함을 줄이기 위해 만들었습니다.  
+현재 각 장소의 예약 상태를 쉽게 확인하고, 중복 없이 예약을 관리할 수 있도록 하는 데 초점을 맞췄습니다.
+
+---
+
+## 스크린샷
+
+> **안내:** 애플리케이션의 주요 화면 캡처를 이곳에 추가해 주세요.
+>
+> <details>
+> <summary>스크린샷 보기 (클릭하여 펼치기)</summary>
+>
+> |    사용자 예약 홈    | 예약 시간 선택  |      관리자 대시보드       |
+> | :------------------: | :-------------: | :------------------------: |
+> | (사용자 홈 스크린샷) | (예약 스크린샷) | (관리자 대시보드 스크린샷) |
+>
+> |   주간/월간 캘린더   |      장소 관리       |  예약 완료 및 공유   |
+> | :------------------: | :------------------: | :------------------: |
+> | (캘린더 뷰 스크린샷) | (장소 관리 스크린샷) | (예약 완료 스크린샷) |
+>
+> </details>
+
+---
+
+## 주요 기능
+
+### 사용자 기능
+
+- **주간/월간 예약**: 주간/월간 캘린더 기반의 예약 현황 조회 및 날짜 선택
+- **실시간 시간 선택**: 30분 단위 슬롯 기반 타임라인 UI를 통한 중복 없는 예약
+- **PWA 지원**: 홈 화면 추가를 통한 앱 형태 사용 지원
+- **예약 공유**: 카카오톡 공유 및 클립보드 복사를 통한 예약 정보 전달
+
+### 관리자 기능
+
+- **가입 승인 시스템**: 관리자 승인 기반 사용자 관리
+- **장소/층/태그 관리**: 장소 그룹화 및 태그 기반 필터링 지원
+- **Google Calendar 연동**: 예약 정보 실시간 동기화 및 외부 일정 조회
+- **대시보드**: 오늘 예약 현황 및 승인 대기 사용자 확인
+
+---
+
+## 기술 스택
+
+- **프레임워크**: Next.js 15 (App Router), React 19, TypeScript
+- **스타일링**: Tailwind CSS v4, shadcn/ui, CSS Variables
+- **데이터베이스**: PostgreSQL (Neon Serverless Postgres)
+- **ORM**: Drizzle ORM
+- **인증**: iron-session
+- **검증 및 서버 로직**: Zod, Server Actions
+- **테스트 및 도구**: Vitest, Playwright, Storybook, Docker
+
+---
+
+## 기술적 의사결정
+
+프로젝트를 개발하면서 고려했던 선택지와, 최종적으로 해당 기술을 선택한 이유를 정리했습니다.
+
+### 1. Next.js (App Router) vs React SPA
+
+이 프로젝트는 단순한 화면 렌더링뿐 아니라 예약 처리, 인증, Google Calendar 연동 등 서버 로직의 비중이 큰 편이었습니다.
+
+- **선택 이유**
+  - 프론트엔드와 백엔드를 분리하기보다 하나의 프로젝트 안에서 함께 관리하는 편이 개발 속도와 유지보수 측면에서 더 적합하다고 판단했습니다.
+  - Next.js의 Server Actions와 Route Handlers를 활용해 예약 로직과 API를 함께 구성했습니다.
+  - Server Components를 통해 필요한 영역만 클라이언트 컴포넌트로 분리하면서 상태 관리 복잡도를 줄일 수 있었습니다.
+
+---
+
+### 2. PostgreSQL vs SQLite
+
+초기에는 구조가 단순하고 설정 부담이 적은 SQLite도 고려했습니다.  
+하지만 개발 과정에서 Vercel 기반의 테스트 배포 환경을 적극적으로 활용하게 되면서 PostgreSQL로 방향을 변경했습니다.
+
+- **선택 이유**
+  - 실제 운영은 온프레미스 환경에서 이루어졌지만, 개발 및 테스트 단계에서는 Vercel Preview Deployment를 통해 기능을 빠르게 검증하는 흐름이 중요했습니다.
+  - SQLite는 파일 기반 데이터베이스이기 때문에 서버리스 배포 환경과의 궁합이 좋지 않았습니다.
+  - 테스트 배포 환경에서도 운영 환경과 유사한 방식으로 데이터를 관리하기 위해 PostgreSQL을 선택했습니다.
+  - Neon DB를 활용해 Vercel 환경에서도 PostgreSQL을 간단하게 구성할 수 있었습니다.
+  - 또한 예약 시스템 특성상 여러 사용자가 동시에 예약을 시도하는 상황을 고려했을 때, 트랜잭션과 동시성 처리 측면에서도 PostgreSQL이 더 적합하다고 판단했습니다.
+
+---
+
+### 3. Drizzle ORM vs Prisma
+
+- **선택 이유**
+  - Drizzle ORM은 SQL 구조를 비교적 그대로 유지하면서 사용할 수 있어 복잡한 예약 조회 로직을 작성하기 편했습니다.
+  - Serverless 환경에서도 비교적 가볍게 동작하고, 스키마와 실제 쿼리 흐름을 직접 제어하기 쉬웠습니다.
+  - 프로젝트 규모와 구조를 고려했을 때 Prisma보다 더 단순하게 운영할 수 있다고 판단했습니다.
+
+---
+
+### 4. iron-session vs NextAuth.js
+
+- **선택 이유**
+  - 이 프로젝트는 일반적인 소셜 로그인 기반 서비스가 아니라, 관리자 승인 절차를 포함한 커스텀 인증 흐름이 필요한 구조였습니다.
+  - 따라서 인증 로직을 직접 제어할 수 있는 방식이 더 적합하다고 판단했습니다.
+  - 복잡한 인증 프레임워크보다는 iron-session 기반으로 필요한 세션 기능만 직접 구현하는 방식을 선택했습니다.
+
+---
+
+### 5. Tailwind CSS + shadcn/ui vs CSS-in-JS
+
+- **선택 이유**
+  - 모바일 환경에서 빠르게 UI를 구성하고 일관된 디자인 시스템을 유지하는 것이 중요했습니다.
+  - Tailwind CSS를 사용해 스타일을 유연하게 관리했고, shadcn/ui 기반 컴포넌트를 프로젝트 스타일에 맞게 커스터마이징해 사용했습니다.
+  - 특히 예약 화면처럼 상태 변화가 많은 UI를 구성할 때 생산성이 높았습니다.
+
+---
+
+### 6. Storybook 도입
+
+- **선택 이유**
+  - 예약 상태, 권한 상태, 예외 케이스 등에 따라 UI가 자주 달라지는 구조였기 때문에 컴포넌트를 독립적으로 검증할 필요가 있었습니다.
+  - Storybook을 사용해 주요 UI 컴포넌트를 상태별로 분리해 테스트하고 문서화했습니다.
+  - 이를 통해 UI 변경 시 회귀를 줄이고, 반복적인 화면 검증 작업을 더 수월하게 진행할 수 있었습니다.
+
+---
+
+## 폴더 구조
+
+```text
+src/
+├── app/              # Next.js App Router (페이지, API, 액션)
+├── components/       # 도메인 및 공통 UI 컴포넌트
+│   ├── ui/           # 기본 UI 요소
+│   ├── layout/       # 레이아웃 관련 컴포넌트
+│   └── ...           # 도메인별 분리된 컴포넌트
+├── lib/
+│   ├── calendar/     # Google Calendar 연동 로직
+│   ├── db/           # 데이터베이스 스키마 및 클라이언트
+│   ├── services/     # 비즈니스 로직
+│   └── validations/  # Zod 기반 검증 스키마
+├── styles/           # 전역 스타일 및 디자인 토큰
+└── tests/            # 유닛, 통합, E2E 테스트 코드
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 로컬 개발 환경 설정
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# 1. 저장소 클론 및 패키지 설치
+git clone <repository-url>
+cd sgec-reservation
+npm install
 
-## Learn More
+# 2. 환경 변수 설정
+cp .env.example .env.local
 
-To learn more about Next.js, take a look at the following resources:
+# 3. 데이터베이스 스키마 반영
+npm run db:push
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# 4. 개발 서버 실행
+npm run dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 배포
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+이 프로젝트는 온프레미스 Docker 환경과 Vercel 기반 테스트 배포 환경을 함께 사용했습니다.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **운영 환경**
+  - Docker 기반 온프레미스 서버에서 운영
+  - 자체 인프라 환경에서 데이터 및 배포 흐름 관리
+
+- **테스트 환경**
+  - Vercel Preview Deployment를 활용해 브랜치 단위 기능 검증 진행
+  - 실제 사용자 피드백 이전에 UI 및 예약 흐름을 빠르게 확인할 수 있도록 구성

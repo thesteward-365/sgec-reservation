@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { toast } from 'sonner';
@@ -9,22 +9,29 @@ import { XMarkIcon } from '@heroicons/react/24/solid';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { cn, formatPhoneNumber, normalizePhoneNumber } from '@/lib/utils';
-import { stat } from 'fs';
+import { cn } from '@/lib/utils';
+import { Eye, EyeOff } from 'lucide-react';
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
-  const [name, setName] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const searchParams = useSearchParams();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (searchParams.get('message') === 'setup_complete') {
+      setMessage('계정 설정이 완료되었습니다. 새로운 정보로 로그인해주세요.');
+    }
+  }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const normalizedPhoneNumber = normalizePhoneNumber(phoneNumber);
-
-    if (normalizedPhoneNumber.length !== 11) {
-      toast.error('전화번호 11자리를 입력해주세요.');
+    if (!username || !password) {
+      toast.error('아이디와 비밀번호를 입력해주세요.');
       return;
     }
 
@@ -34,27 +41,13 @@ export default function LoginPage() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          phoneNumber: normalizedPhoneNumber,
-          rememberMe,
-        }),
+        body: JSON.stringify({ username, password, rememberMe }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        if (res.status === 404) {
-          toast.error('등록되지 않은 전화번호입니다.', {
-            description: '아직 가입하지 않으셨나요?',
-            action: {
-              label: '계정만들기',
-              onClick: () => router.push('/signup'),
-            },
-          });
-        } else {
-          toast.error(data.error ?? '로그인에 실패했습니다.');
-        }
+        toast.error(data.error ?? '로그인에 실패했습니다.');
         return;
       }
 
@@ -67,7 +60,7 @@ export default function LoginPage() {
         );
         return;
       } else if (role === 'admin') {
-        router.push('/admin');
+        router.push('/admin/dashboard');
       } else {
         router.push('/reserve');
       }
@@ -102,27 +95,32 @@ export default function LoginPage() {
         </p>
       </div>
 
+      {message && (
+        <div className="mb-6 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-700">
+          {message}
+        </div>
+      )}
+
       {/* 폼 */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        {/* 이름 */}
+        {/* 아이디 */}
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="name">이름</Label>
+          <Label htmlFor="username">아이디</Label>
           <div className="relative">
             <Input
-              id="name"
+              id="username"
               type="text"
-              placeholder="홍길동"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              placeholder="아이디를 입력하세요"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
-              autoComplete="name"
-              className={cn(name && 'pr-10')}
+              className={cn(username && 'pr-10')}
             />
-            {name && (
+            {username && (
               <button
                 type="button"
-                aria-label="이름 지우기"
-                onClick={() => setName('')}
+                aria-label="아이디 지우기"
+                onClick={() => setUsername('')}
                 className="bg-muted hover:bg-muted-foreground/20 absolute top-1/2 right-3 flex size-5 -translate-y-1/2 items-center justify-center rounded-full transition-colors"
               >
                 <XMarkIcon className="text-muted-foreground size-3" />
@@ -131,34 +129,26 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* 전화번호 */}
+        {/* 비밀번호 */}
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="phone">전화번호</Label>
+          <Label htmlFor="password">비밀번호</Label>
           <div className="relative">
             <Input
-              id="phone"
-              type="tel"
-              placeholder="010-0000-0000"
-              value={phoneNumber}
-              onChange={(e) =>
-                setPhoneNumber(formatPhoneNumber(e.target.value))
-              }
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="비밀번호를 입력하세요"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               required
-              autoComplete="tel"
-              inputMode="numeric"
-              maxLength={13}
-              className={cn(phoneNumber && 'pr-10')}
+              className="pr-10"
             />
-            {phoneNumber && (
-              <button
-                type="button"
-                aria-label="전화번호 지우기"
-                onClick={() => setPhoneNumber('')}
-                className="bg-muted hover:bg-muted-foreground/20 absolute top-1/2 right-3 flex size-5 -translate-y-1/2 items-center justify-center rounded-full transition-colors"
-              >
-                <XMarkIcon className="text-muted-foreground size-3" />
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
           </div>
         </div>
 
@@ -181,12 +171,28 @@ export default function LoginPage() {
       </form>
 
       {/* 하단 링크 — 남는 공간이 있으면 하단으로 */}
-      <p className="text-body-sm text-muted-foreground mt-auto pt-10 text-center">
-        아직 계정이 없으신가요?{' '}
-        <Link href="/signup" className="font-semibold">
-          계정만들기
+      <div className="mt-auto flex flex-col gap-2 pt-10 text-center">
+        <p className="text-body-sm text-muted-foreground">
+          아직 계정이 없으신가요?{' '}
+          <Link href="/signup" className="text-foreground font-semibold">
+            계정만들기
+          </Link>
+        </p>
+        <Link
+          href="/privacy"
+          className="text-body-sm text-muted-foreground mt-4"
+        >
+          개인정보 처리방침
         </Link>
-      </p>
+      </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
   );
 }
