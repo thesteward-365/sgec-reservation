@@ -289,6 +289,19 @@ export function SettingsView({
               <ChevronRightIcon className="text-muted-foreground size-4" />
             </button>
           </ListItem>
+
+          <ListItem className="px-0 py-0">
+            <button
+              onClick={() => router.push('/privacy')}
+              className="flex w-full items-center gap-3 px-5 py-4 transition-colors hover:bg-neutral-50"
+            >
+              <ShieldCheckIcon className="text-foreground size-5" />
+              <span className="text-foreground flex-1 text-left text-[15px] font-semibold">
+                개인정보 처리방침
+              </span>
+              <ChevronRightIcon className="text-muted-foreground size-4" />
+            </button>
+          </ListItem>
         </List>
 
         {/* 로그아웃 섹션 */}

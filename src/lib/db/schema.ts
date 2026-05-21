@@ -46,6 +46,8 @@ export const syncCalendarStatusEnum = pgEnum('sync_calendar_status', [
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
   name: text('name').notNull(),
+  username: text('username').unique(),
+  password: text('password'),
   phoneNumber: text('phone_number').notNull().unique(),
   role: userRoleEnum('role').notNull().default('user'),
   status: userStatusEnum('status').notNull().default('pending'),
