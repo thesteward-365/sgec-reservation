@@ -22,6 +22,7 @@ import {
   type FilterState,
 } from '@/components/reservations/filter-sheet';
 import { Chip } from '@/components/ui/chip';
+import { compareReservationByDayAndTime } from '@/lib/services/reservation-sorting';
 
 type ReservationStatus = 'active' | 'cancelled';
 type AdminReservation = {
@@ -175,7 +176,7 @@ export default function ReservationsPage() {
   const [filter, setFilter] = useState<FilterState>({
     floorId: null,
     tagId: null,
-    sortOrder: 'asc',
+    sortOrder: 'desc',
     includeCancelled: false,
     onlyMine: false,
   });
@@ -250,9 +251,7 @@ export default function ReservationsPage() {
     }
 
     return [...list].sort((a, b) => {
-      const aTime = a.startTime ? new Date(a.startTime).getTime() : 0;
-      const bTime = b.startTime ? new Date(b.startTime).getTime() : 0;
-      return filter.sortOrder === 'asc' ? aTime - bTime : bTime - aTime;
+      return compareReservationByDayAndTime(a, b, filter.sortOrder);
     });
   }, [filter, placeTagMap, reservations, currentUser]);
 
@@ -286,7 +285,7 @@ export default function ReservationsPage() {
   const activeFilter =
     filter.floorId !== null ||
     filter.tagId !== null ||
-    filter.sortOrder !== 'asc' ||
+    filter.sortOrder !== 'desc' ||
     filter.onlyMine;
 
   const listViewReservations = filteredReservations.filter((reservation) => {

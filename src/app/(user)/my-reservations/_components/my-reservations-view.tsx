@@ -24,6 +24,7 @@ import {
   type FilterState,
 } from '@/components/reservations/filter-sheet';
 import { SessionData } from '@/lib/session';
+import { compareReservationByDayAndTime } from '@/lib/services/reservation-sorting';
 
 type PlaceTagMap = Record<number, number[]>; // placeId -> tagId[]
 
@@ -137,7 +138,7 @@ export function MyReservationsView({ user }: Props) {
   const [filter, setFilter] = useState<FilterState>({
     floorId: null,
     tagId: null,
-    sortOrder: 'asc',
+    sortOrder: 'desc',
     includeCancelled: false,
     onlyMine: false,
   });
@@ -224,9 +225,7 @@ export function MyReservationsView({ user }: Props) {
     }
 
     return [...list].sort((a, b) => {
-      const ta = new Date(a.startTime).getTime();
-      const tb = new Date(b.startTime).getTime();
-      return filter.sortOrder === 'asc' ? ta - tb : tb - ta;
+      return compareReservationByDayAndTime(a, b, filter.sortOrder);
     });
   }, [allReservations, filter, placeTagMap, user?.id]);
 
@@ -263,7 +262,7 @@ export function MyReservationsView({ user }: Props) {
   const isFilterActive =
     filter.floorId !== null ||
     filter.tagId !== null ||
-    filter.sortOrder !== 'asc' ||
+    filter.sortOrder !== 'desc' ||
     filter.onlyMine;
 
   return (
