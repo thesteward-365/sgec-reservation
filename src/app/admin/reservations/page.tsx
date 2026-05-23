@@ -23,6 +23,10 @@ import {
 } from '@/components/reservations/filter-sheet';
 import { Chip } from '@/components/ui/chip';
 import { compareReservationByDayAndTime } from '@/lib/services/reservation-sorting';
+import {
+  ExternalEventsSheet,
+  type ExternalEventSheetItem,
+} from '@/components/reservations/external-events-sheet';
 
 type ReservationStatus = 'active' | 'cancelled';
 type AdminReservation = {
@@ -44,7 +48,12 @@ type ExternalEventResponse = {
   title: string;
   startTime: string;
   endTime: string;
+  isAllDay?: boolean;
   description: string | null;
+};
+
+type ExternalCalendarEvent = CalendarEvent & {
+  raw: ExternalEventResponse;
 };
 
 type PlaceTagMap = Record<number, number[]>;
@@ -167,7 +176,9 @@ export default function ReservationsPage() {
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
   const [reservations, setReservations] = useState<AdminReservation[]>([]);
-  const [externalEvents, setExternalEvents] = useState<CalendarEvent[]>([]);
+  const [externalEvents, setExternalEvents] = useState<ExternalCalendarEvent[]>(
+    []
+  );
   const [placeTagMap, setPlaceTagMap] = useState<PlaceTagMap>({});
   const [currentUser, setCurrentUser] = useState<{
     id: number;
@@ -182,6 +193,10 @@ export default function ReservationsPage() {
   });
   const [showFilter, setShowFilter] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [activeExternalEvents, setActiveExternalEvents] = useState<{
+    dateLabel: string;
+    events: ExternalEventSheetItem[];
+  } | null>(null);
   const [now] = useState(() => new Date());
 
   // 데이터 로딩: 예약, 장소, 계정
@@ -220,6 +235,7 @@ export default function ReservationsPage() {
             startDate: toEffectiveYMD(ev.startTime, false),
             endDate: toEffectiveYMD(ev.endTime, true),
             variant: 'accent', // 기본 테마색
+            raw: ev,
           }))
         );
       })
@@ -311,6 +327,31 @@ export default function ReservationsPage() {
     );
   }, [filter.sortOrder, listViewReservations]);
 
+  function getExternalEventsForDate(dateKey: string): ExternalEventSheetItem[] {
+    return externalEvents
+      .filter((event) => dateKey >= event.startDate && dateKey <= event.endDate)
+      .map((event) => ({
+        id: event.id,
+        title: event.title,
+        startTime: event.raw.startTime,
+        endTime: event.raw.endTime,
+        description: event.raw.description,
+        isAllDay: event.raw.isAllDay,
+      }));
+  }
+
+  function getExternalEventsSummary(dateKey: string) {
+    const events = getExternalEventsForDate(dateKey);
+    if (events.length === 0) return null;
+
+    const label =
+      events.length === 1
+        ? events[0].title
+        : `${events[0].title} 외 ${events.length - 1}건`;
+
+    return { label, events };
+  }
+
   return (
     <>
       <BrandHeader />
@@ -401,8 +442,8 @@ export default function ReservationsPage() {
                       <InformationalEventCard
                         key={ev.id}
                         title={ev.title}
-                        startTime={ev.startDate}
-                        endTime={ev.endDate}
+                        startTime={ev.raw.startTime}
+                        endTime={ev.raw.endTime}
                       />
                     ))}
 
@@ -493,7 +534,10 @@ export default function ReservationsPage() {
                 </div>
               ) : (
                 <div className="space-y-5 px-1">
-                  {groupedListView.map(([dateKey, items]) => (
+                  {groupedListView.map(([dateKey, items]) => {
+                    const eventSummary = getExternalEventsSummary(dateKey);
+
+                    return (
                     <div key={dateKey} className="mb-8 space-y-3">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
@@ -513,19 +557,23 @@ export default function ReservationsPage() {
                           )}
 
                           {/* 리스트 뷰 날짜 헤더 옆 행사 배지 */}
-                          {externalEvents.some(
-                            (ev) =>
-                              dateKey >= ev.startDate && dateKey <= ev.endDate
-                          ) && (
-                            <Badge className="border-none bg-blue-50 px-2 py-0.5 text-[12px]! text-blue-700">
-                              {
-                                externalEvents.find(
-                                  (ev) =>
-                                    dateKey >= ev.startDate &&
-                                    dateKey <= ev.endDate
-                                )?.title
+                          {eventSummary && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setActiveExternalEvents({
+                                  dateLabel: items[0].startTime
+                                    ? formatDateHeader(items[0].startTime)
+                                    : dateKey,
+                                  events: eventSummary.events,
+                                })
                               }
-                            </Badge>
+                              className="rounded-full transition-opacity hover:opacity-80"
+                            >
+                              <Badge className="border-none bg-blue-50 px-2 py-0.5 text-[12px]! text-blue-700">
+                                {eventSummary.label}
+                              </Badge>
+                            </button>
                           )}
                         </div>
                         <div className="flex items-center gap-2">
@@ -592,7 +640,7 @@ export default function ReservationsPage() {
                         ))}
                       </List>
                     </div>
-                  ))}
+                  )})}
                 </div>
               )}
             </div>
@@ -613,6 +661,15 @@ export default function ReservationsPage() {
         onClose={() => setShowFilter(false)}
         current={filter}
         onApply={(state) => setFilter(state)}
+      />
+
+      <ExternalEventsSheet
+        open={!!activeExternalEvents}
+        onOpenChange={(open) => {
+          if (!open) setActiveExternalEvents(null);
+        }}
+        dateLabel={activeExternalEvents?.dateLabel ?? ''}
+        events={activeExternalEvents?.events ?? []}
       />
     </>
   );

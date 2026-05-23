@@ -23,6 +23,10 @@ import {
   FilterSheet,
   type FilterState,
 } from '@/components/reservations/filter-sheet';
+import {
+  ExternalEventsSheet,
+  type ExternalEventSheetItem,
+} from '@/components/reservations/external-events-sheet';
 import { SessionData } from '@/lib/session';
 import { compareReservationByDayAndTime } from '@/lib/services/reservation-sorting';
 
@@ -35,6 +39,10 @@ type ExternalEventResponse = {
   endTime: string;
   isAllDay: boolean;
   description: string | null;
+};
+
+type ExternalCalendarEvent = CalendarEvent & {
+  raw: ExternalEventResponse;
 };
 
 function toYMD(dt: Date | string): string {
@@ -132,7 +140,9 @@ export function MyReservationsView({ user }: Props) {
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
   const [allReservations, setAllReservations] = useState<MyReservation[]>([]);
-  const [externalEvents, setExternalEvents] = useState<CalendarEvent[]>([]);
+  const [externalEvents, setExternalEvents] = useState<ExternalCalendarEvent[]>(
+    []
+  );
   const [placeTagMap, setPlaceTagMap] = useState<PlaceTagMap>({});
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterState>({
@@ -144,6 +154,10 @@ export function MyReservationsView({ user }: Props) {
   });
   const [showFilter, setShowFilter] = useState(false);
   const [activeRes, setActiveRes] = useState<MyReservation | null>(null);
+  const [activeExternalEvents, setActiveExternalEvents] = useState<{
+    dateLabel: string;
+    events: ExternalEventSheetItem[];
+  } | null>(null);
   const [now] = useState(() => new Date());
 
   // 마운트 시 전체 예약 + 장소 태그 맵 로드
@@ -182,8 +196,7 @@ export function MyReservationsView({ user }: Props) {
             startDate: toEffectiveYMD(ev.startTime, false),
             endDate: toEffectiveYMD(ev.endTime, true),
             variant: 'accent', // 기본 테마색
-            // 원본 데이터 보관 (isAllDay 추출용)
-            _raw: ev,
+            raw: ev,
           }))
         );
       })
@@ -258,6 +271,31 @@ export function MyReservationsView({ user }: Props) {
     }
     return Array.from(map.entries());
   }, [filtered]);
+
+  function getExternalEventsForDate(ymd: string): ExternalEventSheetItem[] {
+    return externalEvents
+      .filter((event) => ymd >= event.startDate && ymd <= event.endDate)
+      .map((event) => ({
+        id: event.id,
+        title: event.title,
+        startTime: event.raw.startTime,
+        endTime: event.raw.endTime,
+        description: event.raw.description,
+        isAllDay: event.raw.isAllDay,
+      }));
+  }
+
+  function getExternalEventsSummary(ymd: string) {
+    const events = getExternalEventsForDate(ymd);
+    if (events.length === 0) return null;
+
+    const label =
+      events.length === 1
+        ? events[0].title
+        : `${events[0].title} 외 ${events.length - 1}건`;
+
+    return { label, events };
+  }
 
   const isFilterActive =
     filter.floorId !== null ||
@@ -335,13 +373,13 @@ export function MyReservationsView({ user }: Props) {
 
             <div className="bg-card overflow-hidden rounded-xl shadow-(--shadow-1)">
               {/* 행사 안내 카드 (관리자 페이지와 동일) */}
-              {dailyEvents.map((ev: any) => (
+              {dailyEvents.map((ev) => (
                 <InformationalEventCard
                   key={ev.id}
                   title={ev.title}
-                  startTime={ev._raw?.startTime || ev.startDate}
-                  endTime={ev._raw?.endTime || ev.endDate}
-                  isAllDay={ev._raw?.isAllDay}
+                  startTime={ev.raw.startTime}
+                  endTime={ev.raw.endTime}
+                  isAllDay={ev.raw.isAllDay}
                 />
               ))}
 
@@ -372,7 +410,10 @@ export function MyReservationsView({ user }: Props) {
           <List emptyMessage="예약 내역이 없어요" />
         ) : (
           <div className="flex flex-col gap-5">
-            {grouped.map(([ymd, items]) => (
+            {grouped.map(([ymd, items]) => {
+              const eventSummary = getExternalEventsSummary(ymd);
+
+              return (
               <div key={ymd} className="space-y-3">
                 <div className="flex items-center justify-between gap-2 px-5">
                   <div className="flex items-center gap-2">
@@ -380,17 +421,21 @@ export function MyReservationsView({ user }: Props) {
                       {formatGroupHeader(ymd)}
                     </h3>
 
-                    {/* 리스트 뷰 날짜 헤더 옆 행사 배지 (관리자 페이지와 동일) */}
-                    {externalEvents.some(
-                      (ev) => ymd >= ev.startDate && ymd <= ev.endDate
-                    ) && (
-                      <Badge className="border-none bg-blue-50 px-2 py-0.5 text-[12px]! text-blue-700">
-                        {
-                          externalEvents.find(
-                            (ev) => ymd >= ev.startDate && ymd <= ev.endDate
-                          )?.title
+                    {eventSummary && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setActiveExternalEvents({
+                            dateLabel: formatGroupHeader(ymd),
+                            events: eventSummary.events,
+                          })
                         }
-                      </Badge>
+                        className="rounded-full transition-opacity hover:opacity-80"
+                      >
+                        <Badge className="border-none bg-blue-50 px-2 py-0.5 text-[12px]! text-blue-700">
+                          {eventSummary.label}
+                        </Badge>
+                      </button>
                     )}
                   </div>
                   <span className="text-muted-foreground text-[13px]">
@@ -411,7 +456,7 @@ export function MyReservationsView({ user }: Props) {
                   ))}
                 </List>
               </div>
-            ))}
+            )})}
           </div>
         )}
       </div>
@@ -439,6 +484,15 @@ export function MyReservationsView({ user }: Props) {
         onClose={() => setShowFilter(false)}
         current={filter}
         onApply={(f) => setFilter(f)}
+      />
+
+      <ExternalEventsSheet
+        open={!!activeExternalEvents}
+        onOpenChange={(open) => {
+          if (!open) setActiveExternalEvents(null);
+        }}
+        dateLabel={activeExternalEvents?.dateLabel ?? ''}
+        events={activeExternalEvents?.events ?? []}
       />
     </>
   );
