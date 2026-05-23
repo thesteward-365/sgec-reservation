@@ -156,6 +156,19 @@ export function ReserveView({ userName }: ReserveViewProps) {
   const [draftFloorId, setDraftFloorId] = useState<number | null>(null);
   const [draftTagId, setDraftTagId] = useState<number | null>(null);
 
+  const refreshCounts = useCallback(() => {
+    const [sy, sm, sd] = weekStartStr.split('-').map(Number);
+    const weekEndDate = new Date(sy, sm - 1, sd + 6);
+    const params = new URLSearchParams();
+    params.set('startDate', weekStartStr);
+    params.set('endDate', formatLocalDate(weekEndDate));
+
+    fetch(`/api/reservations/counts?${params}`, { cache: 'no-store' })
+      .then((r) => r.json())
+      .then(setCountsMap)
+      .catch(() => {});
+  }, [weekStartStr]);
+
   // 정적 데이터 — 마운트 시 1회
   useEffect(() => {
     fetch('/api/floors')
@@ -196,16 +209,26 @@ export function ReserveView({ userName }: ReserveViewProps) {
 
   // 예약 건수 — 주 변경 시에만
   useEffect(() => {
-    const [sy, sm, sd] = weekStartStr.split('-').map(Number);
-    const weekEndDate = new Date(sy, sm - 1, sd + 6);
-    const params = new URLSearchParams();
-    params.set('startDate', weekStartStr);
-    params.set('endDate', formatLocalDate(weekEndDate));
-    fetch(`/api/reservations/counts?${params}`)
-      .then((r) => r.json())
-      .then(setCountsMap)
-      .catch(() => {});
-  }, [weekStartStr]);
+    refreshCounts();
+  }, [refreshCounts]);
+
+  useEffect(() => {
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        refreshCounts();
+      }
+    }
+
+    window.addEventListener('focus', refreshCounts);
+    window.addEventListener('pageshow', refreshCounts);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', refreshCounts);
+      window.removeEventListener('pageshow', refreshCounts);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [refreshCounts]);
 
   function pushUrl(date: Date, floorId: number | null, tagId: number | null) {
     const params = new URLSearchParams();
