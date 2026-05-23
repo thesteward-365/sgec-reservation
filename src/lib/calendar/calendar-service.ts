@@ -121,7 +121,7 @@ export type CalendarSyncRunDetail = CalendarSyncRunSummary & {
 
 function buildEventBody(reservation: ReservationRow): calendar_v3.Schema$Event {
   return {
-    summary: `${reservation.placeName}•${reservation.purpose}`,
+    summary: `${reservation.purpose}`,
     description: `예약자: ${reservation.userName}\n목적: ${reservation.purpose}\n장소: ${reservation.placeName}`,
     location: reservation.placeName,
     start: {
