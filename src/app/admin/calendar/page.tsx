@@ -51,7 +51,9 @@ type SyncRunSummary = {
 };
 
 function formatScopeStatus(
-  status: SyncRunSummary['reservationSyncStatus'] | SyncRunSummary['eventSyncStatus']
+  status:
+    | SyncRunSummary['reservationSyncStatus']
+    | SyncRunSummary['eventSyncStatus']
 ) {
   switch (status) {
     case 'success':
@@ -320,16 +322,23 @@ function CalendarPageContent() {
                 <p className="text-caption text-muted-foreground px-1 font-bold">
                   Google 계정
                 </p>
-                
+
                 {status.needsReauth && (
-                  <div className="mb-4 flex items-start gap-3 rounded-2xl bg-red-50 p-4 border border-red-100 shadow-sm">
+                  <div className="mb-4 flex items-start gap-3 rounded-2xl border border-red-100 bg-red-50 p-4 shadow-sm">
                     <ExclamationCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
                     <div className="flex-1">
-                      <p className="text-[14px] font-bold text-red-900 leading-tight">연동 정보가 만료되었습니다</p>
-                      <p className="text-[13px] text-red-700 mt-1 leading-relaxed">
-                        보안 정책이나 비밀번호 변경으로 인해 Google 연결이 끊어졌습니다. 정상적인 동기화를 위해 다시 로그인이 필요합니다.
+                      <p className="text-[14px] leading-tight font-bold text-red-900">
+                        연동 정보가 만료되었습니다
                       </p>
-                      <a href="/api/auth/google" className="mt-3 inline-block px-4 py-1.5 bg-red-600 text-white text-[13px] font-bold rounded-full hover:bg-red-700 transition-colors shadow-sm">
+                      <p className="mt-1 text-[13px] leading-relaxed text-red-700">
+                        보안 정책이나 비밀번호 변경으로 인해 Google 연결이
+                        끊어졌습니다. 정상적인 동기화를 위해 다시 로그인이
+                        필요합니다.
+                      </p>
+                      <a
+                        href="/api/auth/google"
+                        className="mt-3 inline-block rounded-full bg-red-600 px-4 py-1.5 text-[13px] font-bold text-white shadow-sm transition-colors hover:bg-red-700"
+                      >
                         다시 로그인하기
                       </a>
                     </div>
@@ -518,7 +527,7 @@ function CalendarPageContent() {
                         <ArrowPathIcon
                           className={`mr-1 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`}
                         />
-                        {isSyncing ? '동기화중' : '동가화'}
+                        {isSyncing ? '동기화중' : '동기화'}
                       </Button>
                     </div>
                   </Card>
@@ -540,27 +549,30 @@ function CalendarPageContent() {
                             href={`/admin/calendar/history/${run.id}`}
                             className="text-foreground block px-5 py-4"
                           >
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2">
-                                <p className="text-body text-foreground min-w-0 truncate font-bold">
-                                  {formatRunDate(run.startedAt)}
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <p className="text-body text-foreground min-w-0 truncate font-bold">
+                                    {formatRunDate(run.startedAt)}
+                                  </p>
+                                  {badge ? (
+                                    <Badge
+                                      color={badge.color}
+                                      className="shrink-0"
+                                    >
+                                      {badge.label}
+                                    </Badge>
+                                  ) : null}
+                                </div>
+                                <p className="text-caption text-muted-foreground mt-1">
+                                  {formatLastSync(run.startedAt)}
                                 </p>
-                                {badge ? (
-                                  <Badge color={badge.color} className="shrink-0">
-                                    {badge.label}
-                                  </Badge>
-                                ) : null}
+                                <p className="text-caption text-muted-foreground mt-1">
+                                  {`예약 ${formatScopeStatus(run.reservationSyncStatus)} · 행사 ${formatScopeStatus(run.eventSyncStatus)}`}
+                                </p>
                               </div>
-                              <p className="text-caption text-muted-foreground mt-1">
-                                {formatLastSync(run.startedAt)}
-                              </p>
-                              <p className="text-caption text-muted-foreground mt-1">
-                                {`예약 ${formatScopeStatus(run.reservationSyncStatus)} · 행사 ${formatScopeStatus(run.eventSyncStatus)}`}
-                              </p>
+                              <ChevronRightIcon className="text-muted-foreground size-4 shrink-0" />
                             </div>
-                            <ChevronRightIcon className="text-muted-foreground size-4 shrink-0" />
-                          </div>
                           </Link>
                         </ListItem>
                       );
