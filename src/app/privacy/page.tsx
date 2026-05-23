@@ -12,7 +12,7 @@ export default function PrivacyPage() {
       <header className="sticky top-0 z-10 flex h-14 items-center border-b bg-white px-4">
         <Link
           href="/login"
-          className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-sm font-medium"
         >
           <ChevronLeftIcon className="h-5 w-5" />
           <span>뒤로가기</span>
@@ -21,7 +21,9 @@ export default function PrivacyPage() {
       </header>
 
       <main className="flex-1 overflow-auto">
-        <style dangerouslySetInnerHTML={{ __html: `
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
           #output-content { margin: 0; word-wrap: break-word; font-size: 14px; font-weight: normal; font-style: normal; font-stretch: normal; line-height: 1.71; letter-spacing: normal; text-align: justify; }
           #output-content > p { margin: 0; word-wrap: break-word; font-size: 14px; font-weight: normal; font-style: normal; font-stretch: normal; line-height: 1.71; letter-spacing: normal; }
           #output-content > table { width: 100%; max-width: 100%; font-size: 14px; border: 1px solid #333; border-collapse: collapse; border-spacing: 0; }
@@ -45,11 +47,14 @@ export default function PrivacyPage() {
           #output-content ol ol ol { counter-reset: item; list-style-type: none; }
           #output-content ol ol ol > li { counter-increment: item; }
           #output-content ol ol ol > li::before { content: counter(item) ") "; }
-        `}} />
-        <div 
-          id="output-content" 
+        `,
+          }}
+        />
+        <div
+          id="output-content"
           className="mx-auto max-w-3xl px-6 pt-10 pb-20 sm:px-10"
-          dangerouslySetInnerHTML={{ __html: `
+          dangerouslySetInnerHTML={{
+            __html: `
             <p class="title" style="text-align: center; font-size: 20px; font-weight:700; padding: 20px 0px 30px 0px; margin: 0px;">개인정보처리방침</p>
             <p class="provision_title"><strong>제1조(목적)</strong></p>
             <p><strong>샘깊은교회</strong>(이하 ‘회사'라고 함)는 회사가 제공하고자 하는 서비스(이하 ‘회사 서비스’)를 이용하는 개인(이하 ‘이용자’ 또는 ‘개인’)의 정보(이하 ‘개인정보’)를 보호하기 위해, 개인정보보호법, 정보통신망 이용촉진 및 정보보호 등에 관한 법률(이하 '정보통신망법') 등 관련 법령을 준수하고, 서비스 이용자의 개인정보 보호 관련한 고충을 신속하고 원활하게 처리할 수 있도록 하기 위하여 다음과 같이 개인정보처리방침(이하 ‘ 본 방침’)을 수립합니다.</p>
@@ -248,22 +253,12 @@ export default function PrivacyPage() {
             <p class="provision_title"><strong>제27조(회사의 개인정보 보호 책임자 지정)</strong></p>
             <ol>
               <li>회사는 이용자의 개인정보를 보호하고 개인정보와 관련한 불만을 처리하기 위하여 아래와 같이 관련 부서 및 개인정보 보호 책임자를 지정하고 있습니다.
-                <ol>
-                  <li>개인정보 보호 책임자
-                    <ol>
+                <ul> 
                       <li>성명: <strong>손창현</strong></li>
                       <li>직책: <strong>목사</strong></li>
-                      <li>전화번호: <strong>010-8554-7384</strong></li>
-                    </ol>
-                  </li>
-                  <li>개인정보 보호 담당자
-                    <ol>
-                      <li>담당부서: <strong>샘깊은교회</strong></li>
-                      <li>담당자명: <strong>정연희</strong></li>
-                      <li>전화번호: <strong>010-7190-7935</strong></li>
-                    </ol>
-                  </li>
-                </ol>
+                      <li>이메일: <strong>webmaster@sgec.or.kr</strong></li>
+                    
+                </ul>
               </li>
             </ol>
             <br>
@@ -286,7 +281,8 @@ export default function PrivacyPage() {
             </ol>
             <p><strong><br>부칙</strong></p>
             <p>제1조 본 방침은 <strong>2026.05.16.</strong>부터 시행됩니다.</p>
-          `}} 
+          `,
+          }}
         />
       </main>
     </div>
