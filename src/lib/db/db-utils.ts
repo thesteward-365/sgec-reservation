@@ -1,4 +1,9 @@
 /**
+ * PostgreSQL error codes
+ */
+export const PG_UNIQUE_VIOLATION = '23505';
+
+/**
  * PostgreSQL timestamp 컬럼에 저장할 Date 값을 정규화합니다.
  */
 export function toDbDate(date: Date): Date {

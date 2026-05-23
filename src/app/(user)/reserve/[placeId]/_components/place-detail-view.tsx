@@ -157,15 +157,15 @@ export function PlaceDetailView({
     };
   });
   const [purpose, setPurpose] = useState(initialReservation?.purpose ?? '');
-  const [frequentPurposes] = useState<string[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const saved = window.localStorage.getItem('frequent-purposes');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [frequentPurposes, setFrequentPurposes] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetch('/api/purposes')
+      .then((r) => r.json())
+      .then((data) => setFrequentPurposes(data.purposes || []))
+      .catch(() => {});
+  }, []);
+
   const [isPending, startTransition] = useTransition();
   const purposeRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);

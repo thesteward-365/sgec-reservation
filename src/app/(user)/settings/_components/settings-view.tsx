@@ -32,17 +32,7 @@ type Props = {
 
 type AccountForm = { name: string; phoneNumber: string };
 
-const STORAGE_PURPOSES = 'frequent-purposes';
 const MAX_PURPOSE_COUNT = 3;
-
-function getStoredPurposes() {
-  try {
-    const saved = localStorage.getItem(STORAGE_PURPOSES);
-    return saved ? (JSON.parse(saved) as string[]) : [];
-  } catch {
-    return [];
-  }
-}
 
 export function SettingsView({
   name: initialName,
@@ -68,9 +58,17 @@ export function SettingsView({
   const [isSavingPurpose, setIsSavingPurpose] = useState(false);
   const [isSavingAccount, setIsSavingAccount] = useState(false);
 
-  function savePurposes(nextPurposes: string[]) {
-    setPurposes(nextPurposes);
-    localStorage.setItem(STORAGE_PURPOSES, JSON.stringify(nextPurposes));
+  async function fetchPurposes() {
+    setIsLoadingPurposes(true);
+    try {
+      const response = await fetch('/api/purposes');
+      const data = (await response.json()) as { purposes: string[] };
+      setPurposes(data.purposes || []);
+    } catch {
+      toast.error('목적을 불러오는데 실패했어요.');
+    } finally {
+      setIsLoadingPurposes(false);
+    }
   }
 
   function handleOpenAccountDialog() {
@@ -78,12 +76,23 @@ export function SettingsView({
     setShowAccountDialog(true);
   }
 
-  function handleRemovePurpose(targetPurpose: string) {
-    savePurposes(purposes.filter((purpose) => purpose !== targetPurpose));
-    toast.success('목적을 삭제했어요.');
+  async function handleRemovePurpose(targetPurpose: string) {
+    try {
+      const response = await fetch(
+        `/api/purposes?purpose=${encodeURIComponent(targetPurpose)}`,
+        {
+          method: 'DELETE',
+        }
+      );
+      if (!response.ok) throw new Error();
+      setPurposes(purposes.filter((purpose) => purpose !== targetPurpose));
+      toast.success('목적을 삭제했어요.');
+    } catch {
+      toast.error('목적 삭제에 실패했어요.');
+    }
   }
 
-  function handleSavePurpose() {
+  async function handleSavePurpose() {
     const trimmedPurpose = newPurpose.trim();
     if (!trimmedPurpose) {
       toast.error('목적을 입력해주세요.');
@@ -101,16 +110,52 @@ export function SettingsView({
     }
 
     setIsSavingPurpose(true);
-    savePurposes([...purposes, trimmedPurpose]);
-    setNewPurpose('');
-    setShowPurposeDialog(false);
-    setIsSavingPurpose(false);
-    toast.success('목적을 추가했어요.');
+    try {
+      const response = await fetch('/api/purposes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ purpose: trimmedPurpose }),
+      });
+
+      const data = (await response.json()) as { error?: string };
+
+      if (!response.ok) {
+        toast.error(data.error ?? '목적 추가에 실패했어요.');
+        return;
+      }
+
+      setPurposes([...purposes, trimmedPurpose]);
+      setNewPurpose('');
+      setShowPurposeDialog(false);
+      toast.success('목적을 추가했어요.');
+    } catch {
+      toast.error('목적 추가에 실패했어요.');
+    } finally {
+      setIsSavingPurpose(false);
+    }
   }
 
   useEffect(() => {
-    setPurposes(getStoredPurposes());
-    setIsLoadingPurposes(false);
+    async function migrateAndFetch() {
+      const saved = localStorage.getItem('frequent-purposes');
+      if (saved) {
+        try {
+          const localPurposes = JSON.parse(saved) as string[];
+          for (const p of localPurposes) {
+            await fetch('/api/purposes', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ purpose: p }),
+            });
+          }
+          localStorage.removeItem('frequent-purposes');
+        } catch {
+          // Ignore migration errors
+        }
+      }
+      fetchPurposes();
+    }
+    migrateAndFetch();
   }, []);
 
   async function handleSaveAccount() {
