@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, reservations, toDbDate, fromDbDate } from '@/lib/db';
-import { and, lt, gt } from 'drizzle-orm';
+import { and, eq, lt, gt } from 'drizzle-orm';
 
 function formatLocalDate(date: Date): string {
   const y = date.getFullYear();
@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
       and(
         lt(reservations.startTime, toDbDate(rangeEnd) as any),
         gt(reservations.endTime, toDbDate(rangeStart) as any),
+        eq(reservations.status, 'active')
       )
     );
 
