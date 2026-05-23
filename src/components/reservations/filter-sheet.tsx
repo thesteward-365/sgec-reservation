@@ -60,7 +60,7 @@ export function FilterSheet({ open, onClose, current, onApply }: Props) {
     setDraft({
       floorId: null,
       tagId: null,
-      sortOrder: 'asc',
+      sortOrder: 'desc',
       includeCancelled: false,
       onlyMine: false,
     });
