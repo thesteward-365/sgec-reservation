@@ -125,10 +125,13 @@ export function MyReservationsView({ user }: Props) {
       .finally(() => setLoading(false));
   }, []);
 
+  const viewMonthKey = useMemo(() => {
+    return `${viewMonth.getFullYear()}-${String(viewMonth.getMonth() + 1).padStart(2, '0')}`;
+  }, [viewMonth]);
+
   // 외부 행사 로딩 (월별)
   useEffect(() => {
-    const monthStr = `${viewMonth.getFullYear()}-${String(viewMonth.getMonth() + 1).padStart(2, '0')}`;
-    fetch(`/api/external-events?month=${monthStr}`)
+    fetch(`/api/external-events?month=${viewMonthKey}`)
       .then((r) => r.json())
       .then((data: ExternalEventResponse[]) => {
         setExternalEvents(
@@ -146,7 +149,7 @@ export function MyReservationsView({ user }: Props) {
         );
       })
       .catch(console.error);
-  }, [viewMonth]);
+  }, [viewMonthKey]);
 
   // 예약 취소 후 목록 새로고침
   function handleCancelled() {
@@ -230,25 +233,13 @@ export function MyReservationsView({ user }: Props) {
       }));
   }
 
-  function getExternalEventsSummary(ymd: string) {
-    const events = getExternalEventsForDate(ymd);
-    if (events.length === 0) return null;
-
-    const label =
-      events.length === 1
-        ? events[0].title
-        : `${events[0].title} 외 ${events.length - 1}건`;
-
-    return { label, events };
-  }
-
   const selectedDateKey = toYMD(selectedDate);
   const selectedDateLabel = selectedDate.toLocaleDateString('ko-KR', {
     month: 'long',
     day: 'numeric',
     weekday: 'short',
   });
-  const selectedDateEventSummary = getExternalEventsSummary(selectedDateKey);
+  const selectedDateEvents = getExternalEventsForDate(selectedDateKey);
 
   const isFilterActive =
     filter.floorId !== null || filter.tagId !== null || filter.onlyMine;
@@ -315,7 +306,10 @@ export function MyReservationsView({ user }: Props) {
                 viewMonth={viewMonth}
                 onSelectDate={(d) => {
                   setSelectedDate(d);
-                  setViewMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+                  const nextMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+                  if (nextMonth.getTime() !== viewMonth.getTime()) {
+                    setViewMonth(nextMonth);
+                  }
                 }}
                 onChangeMonth={setViewMonth}
                 indicators={indicatorDates}
@@ -330,19 +324,29 @@ export function MyReservationsView({ user }: Props) {
                   {selectedDateLabel}
                 </h3>
 
-                {selectedDateEventSummary && (
+                {selectedDateEvents.length > 0 && (
                   <button
                     type="button"
                     onClick={() =>
                       setActiveExternalEvents({
                         dateLabel: selectedDateLabel,
-                        events: selectedDateEventSummary.events,
+                        events: selectedDateEvents,
                       })
                     }
                     className="min-w-0 rounded-full transition-opacity hover:opacity-80"
                   >
-                    <Badge className="block max-w-full truncate border-none bg-blue-50 px-2 py-0.5 text-[12px]! text-blue-700">
-                      {selectedDateEventSummary.label}
+                    <Badge
+                      color="violet"
+                      className="flex max-w-full items-center gap-1 border-none px-2 py-0.5 text-[12px]! font-bold"
+                    >
+                      <span className="truncate">
+                        {selectedDateEvents[0].title}
+                      </span>
+                      {selectedDateEvents.length > 1 && (
+                        <span className="shrink-0">
+                          외 {selectedDateEvents.length - 1}건
+                        </span>
+                      )}
                     </Badge>
                   </button>
                 )}
@@ -383,7 +387,7 @@ export function MyReservationsView({ user }: Props) {
         ) : (
           <div className="flex flex-col gap-5">
             {grouped.map(([ymd, items]) => {
-              const eventSummary = getExternalEventsSummary(ymd);
+              const events = getExternalEventsForDate(ymd);
 
               return (
                 <div key={ymd} className="space-y-3">
@@ -393,19 +397,27 @@ export function MyReservationsView({ user }: Props) {
                         {formatGroupHeader(ymd)}
                       </h3>
 
-                      {eventSummary && (
+                      {events.length > 0 && (
                         <button
                           type="button"
                           onClick={() =>
                             setActiveExternalEvents({
                               dateLabel: formatGroupHeader(ymd),
-                              events: eventSummary.events,
+                              events: events,
                             })
                           }
                           className="min-w-0 rounded-full transition-opacity hover:opacity-80"
                         >
-                          <Badge className="block max-w-full truncate border-none bg-blue-50 px-2 py-0.5 text-[12px]! text-blue-700">
-                            {eventSummary.label}
+                          <Badge
+                            color="violet"
+                            className="flex max-w-full items-center gap-1 border-none px-2 py-0.5 text-[12px]! font-bold"
+                          >
+                            <span className="truncate">{events[0].title}</span>
+                            {events.length > 1 && (
+                              <span className="shrink-0">
+                                외 {events.length - 1}건
+                              </span>
+                            )}
                           </Badge>
                         </button>
                       )}
