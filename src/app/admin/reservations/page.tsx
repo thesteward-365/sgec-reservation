@@ -301,7 +301,6 @@ export default function ReservationsPage() {
   const activeFilter =
     filter.floorId !== null ||
     filter.tagId !== null ||
-    filter.sortOrder !== 'desc' ||
     filter.onlyMine;
 
   const listViewReservations = filteredReservations.filter((reservation) => {
@@ -372,17 +371,35 @@ export default function ReservationsPage() {
       </div>
       <main className="flex-1 pb-10">
         <div className="space-y-4 px-5">
-          <div className="flex flex-wrap gap-1.5">
-            {VIEW_CHIPS.map((item) => (
-              <Chip
-                key={item.value}
-                variant={view === item.value ? 'active' : 'inactive'}
-                size="md"
-                onClick={() => setView(item.value)}
+          <div className="flex items-center justify-between">
+            <div className="flex gap-1.5">
+              {VIEW_CHIPS.map((item) => (
+                <Chip
+                  key={item.value}
+                  variant={view === item.value ? 'active' : 'inactive'}
+                  size="md"
+                  onClick={() => setView(item.value)}
+                >
+                  {item.label}
+                </Chip>
+              ))}
+            </div>
+
+            {view === 'list' && (
+              <select
+                value={filter.sortOrder}
+                onChange={(e) =>
+                  setFilter((f) => ({
+                    ...f,
+                    sortOrder: e.target.value as 'asc' | 'desc',
+                  }))
+                }
+                className="text-foreground bg-transparent text-[14px] font-medium outline-none cursor-pointer"
               >
-                {item.label}
-              </Chip>
-            ))}
+                <option value="desc">최신순</option>
+                <option value="asc">오래된순</option>
+              </select>
+            )}
           </div>
 
           {view === 'calendar' ? (
