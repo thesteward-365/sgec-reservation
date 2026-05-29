@@ -18,10 +18,15 @@ export interface Reservation {
   endTime: string | null;
   googleEventUrl?: string | null;
   googleSync?: {
-    status: 'synced' | 'pending' | 'missing_event';
+    status: 'synced' | 'pending' | 'failed';
     label: string;
     lastSyncedAt: string | null;
+    lastAttemptedAt?: string | null;
     runId: string | null;
+    errorCode?: string | null;
+    errorLabel?: string | null;
+    errorMessage?: string | null;
+    retryable?: boolean;
   } | null;
 }
 

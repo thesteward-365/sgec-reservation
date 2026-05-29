@@ -12,6 +12,7 @@ import {
   syncAll,
   saveCalendarIds,
   listRecentSyncRuns,
+  getPendingAndFailedSyncCounts,
 } from '@/lib/calendar/calendar-service';
 import { db } from '@/lib/db';
 import { calendarSettings } from '@/lib/db';
@@ -47,6 +48,15 @@ export async function GET() {
   }
 
   const [lastRun] = await listRecentSyncRuns(1);
+  
+  // 실패/대기 상태 요약 조회
+  let pendingCount = 0;
+  let failedCount = 0;
+  if (connected && settings?.calendarId) {
+    const counts = await getPendingAndFailedSyncCounts();
+    pendingCount = counts.pendingCount;
+    failedCount = counts.failedCount;
+  }
 
   return NextResponse.json({
     connected,
@@ -55,6 +65,8 @@ export async function GET() {
     calendarId: settings?.calendarId ?? null,
     eventCalendarId: settings?.eventCalendarId ?? null,
     lastSync: lastRun?.startedAt ?? null,
+    pendingCount,
+    failedCount,
   });
 }
 
