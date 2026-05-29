@@ -31,6 +31,22 @@ type SyncCalendarStatus = 'success' | 'failed' | 'skipped';
 type SyncTrigger = 'manual' | 'system';
 type SyncCategory = 'reservation' | 'event';
 type SyncAction = 'created' | 'updated' | 'cancelled';
+export type CalendarSyncErrorCode =
+  | 'connection_required'
+  | 'calendar_not_configured'
+  | 'permission_denied'
+  | 'token_error'
+  | 'rate_limited'
+  | 'network_error'
+  | 'google_api_error'
+  | 'unknown';
+type CalendarSyncErrorInfo = {
+  code: CalendarSyncErrorCode;
+  label: string;
+  message: string;
+  detail: string;
+  retryable: boolean;
+};
 type ExternalEventRow = {
   googleEventId: string;
   title: string;
@@ -161,6 +177,11 @@ function formatError(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
 
+function getSyncErrorCode(error: unknown) {
+  if (typeof error !== 'object' || error === null) return undefined;
+  return (error as { syncErrorCode?: CalendarSyncErrorCode }).syncErrorCode;
+}
+
 function getErrorStatus(error: unknown) {
   if (typeof error !== 'object' || error === null) return undefined;
   const withStatus = error as {
@@ -169,6 +190,112 @@ function getErrorStatus(error: unknown) {
     status?: number;
   };
   return withStatus.code ?? withStatus.response?.status ?? withStatus.status;
+}
+
+function makeCalendarSyncError(
+  message: string,
+  code: CalendarSyncErrorCode
+) {
+  return Object.assign(new Error(message), { syncErrorCode: code });
+}
+
+export function classifyCalendarSyncError(
+  error: unknown
+): CalendarSyncErrorInfo {
+  const detail = formatError(error);
+  const explicitCode = getSyncErrorCode(error);
+  const status = getErrorStatus(error);
+  const numericStatus =
+    typeof status === 'number'
+      ? status
+      : typeof status === 'string' && /^\d+$/.test(status)
+        ? Number(status)
+        : undefined;
+  const lowerDetail = detail.toLowerCase();
+
+  if (explicitCode === 'connection_required') {
+    return {
+      code: 'connection_required',
+      label: '연결 필요',
+      message: 'Google Calendar 연결이 필요합니다. 관리자 설정에서 Google 계정을 다시 연결해주세요.',
+      detail,
+      retryable: false,
+    };
+  }
+
+  if (explicitCode === 'calendar_not_configured') {
+    return {
+      code: 'calendar_not_configured',
+      label: '캘린더 설정 오류',
+      message: '예약 캘린더가 선택되지 않았습니다. 관리자 설정에서 예약 캘린더를 저장해주세요.',
+      detail,
+      retryable: false,
+    };
+  }
+
+  if (numericStatus === 401 || lowerDetail.includes('invalid_grant')) {
+    return {
+      code: 'token_error',
+      label: '토큰 갱신 실패',
+      message: 'Google 인증 정보가 만료되었거나 갱신에 실패했습니다. Google 계정을 다시 연결해주세요.',
+      detail,
+      retryable: false,
+    };
+  }
+
+  if (numericStatus === 403) {
+    return {
+      code: 'permission_denied',
+      label: '권한 오류',
+      message: '연결된 Google 계정에 캘린더 수정 권한이 없습니다. 캘린더 권한을 확인해주세요.',
+      detail,
+      retryable: false,
+    };
+  }
+
+  if (numericStatus === 429) {
+    return {
+      code: 'rate_limited',
+      label: 'Google API 제한',
+      message: 'Google API 요청 한도에 도달했습니다. 잠시 후 다시 동기화해주세요.',
+      detail,
+      retryable: true,
+    };
+  }
+
+  if (
+    lowerDetail.includes('network') ||
+    lowerDetail.includes('timeout') ||
+    lowerDetail.includes('econnreset') ||
+    lowerDetail.includes('enotfound') ||
+    lowerDetail.includes('etimedout')
+  ) {
+    return {
+      code: 'network_error',
+      label: '네트워크 오류',
+      message: 'Google Calendar와 통신하는 중 네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+      detail,
+      retryable: true,
+    };
+  }
+
+  if (numericStatus && numericStatus >= 500) {
+    return {
+      code: 'google_api_error',
+      label: 'Google API 오류',
+      message: 'Google Calendar API에서 일시적인 오류가 발생했습니다. 잠시 후 다시 동기화해주세요.',
+      detail,
+      retryable: true,
+    };
+  }
+
+  return {
+    code: 'unknown',
+    label: '알 수 없는 오류',
+    message: 'Google Calendar 동기화 중 알 수 없는 오류가 발생했습니다. 상세 이력을 확인해주세요.',
+    detail,
+    retryable: true,
+  };
 }
 
 function buildReservationPayload(row: ReservationRow) {
@@ -462,8 +589,18 @@ export async function syncReservation(
   try {
     const calendar = await getCalendarClient();
     const settings = await getCalendarSettings();
-    if (!calendar || !settings?.calendarId) {
-      throw new Error('Google Calendar connection not configured');
+    if (!calendar) {
+      throw makeCalendarSyncError(
+        'Google Calendar connection not configured',
+        'connection_required'
+      );
+    }
+
+    if (!settings?.calendarId) {
+      throw makeCalendarSyncError(
+        'Reservation calendar is not configured',
+        'calendar_not_configured'
+      );
     }
 
     let eventId = row.googleEventId;
@@ -549,7 +686,8 @@ export async function syncReservation(
       payload,
     };
   } catch (error) {
-    const message = `예약 #${row.id} 동기화 실패: ${formatError(error)}`;
+    const syncError = classifyCalendarSyncError(error);
+    const message = `예약 #${row.id} 동기화 실패: ${syncError.message}`;
     await logSync('error', message, runId);
     return {
       category: 'reservation',
@@ -558,7 +696,10 @@ export async function syncReservation(
       reservationId: row.id,
       externalEventId: row.googleEventId ?? undefined,
       title,
-      payload: buildReservationPayload(row as ReservationRow),
+      payload: {
+        ...buildReservationPayload(row as ReservationRow),
+        syncError,
+      },
       errorMessage: message,
     };
   }
@@ -981,7 +1122,8 @@ export async function syncReservationWithRun(
     const item = await syncReservation(reservationId, runId);
     addReservationSyncItemToScope(scope, item);
   } catch (error) {
-    const message = `예약 #${reservationId} 동기화 실행 실패: ${formatError(error)}`;
+    const syncError = classifyCalendarSyncError(error);
+    const message = `예약 #${reservationId} 동기화 실행 실패: ${syncError.message}`;
     scope.counts.failed += 1;
     scope.errors.push(message);
     scope.items.push({
@@ -990,6 +1132,7 @@ export async function syncReservationWithRun(
       status: 'failed',
       reservationId,
       title: `예약 #${reservationId}`,
+      payload: { syncError },
       errorMessage: message,
     });
     await logSync('error', message, runId);
@@ -1169,4 +1312,69 @@ export async function saveCalendarIds(
     .update(calendarSettings)
     .set({ calendarId, eventCalendarId })
     .where(eq(calendarSettings.id, settings.id));
+}
+
+export async function getPendingAndFailedSyncCounts(): Promise<{
+  pendingCount: number;
+  failedCount: number;
+}> {
+  const candidateRows = await db
+    .select({
+      id: reservations.id,
+      status: reservations.status,
+      googleEventId: reservations.googleEventId,
+      updatedAt: reservations.updatedAt,
+    })
+    .from(reservations)
+    .where(
+      or(
+        and(
+          eq(reservations.status, 'active'),
+          gte(reservations.endTime, sql`now()`)
+        ),
+        and(
+          eq(reservations.status, 'cancelled'),
+          isNotNull(reservations.googleEventId)
+        )
+      )
+    );
+
+  let pendingCount = 0;
+  let failedCount = 0;
+
+  for (const row of candidateRows) {
+    let isOutdated = false;
+
+    if (row.status === 'cancelled') {
+      isOutdated = true;
+    } else {
+      const lastSuccess = await getLatestSyncItemForReservation(row.id);
+      isOutdated =
+        !row.googleEventId ||
+        !lastSuccess ||
+        row.updatedAt.getTime() > lastSuccess.processedAt.getTime();
+    }
+
+    if (isOutdated) {
+      const [absoluteLatest] = await db
+        .select({ status: calendarSyncItems.status })
+        .from(calendarSyncItems)
+        .where(
+          and(
+            eq(calendarSyncItems.reservationId, row.id),
+            eq(calendarSyncItems.category, 'reservation')
+          )
+        )
+        .orderBy(desc(calendarSyncItems.processedAt))
+        .limit(1);
+
+      if (absoluteLatest?.status === 'failed') {
+        failedCount++;
+      } else {
+        pendingCount++;
+      }
+    }
+  }
+
+  return { pendingCount, failedCount };
 }

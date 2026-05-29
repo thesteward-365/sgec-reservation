@@ -31,6 +31,8 @@ type CalendarStatus = {
   calendarId: string | null;
   eventCalendarId: string | null;
   lastSync: string | null;
+  pendingCount?: number;
+  failedCount?: number;
 };
 
 type CalendarOption = { id: string; summary: string };
@@ -500,13 +502,27 @@ function CalendarPageContent() {
                     <div className="flex items-center justify-between gap-4">
                       <div className="min-w-0 flex-1">
                         <div className="mb-1 flex items-center gap-1.5">
-                          <CheckCircleIcon className="text-muted-foreground h-4 w-4" />
-                          <span className="text-body text-foreground font-bold">
-                            정상 동작 중
-                          </span>
+                          {(status.failedCount ?? 0) > 0 ? (
+                            <>
+                              <ExclamationCircleIcon className="text-red-500 h-4 w-4" />
+                              <span className="text-body text-red-600 font-bold">
+                                오류 {status.failedCount}건 발생
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircleIcon className="text-muted-foreground h-4 w-4" />
+                              <span className="text-body text-foreground font-bold">
+                                정상 동작 중
+                              </span>
+                            </>
+                          )}
                         </div>
                         <p className="text-caption text-muted-foreground">
                           마지막 동기화: {formatLastSync(status.lastSync)}
+                        </p>
+                        <p className="text-caption text-muted-foreground mt-0.5">
+                          대기 {status.pendingCount ?? 0}건 · 실패 {status.failedCount ?? 0}건
                         </p>
                       </div>
                       <Button
@@ -518,7 +534,7 @@ function CalendarPageContent() {
                         <ArrowPathIcon
                           className={`mr-1 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`}
                         />
-                        {isSyncing ? '동기화중' : '동기화'}
+                        {isSyncing ? '동기화중' : '전체 동기화'}
                       </Button>
                     </div>
                   </Card>

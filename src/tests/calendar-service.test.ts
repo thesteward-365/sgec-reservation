@@ -412,7 +412,13 @@ describe('calendar-service new sync logic', () => {
     expect(result.status).toBe('failed');
     expect(result.counts.failed).toBe(1);
     expect(state.insertedRuns.length).toBe(1);
-    expect(state.insertedItems.find(i => i.reservationId === 8)?.status).toBe('failed');
+    const failedItem = state.insertedItems.find(i => i.reservationId === 8);
+    expect(failedItem?.status).toBe('failed');
+    expect(JSON.parse(failedItem?.payload).syncError).toMatchObject({
+      code: 'connection_required',
+      label: '연결 필요',
+      retryable: false,
+    });
     expect(state.logRows.some(log => log.level === 'error')).toBe(true);
   });
 
