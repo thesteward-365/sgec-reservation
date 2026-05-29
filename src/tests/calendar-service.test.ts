@@ -75,6 +75,7 @@ vi.mock('drizzle-orm', () => ({
   and: vi.fn((...args) => ({ type: 'and', args })),
   or: vi.fn((...args) => ({ type: 'or', args })),
   gte: vi.fn((a, b) => ({ table: a, op: '>=', value: b })),
+  notInArray: vi.fn((a, b) => ({ table: a, op: 'notIn', value: b })),
   sql: vi.fn(() => ({})),
   isNotNull: vi.fn((a) => ({ table: a, op: 'isNotNull' })),
   desc: vi.fn((a) => ({ table: a, op: 'desc' })),
