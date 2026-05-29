@@ -121,8 +121,10 @@ export class ReservationService {
       throw new Error('예약을 찾을 수 없거나 권한이 없습니다.');
     }
 
-    if (fromDbDate(current.endTime) < new Date()) {
-      throw new Error('지난 예약은 수정할 수 없습니다.');
+    const now = new Date();
+    const cutoff = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+    if (fromDbDate(current.endTime) < cutoff) {
+      throw new Error('이틀 이상 지난 예약은 수정할 수 없습니다.');
     }
 
     // 겹침 확인 (자기 자신 제외)

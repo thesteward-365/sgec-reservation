@@ -59,12 +59,6 @@ export function ExternalEventsSheet({
             <div className="divide-border/50 bg-card flex flex-col divide-y overflow-hidden rounded-2xl shadow-(--shadow-1)">
               {events.map((event) => (
                 <div key={event.id} className="px-4 py-4">
-                  <div className="mb-1.5 flex items-center gap-1.5 text-blue-700/80">
-                    <CalendarIcon className="size-3.5 shrink-0" />
-                    <span className="text-[12px] font-bold uppercase">
-                      Event
-                    </span>
-                  </div>
                   <p className="text-foreground text-[16px] font-bold">
                     {event.title}
                   </p>

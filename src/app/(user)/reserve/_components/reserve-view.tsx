@@ -174,10 +174,13 @@ export function ReserveView({ userName }: ReserveViewProps) {
       .catch(() => setLoadingPlaces(false));
   }, []);
 
+  const viewMonthKey = useMemo(() => {
+    return `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}`;
+  }, [selectedDate]);
+
   // 외부 행사 로딩 (선택된 날짜의 월 기준)
   useEffect(() => {
-    const monthStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}`;
-    fetch(`/api/external-events?month=${monthStr}`)
+    fetch(`/api/external-events?month=${viewMonthKey}`)
       .then((r) => r.json())
       .then((data: ExternalEventResponse[]) => {
         setExternalEvents(
@@ -194,7 +197,7 @@ export function ReserveView({ userName }: ReserveViewProps) {
         );
       })
       .catch(console.error);
-  }, [selectedDate.getFullYear(), selectedDate.getMonth()]);
+  }, [viewMonthKey]);
 
   // 예약 건수 — 주 변경 시에만
   useEffect(() => {
@@ -230,8 +233,18 @@ export function ReserveView({ userName }: ReserveViewProps) {
   function handleDateSelect(date: Date) {
     setSelectedDate(date);
     const newWeekStart = getWeekStartStr(date);
-    if (newWeekStart !== weekStartStr) setWeekStartStr(newWeekStart);
+    if (newWeekStart !== weekStartStr) {
+      setWeekStartStr(newWeekStart);
+    }
     pushUrl(date, selectedFloorId, selectedTagId);
+  }
+
+  function handleWeekChange(date: Date) {
+    const newWeekStart = formatLocalDate(date);
+    if (newWeekStart !== weekStartStr) {
+      setWeekStartStr(newWeekStart);
+      // refreshCounts is automatically called via useEffect dependency on weekStartStr
+    }
   }
 
   function handleFloorChipClick(id: number | null) {
@@ -313,6 +326,7 @@ export function ReserveView({ userName }: ReserveViewProps) {
             defaultDate={selectedDate}
             selectedDate={selectedDate}
             onDateSelect={handleDateSelect}
+            onWeekChange={handleWeekChange}
             getIndicator={getIndicator}
           />
         </div>

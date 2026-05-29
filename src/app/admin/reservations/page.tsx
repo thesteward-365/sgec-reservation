@@ -173,10 +173,13 @@ export default function ReservationsPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const viewMonthKey = useMemo(() => {
+    return `${viewMonth.getFullYear()}-${String(viewMonth.getMonth() + 1).padStart(2, '0')}`;
+  }, [viewMonth]);
+
   // 외부 행사 로딩 (월별)
   useEffect(() => {
-    const monthStr = `${viewMonth.getFullYear()}-${String(viewMonth.getMonth() + 1).padStart(2, '0')}`;
-    fetch(`/api/external-events?month=${monthStr}`)
+    fetch(`/api/external-events?month=${viewMonthKey}`)
       .then((r) => r.json())
       .then((data: ExternalEventResponse[]) => {
         setExternalEvents(
@@ -194,7 +197,7 @@ export default function ReservationsPage() {
         );
       })
       .catch(console.error);
-  }, [viewMonth]);
+  }, [viewMonthKey]);
 
   const filteredReservations = useMemo(() => {
     let list = reservations;
@@ -291,26 +294,12 @@ export default function ReservationsPage() {
       }));
   }
 
-  function getExternalEventsSummary(dateKey: string) {
-    const events = getExternalEventsForDate(dateKey);
-    if (events.length === 0) return null;
-
-    const label =
-      events.length === 1
-        ? events[0].title
-        : `${events[0].title} 외 ${events.length - 1}건`;
-
-    return { label, events };
-  }
-
   const selectedDateLabel = selectedDate.toLocaleDateString('ko-KR', {
     month: 'long',
     day: 'numeric',
     weekday: 'short',
   });
-  const selectedDateEventSummary = getExternalEventsSummary(
-    toYMD(selectedDate)
-  );
+  const selectedDateEvents = getExternalEventsForDate(toYMD(selectedDate));
 
   return (
     <>
@@ -370,9 +359,14 @@ export default function ReservationsPage() {
                 viewMonth={viewMonth}
                 onSelectDate={(date) => {
                   setSelectedDate(date);
-                  setViewMonth(
-                    new Date(date.getFullYear(), date.getMonth(), 1)
+                  const nextMonth = new Date(
+                    date.getFullYear(),
+                    date.getMonth(),
+                    1
                   );
+                  if (nextMonth.getTime() !== viewMonth.getTime()) {
+                    setViewMonth(nextMonth);
+                  }
                 }}
                 onChangeMonth={setViewMonth}
                 indicators={indicatorDates}
@@ -407,19 +401,29 @@ export default function ReservationsPage() {
                         {selectedDateLabel}
                       </h3>
 
-                      {selectedDateEventSummary && (
+                      {selectedDateEvents.length > 0 && (
                         <button
                           type="button"
                           onClick={() => {
                             setActiveExternalEvents({
                               dateLabel: selectedDateLabel,
-                              events: selectedDateEventSummary.events,
+                              events: selectedDateEvents,
                             });
                           }}
                           className="min-w-0 rounded-full transition-opacity hover:opacity-80"
                         >
-                          <Badge className="block max-w-full truncate border-none bg-blue-50 px-2 py-0.5 text-[12px]! text-blue-700">
-                            {selectedDateEventSummary.label}
+                          <Badge
+                            color="violet"
+                            className="flex max-w-full items-center gap-1 border-none px-2 py-0.5 text-[12px]! font-bold"
+                          >
+                            <span className="truncate">
+                              {selectedDateEvents[0].title}
+                            </span>
+                            {selectedDateEvents.length > 1 && (
+                              <span className="shrink-0">
+                                외 {selectedDateEvents.length - 1}건
+                              </span>
+                            )}
                           </Badge>
                         </button>
                       )}
@@ -529,7 +533,7 @@ export default function ReservationsPage() {
               ) : (
                 <div className="space-y-5 px-1">
                   {groupedListView.map(([dateKey, items]) => {
-                    const eventSummary = getExternalEventsSummary(dateKey);
+                    const events = getExternalEventsForDate(dateKey);
 
                     return (
                       <div key={dateKey} className="mb-8 space-y-3">
@@ -551,7 +555,7 @@ export default function ReservationsPage() {
                             )}
 
                             {/* 리스트 뷰 날짜 헤더 옆 행사 배지 */}
-                            {eventSummary && (
+                            {events.length > 0 && (
                               <button
                                 type="button"
                                 onClick={() =>
@@ -559,13 +563,23 @@ export default function ReservationsPage() {
                                     dateLabel: items[0].startTime
                                       ? formatDateHeader(items[0].startTime)
                                       : dateKey,
-                                    events: eventSummary.events,
+                                    events: events,
                                   })
                                 }
                                 className="min-w-0 rounded-full transition-opacity hover:opacity-80"
                               >
-                                <Badge className="block max-w-full truncate border-none bg-blue-50 px-2 py-0.5 text-[12px]! text-blue-700">
-                                  {eventSummary.label}
+                                <Badge
+                                  color="violet"
+                                  className="flex max-w-full items-center gap-1 border-none px-2 py-0.5 text-[12px]! font-bold"
+                                >
+                                  <span className="truncate">
+                                    {events[0].title}
+                                  </span>
+                                  {events.length > 1 && (
+                                    <span className="shrink-0">
+                                      외 {events.length - 1}건
+                                    </span>
+                                  )}
                                 </Badge>
                               </button>
                             )}
