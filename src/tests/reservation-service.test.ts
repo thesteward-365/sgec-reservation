@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ReservationService } from '../lib/services/reservation-service';
 import { ReservationRepository } from '../lib/repositories/reservation-repository';
 import { UserRepository } from '../lib/repositories/user-repository';
+import { syncReservationWithRun } from '../lib/calendar/calendar-service';
 
 // Mocking dependencies
 vi.mock('../lib/db', () => ({
@@ -32,8 +33,7 @@ vi.mock('../lib/repositories/place-repository', () => ({
   },
 }));
 vi.mock('../lib/calendar/calendar-service', () => ({
-  updateGoogleEvent: vi.fn().mockResolvedValue(undefined),
-  deleteGoogleEvent: vi.fn().mockResolvedValue(undefined),
+  syncReservationWithRun: vi.fn().mockResolvedValue({ status: 'success' }),
 }));
 
 type MockUser = Awaited<ReturnType<typeof UserRepository.findById>>;
@@ -94,6 +94,7 @@ describe('ReservationService', () => {
         userName: mockActor.name,
         purpose: mockData.purpose,
       });
+      expect(syncReservationWithRun).toHaveBeenCalledWith(1, 'system');
     });
 
     it('should throw an error if there is a conflict', async () => {
@@ -126,6 +127,7 @@ describe('ReservationService', () => {
 
       expect(result.purpose).toBe('Updated');
       expect(ReservationRepository.update).toHaveBeenCalled();
+      expect(syncReservationWithRun).toHaveBeenCalledWith(1, 'system');
     });
 
     it('should throw error if reservation not found or no permission', async () => {
@@ -250,6 +252,7 @@ describe('ReservationService', () => {
         userName: 'Reservation Owner',
         purpose: mockData.purpose,
       });
+      expect(syncReservationWithRun).toHaveBeenCalledWith(1, 'system');
     });
 
     it('should allow admin to cancel any reservation', async () => {

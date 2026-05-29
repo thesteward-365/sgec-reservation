@@ -32,10 +32,15 @@ interface Reservation extends BaseReservation {
   isCancelled?: boolean;
   googleEventUrl?: string | null;
   googleSync?: {
-    status: 'synced' | 'pending' | 'missing_event';
+    status: 'synced' | 'pending' | 'failed';
     label: string;
     lastSyncedAt: string | null;
+    lastAttemptedAt: string | null;
     runId: string | null;
+    errorCode: string | null;
+    errorLabel: string | null;
+    errorMessage: string | null;
+    retryable: boolean;
   } | null;
 }
 
@@ -157,8 +162,13 @@ export default function ReservationDetailPage({
       const res = await fetch(`/api/admin/reservations/${params.id}/sync`, {
         method: 'POST',
       });
+      const syncResult = await res.json();
       if (res.ok) {
-        toast.success('동기화가 완료되었습니다.');
+        if (syncResult.status === 'success') {
+          toast.success('동기화가 완료되었습니다.');
+        } else {
+          toast.error('동기화에 실패했습니다.');
+        }
         const refreshRes = await fetch(`/api/admin/reservations/${params.id}`);
         if (refreshRes.ok) {
           const data = await refreshRes.json();
@@ -230,10 +240,22 @@ export default function ReservationDetailPage({
                       Google 동기화
                     </p>
                     <p className="text-foreground mt-1 truncate text-sm font-semibold">
-                      {reservation.googleSync.lastSyncedAt
+                      {reservation.googleSync.status === 'failed'
+                        ? reservation.googleSync.lastAttemptedAt
+                          ? `${reservation.googleSync.label} · ${formatKoreanDate(reservation.googleSync.lastAttemptedAt)} ${formatTime(reservation.googleSync.lastAttemptedAt)} 시도`
+                          : reservation.googleSync.label
+                        : reservation.googleSync.lastSyncedAt
                         ? `${reservation.googleSync.label} · ${formatKoreanDate(reservation.googleSync.lastSyncedAt)} ${formatTime(reservation.googleSync.lastSyncedAt)} 반영`
                         : reservation.googleSync.label}
                     </p>
+                    {reservation.googleSync.errorMessage ? (
+                      <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">
+                        {reservation.googleSync.errorLabel
+                          ? `${reservation.googleSync.errorLabel}: `
+                          : ''}
+                        {reservation.googleSync.errorMessage}
+                      </p>
+                    ) : null}
                   </div>
                   <div className="ml-2 flex shrink-0 items-center gap-3">
                     {!reservation.isCancelled && (

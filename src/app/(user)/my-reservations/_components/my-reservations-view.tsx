@@ -5,9 +5,7 @@ import Link from 'next/link';
 import {
   AdjustmentsHorizontalIcon,
   PlusIcon,
-  CalendarIcon,
 } from '@heroicons/react/24/outline';
-import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Chip } from '@/components/ui/chip';
 import { List, ListItem } from '@/components/ui/list';
@@ -23,7 +21,15 @@ import {
   FilterSheet,
   type FilterState,
 } from '@/components/reservations/filter-sheet';
+import {
+  ExternalEventsSheet,
+  type ExternalEventSheetItem,
+} from '@/components/reservations/external-events-sheet';
 import { SessionData } from '@/lib/session';
+import { compareReservationByDayAndTime } from '@/lib/services/reservation-sorting';
+import {
+  getExternalEventDateRange,
+} from '@/lib/external-event-dates';
 
 type PlaceTagMap = Record<number, number[]>; // placeId -> tagId[]
 
@@ -36,24 +42,13 @@ type ExternalEventResponse = {
   description: string | null;
 };
 
+type ExternalCalendarEvent = CalendarEvent & {
+  raw: ExternalEventResponse;
+};
+
 function toYMD(dt: Date | string): string {
   const d = typeof dt === 'string' ? new Date(dt) : dt;
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-// 구글 캘린더 종일 일정(00:00:00 종료) 처리를 위한 헬퍼
-function toEffectiveYMD(isoString: string, isEnd: boolean): string {
-  const d = new Date(isoString);
-  if (
-    isEnd &&
-    d.getHours() === 0 &&
-    d.getMinutes() === 0 &&
-    d.getSeconds() === 0
-  ) {
-    // 00:00:00에 끝나면 실제로는 전날 종료된 것으로 처리
-    d.setDate(d.getDate() - 1);
-  }
-  return toYMD(d);
 }
 
 function isSameDay(a: Date | string, b: Date): boolean {
@@ -75,50 +70,6 @@ function formatGroupHeader(ymd: string): string {
   });
 }
 
-function isToday(ymd: string): boolean {
-  return ymd === toYMD(new Date());
-}
-
-// 행사 정보 카드 컴포넌트 (관리자 페이지와 동일)
-function InformationalEventCard({
-  title,
-  startTime,
-  endTime,
-  isAllDay,
-}: {
-  title: string;
-  startTime: string;
-  endTime: string;
-  isAllDay?: boolean;
-}) {
-  const startDate = new Date(startTime);
-  const endDate = new Date(endTime);
-  const isSingleDay = toYMD(startDate) === toYMD(endDate);
-
-  let dateRangeLabel = isSingleDay
-    ? `${startDate.getMonth() + 1}월 ${startDate.getDate()}일`
-    : `${startDate.getMonth() + 1}월 ${startDate.getDate()}일 ~ ${endDate.getMonth() + 1}월 ${endDate.getDate()}일`;
-
-  if (isAllDay) {
-    dateRangeLabel += ' (종일)';
-  }
-
-  return (
-    <div className="border-b border-blue-100/50 bg-blue-50/30 p-4 text-blue-700 last:border-0">
-      <div className="mb-1.5 flex items-center gap-1.5 opacity-80">
-        <CalendarIcon className="size-3.5 shrink-0" />
-        <span className="text-[12px] font-bold tracking-tight uppercase">
-          Event
-        </span>
-      </div>
-      <h4 className="text-foreground mb-0.5 text-[16px] leading-tight font-bold">
-        {title}
-      </h4>
-      <p className="text-[13px] font-medium opacity-60">{dateRangeLabel}</p>
-    </div>
-  );
-}
-
 type Props = {
   user: SessionData['user'];
 };
@@ -131,18 +82,24 @@ export function MyReservationsView({ user }: Props) {
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
   const [allReservations, setAllReservations] = useState<MyReservation[]>([]);
-  const [externalEvents, setExternalEvents] = useState<CalendarEvent[]>([]);
+  const [externalEvents, setExternalEvents] = useState<ExternalCalendarEvent[]>(
+    []
+  );
   const [placeTagMap, setPlaceTagMap] = useState<PlaceTagMap>({});
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterState>({
     floorId: null,
     tagId: null,
-    sortOrder: 'asc',
+    sortOrder: 'desc',
     includeCancelled: false,
     onlyMine: false,
   });
   const [showFilter, setShowFilter] = useState(false);
   const [activeRes, setActiveRes] = useState<MyReservation | null>(null);
+  const [activeExternalEvents, setActiveExternalEvents] = useState<{
+    dateLabel: string;
+    events: ExternalEventSheetItem[];
+  } | null>(null);
   const [now] = useState(() => new Date());
 
   // 마운트 시 전체 예약 + 장소 태그 맵 로드
@@ -168,26 +125,31 @@ export function MyReservationsView({ user }: Props) {
       .finally(() => setLoading(false));
   }, []);
 
+  const viewMonthKey = useMemo(() => {
+    return `${viewMonth.getFullYear()}-${String(viewMonth.getMonth() + 1).padStart(2, '0')}`;
+  }, [viewMonth]);
+
   // 외부 행사 로딩 (월별)
   useEffect(() => {
-    const monthStr = `${viewMonth.getFullYear()}-${String(viewMonth.getMonth() + 1).padStart(2, '0')}`;
-    fetch(`/api/external-events?month=${monthStr}`)
+    fetch(`/api/external-events?month=${viewMonthKey}`)
       .then((r) => r.json())
       .then((data: ExternalEventResponse[]) => {
         setExternalEvents(
-          (data || []).map((ev) => ({
-            id: ev.id,
-            title: ev.title,
-            startDate: toEffectiveYMD(ev.startTime, false),
-            endDate: toEffectiveYMD(ev.endTime, true),
-            variant: 'accent', // 기본 테마색
-            // 원본 데이터 보관 (isAllDay 추출용)
-            _raw: ev,
-          }))
+          (data || []).map((ev) => {
+            const { startDate, endDate } = getExternalEventDateRange(ev);
+            return {
+              id: ev.id,
+              title: ev.title,
+              startDate,
+              endDate,
+              variant: 'accent', // 기본 테마색
+              raw: ev,
+            };
+          })
         );
       })
       .catch(console.error);
-  }, [viewMonth]);
+  }, [viewMonthKey]);
 
   // 예약 취소 후 목록 새로고침
   function handleCancelled() {
@@ -219,16 +181,14 @@ export function MyReservationsView({ user }: Props) {
       list = list.filter((reservation) => reservation.status !== 'cancelled');
     }
 
-    if (filter.onlyMine && user) {
+    if (filter.onlyMine && user?.id) {
       list = list.filter((r) => r.userId === user.id);
     }
 
     return [...list].sort((a, b) => {
-      const ta = new Date(a.startTime).getTime();
-      const tb = new Date(b.startTime).getTime();
-      return filter.sortOrder === 'asc' ? ta - tb : tb - ta;
+      return compareReservationByDayAndTime(a, b, filter.sortOrder);
     });
-  }, [allReservations, filter, placeTagMap, user?.id]);
+  }, [allReservations, filter, placeTagMap, user]);
 
   // 캘린더 인디케이터용 날짜 Set
   const indicatorDates = useMemo(
@@ -260,11 +220,29 @@ export function MyReservationsView({ user }: Props) {
     return Array.from(map.entries());
   }, [filtered]);
 
+  function getExternalEventsForDate(ymd: string): ExternalEventSheetItem[] {
+    return externalEvents
+      .filter((event) => ymd >= event.startDate && ymd <= event.endDate)
+      .map((event) => ({
+        id: event.id,
+        title: event.title,
+        startTime: event.raw.startTime,
+        endTime: event.raw.endTime,
+        description: event.raw.description,
+        isAllDay: event.raw.isAllDay,
+      }));
+  }
+
+  const selectedDateKey = toYMD(selectedDate);
+  const selectedDateLabel = selectedDate.toLocaleDateString('ko-KR', {
+    month: 'long',
+    day: 'numeric',
+    weekday: 'short',
+  });
+  const selectedDateEvents = getExternalEventsForDate(selectedDateKey);
+
   const isFilterActive =
-    filter.floorId !== null ||
-    filter.tagId !== null ||
-    filter.sortOrder !== 'asc' ||
-    filter.onlyMine;
+    filter.floorId !== null || filter.tagId !== null || filter.onlyMine;
 
   return (
     <>
@@ -284,17 +262,35 @@ export function MyReservationsView({ user }: Props) {
       </div>
 
       {/* 탭 */}
-      <div className="flex gap-2 px-5 pb-4">
-        {(['calendar', 'list'] as const).map((t) => (
-          <Chip
-            key={t}
-            size="md"
-            variant={tab === t ? 'active' : 'inactive'}
-            onClick={() => setTab(t)}
+      <div className="flex items-center justify-between px-5 pb-4">
+        <div className="flex gap-2">
+          {(['calendar', 'list'] as const).map((t) => (
+            <Chip
+              key={t}
+              size="md"
+              variant={tab === t ? 'active' : 'inactive'}
+              onClick={() => setTab(t)}
+            >
+              {t === 'calendar' ? '캘린더' : '전체 목록'}
+            </Chip>
+          ))}
+        </div>
+
+        {tab === 'list' && (
+          <select
+            value={filter.sortOrder}
+            onChange={(e) =>
+              setFilter((f) => ({
+                ...f,
+                sortOrder: e.target.value as 'asc' | 'desc',
+              }))
+            }
+            className="text-foreground cursor-pointer bg-transparent text-[14px] font-medium outline-none"
           >
-            {t === 'calendar' ? '캘린더' : '전체 목록'}
-          </Chip>
-        ))}
+            <option value="desc">최신순</option>
+            <option value="asc">오래된순</option>
+          </select>
+        )}
       </div>
 
       {/* 콘텐츠 */}
@@ -310,7 +306,10 @@ export function MyReservationsView({ user }: Props) {
                 viewMonth={viewMonth}
                 onSelectDate={(d) => {
                   setSelectedDate(d);
-                  setViewMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+                  const nextMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+                  if (nextMonth.getTime() !== viewMonth.getTime()) {
+                    setViewMonth(nextMonth);
+                  }
                 }}
                 onChangeMonth={setViewMonth}
                 indicators={indicatorDates}
@@ -320,36 +319,50 @@ export function MyReservationsView({ user }: Props) {
             </div>
 
             <div className="mt-4 flex items-center justify-between gap-2">
-              <div>
-                <h3 className="text-foreground text-[16px]! font-bold">
-                  {selectedDate.toLocaleDateString('ko-KR', {
-                    month: 'long',
-                    day: 'numeric',
-                    weekday: 'short',
-                  })}
+              <div className="flex min-w-0 flex-1 items-center gap-2">
+                <h3 className="text-foreground shrink-0 text-[16px]! font-bold">
+                  {selectedDateLabel}
                 </h3>
+
+                {selectedDateEvents.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setActiveExternalEvents({
+                        dateLabel: selectedDateLabel,
+                        events: selectedDateEvents,
+                      })
+                    }
+                    className="min-w-0 rounded-full transition-opacity hover:opacity-80"
+                  >
+                    <Badge
+                      color="violet"
+                      className="flex max-w-full items-center gap-1 border-none px-2 py-0.5 text-[12px]! font-bold"
+                    >
+                      <span className="truncate">
+                        {selectedDateEvents[0].title}
+                      </span>
+                      {selectedDateEvents.length > 1 && (
+                        <span className="shrink-0">
+                          외 {selectedDateEvents.length - 1}건
+                        </span>
+                      )}
+                    </Badge>
+                  </button>
+                )}
               </div>
-              <span className="text-muted-foreground text-[14px]!">
+              <span className="text-muted-foreground shrink-0 text-[14px]!">
                 {dailyList.length}건
               </span>
             </div>
 
             <div className="bg-card overflow-hidden rounded-xl shadow-(--shadow-1)">
-              {/* 행사 안내 카드 (관리자 페이지와 동일) */}
-              {dailyEvents.map((ev: any) => (
-                <InformationalEventCard
-                  key={ev.id}
-                  title={ev.title}
-                  startTime={ev._raw?.startTime || ev.startDate}
-                  endTime={ev._raw?.endTime || ev.endDate}
-                  isAllDay={ev._raw?.isAllDay}
-                />
-              ))}
-
-              {dailyList.length === 0 && dailyEvents.length === 0 ? (
+              {dailyList.length === 0 ? (
                 <div className="bg-card flex flex-col items-center gap-1.5 rounded-2xl px-4 py-10">
                   <p className="text-foreground text-[15px] font-semibold">
-                    예약이 없는 날이에요
+                    {dailyEvents.length === 0
+                      ? '예약이 없는 날이에요'
+                      : '예약 내역이 없어요'}
                   </p>
                 </div>
               ) : (
@@ -373,46 +386,62 @@ export function MyReservationsView({ user }: Props) {
           <List emptyMessage="예약 내역이 없어요" />
         ) : (
           <div className="flex flex-col gap-5">
-            {grouped.map(([ymd, items]) => (
-              <div key={ymd} className="space-y-3">
-                <div className="flex items-center justify-between gap-2 px-5">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-foreground text-[15px]! font-bold">
-                      {formatGroupHeader(ymd)}
-                    </h3>
+            {grouped.map(([ymd, items]) => {
+              const events = getExternalEventsForDate(ymd);
 
-                    {/* 리스트 뷰 날짜 헤더 옆 행사 배지 (관리자 페이지와 동일) */}
-                    {externalEvents.some(
-                      (ev) => ymd >= ev.startDate && ymd <= ev.endDate
-                    ) && (
-                      <Badge className="border-none bg-blue-50 px-2 py-0.5 text-[12px]! text-blue-700">
-                        {
-                          externalEvents.find(
-                            (ev) => ymd >= ev.startDate && ymd <= ev.endDate
-                          )?.title
-                        }
-                      </Badge>
-                    )}
+              return (
+                <div key={ymd} className="space-y-3">
+                  <div className="flex items-center justify-between gap-2 px-5">
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                      <h3 className="text-foreground shrink-0 text-[15px]! font-bold">
+                        {formatGroupHeader(ymd)}
+                      </h3>
+
+                      {events.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setActiveExternalEvents({
+                              dateLabel: formatGroupHeader(ymd),
+                              events: events,
+                            })
+                          }
+                          className="min-w-0 rounded-full transition-opacity hover:opacity-80"
+                        >
+                          <Badge
+                            color="violet"
+                            className="flex max-w-full items-center gap-1 border-none px-2 py-0.5 text-[12px]! font-bold"
+                          >
+                            <span className="truncate">{events[0].title}</span>
+                            {events.length > 1 && (
+                              <span className="shrink-0">
+                                외 {events.length - 1}건
+                              </span>
+                            )}
+                          </Badge>
+                        </button>
+                      )}
+                    </div>
+                    <span className="text-muted-foreground shrink-0 text-[13px]">
+                      {items.length}건
+                    </span>
                   </div>
-                  <span className="text-muted-foreground text-[13px]">
-                    {items.length}건
-                  </span>
+                  <List>
+                    {items.map((r) => (
+                      <ListItem key={r.id} className="px-0 py-0">
+                        <ReservationItem
+                          reservation={r}
+                          isPast={new Date(r.endTime) < now}
+                          isMine={r.userId === user?.id}
+                          onTap={() => setActiveRes(r)}
+                          flat
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
                 </div>
-                <List>
-                  {items.map((r) => (
-                    <ListItem key={r.id} className="px-0 py-0">
-                      <ReservationItem
-                        reservation={r}
-                        isPast={new Date(r.endTime) < now}
-                        isMine={r.userId === user?.id}
-                        onTap={() => setActiveRes(r)}
-                        flat
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -440,6 +469,15 @@ export function MyReservationsView({ user }: Props) {
         onClose={() => setShowFilter(false)}
         current={filter}
         onApply={(f) => setFilter(f)}
+      />
+
+      <ExternalEventsSheet
+        open={!!activeExternalEvents}
+        onOpenChange={(open) => {
+          if (!open) setActiveExternalEvents(null);
+        }}
+        dateLabel={activeExternalEvents?.dateLabel ?? ''}
+        events={activeExternalEvents?.events ?? []}
       />
     </>
   );

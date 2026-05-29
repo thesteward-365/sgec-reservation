@@ -19,6 +19,7 @@ type Props = {
   indicators?: Set<string>; // Set of 'YYYY-MM-DD' strings
   events?: CalendarEvent[];
   showEvents?: boolean;
+  today?: Date;
 };
 
 const DOW_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -50,9 +51,8 @@ export function MonthlyCalendar({
   indicators,
   events = [],
   showEvents = true,
+  today = new Date(),
 }: Props) {
-  const today = new Date();
-
   const firstOfMonth = new Date(
     viewMonth.getFullYear(),
     viewMonth.getMonth(),
@@ -83,11 +83,16 @@ export function MonthlyCalendar({
       new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1)
     );
   }
+  function goToday() {
+    const next = new Date(today);
+    onSelectDate(next);
+    onChangeMonth(new Date(next.getFullYear(), next.getMonth(), 1));
+  }
 
   return (
     <div className="flex flex-col gap-3 rounded-xl bg-white p-4">
       {/* 월 네비게이션 */}
-      <div className="mb-2 flex items-center justify-between">
+      <div className="mb-2 grid grid-cols-[auto_1fr_auto] items-center">
         <button
           onClick={prevMonth}
           className="flex items-center justify-center rounded-full p-1.5 transition-colors hover:bg-neutral-100"
@@ -95,9 +100,19 @@ export function MonthlyCalendar({
         >
           <ChevronLeftIcon className="text-foreground size-5" />
         </button>
-        <span className="text-foreground text-[16px] font-bold">
-          {monthLabel}
-        </span>
+        <div className="flex items-center justify-center gap-2">
+          <span className="text-foreground text-[16px] font-bold">
+            {monthLabel}
+          </span>
+          <button
+            type="button"
+            onClick={goToday}
+            className="text-muted-foreground hover:text-foreground border-border rounded-full border px-2 py-0.5 text-[11px] font-semibold transition-colors hover:bg-neutral-100"
+            aria-label="오늘 날짜로 이동"
+          >
+            오늘
+          </button>
+        </div>
         <button
           onClick={nextMonth}
           className="flex items-center justify-center rounded-full p-1.5 transition-colors hover:bg-neutral-100"
@@ -180,15 +195,17 @@ export function MonthlyCalendar({
 
               <span
                 className={cn(
-                  'relative z-10 flex size-8 items-center justify-center text-[14px] font-medium transition-colors',
+                  'relative z-10 flex size-8 items-center justify-center rounded-full text-[14px] font-medium transition-colors',
                   isSel
-                    ? 'rounded-full bg-(--color-fg-strong) font-bold text-white shadow-sm' // 선택 시 원형
+                    ? 'bg-(--color-fg-strong) font-bold text-white shadow-sm' // 선택 시 원형
                     : [
                         inMonth && dow === 0 && 'text-destructive',
                         inMonth && dow === 6 && 'text-primary',
                         !inMonth && 'text-muted-foreground',
                         inMonth && dow !== 0 && dow !== 6 && 'text-foreground',
-                        isToday && !isSel && 'font-bold',
+                        isToday &&
+                          !isSel &&
+                          'bg-blue-100 font-bold ring-1 ring-blue-100',
                         dayEvents.length > 0 && 'font-bold',
                       ]
                 )}

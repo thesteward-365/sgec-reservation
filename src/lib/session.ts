@@ -4,9 +4,10 @@ export interface SessionData {
   user?: {
     id: number;
     name: string;
+    username: string;
     phoneNumber: string;
     role: 'user' | 'admin';
-    status: 'pending' | 'approved' | 'rejected';
+    status: 'pending' | 'approved' | 'rejected' | 'withdrawn';
   };
 }
 

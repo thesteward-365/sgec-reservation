@@ -11,7 +11,22 @@ export async function GET() {
   if (!session.user) {
     return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 });
   }
-  return NextResponse.json({ user: session.user });
+
+  // Fetch latest to get username if it's missing in session
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, session.user.id),
+  });
+
+  if (!user) {
+    return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 404 });
+  }
+
+  return NextResponse.json({ 
+    user: {
+      ...session.user,
+      username: user.username,
+    } 
+  });
 }
 
 export async function PATCH(request: NextRequest) {
@@ -66,6 +81,7 @@ export async function PATCH(request: NextRequest) {
   session.user = {
     ...session.user,
     name: updatedUser.name,
+    username: updatedUser.username || '',
     phoneNumber: updatedUser.phoneNumber,
   };
   await session.save();

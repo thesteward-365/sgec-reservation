@@ -94,14 +94,14 @@ function getTriggerLabel(trigger: SyncTrigger) {
   return trigger === 'manual' ? '수동 실행' : '자동 실행';
 }
 
-function getActionLabel(action: SyncItemAction) {
+function getActionLabel(action: SyncItemAction, category?: SyncItemCategory) {
   switch (action) {
     case 'created':
       return '생성';
     case 'updated':
       return '수정';
     case 'cancelled':
-      return '취소';
+      return category === 'event' ? '삭제' : '취소';
   }
 }
 
@@ -429,7 +429,7 @@ function SyncHistoryListItem({
               getActionTone(item.action, item.status)
             )}
           >
-            {getActionLabel(item.action)}
+            {getActionLabel(item.action, item.category)}
           </span>
           <span className={cn("font-bold truncate", item.status === 'skipped' && "text-muted-foreground")}>
             {item.title}

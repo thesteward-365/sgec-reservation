@@ -3,7 +3,7 @@ import { getIronSession } from 'iron-session';
 import { sessionOptions, SessionData } from '@/lib/session';
 import { cookies } from 'next/headers';
 import { db, reservations, users, places, floors, fromDbDate } from '@/lib/db';
-import { eq, asc } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 
 export async function GET() {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
@@ -29,7 +29,7 @@ export async function GET() {
     .leftJoin(users, eq(reservations.userId, users.id))
     .leftJoin(places, eq(reservations.placeId, places.id))
     .leftJoin(floors, eq(places.floorId, floors.id))
-    .orderBy(asc(reservations.startTime));
+    .orderBy(desc(reservations.startTime), desc(reservations.endTime));
 
   return NextResponse.json(
     rows.map((r) => ({

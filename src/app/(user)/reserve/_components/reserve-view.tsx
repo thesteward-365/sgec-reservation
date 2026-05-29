@@ -25,6 +25,10 @@ import { ListSkeleton } from '@/components/ui/list-skeleton';
 import { BrandHeader } from '@/components/layout/brand-header';
 import { cn } from '@/lib/utils';
 import type { CalendarEvent } from '@/components/calendar/monthly-calendar';
+import {
+  formatExternalEventDateRangeLabel,
+  getExternalEventDateRange,
+} from '@/lib/external-event-dates';
 
 type Floor = { id: number; name: string; order: number };
 type Tag = { id: number; name: string };
@@ -43,6 +47,7 @@ type ExternalEventResponse = {
   title: string;
   startTime: string;
   endTime: string;
+  isAllDay?: boolean;
   description: string | null;
 };
 
@@ -68,41 +73,22 @@ function getWeekStartStr(date: Date): string {
   return formatLocalDate(d);
 }
 
-// 구글 캘린더 종일 일정(00:00:00 종료) 처리를 위한 헬퍼
-function toEffectiveYMD(isoString: string, isEnd: boolean): string {
-  const d = new Date(isoString);
-  if (
-    isEnd &&
-    d.getHours() === 0 &&
-    d.getMinutes() === 0 &&
-    d.getSeconds() === 0
-  ) {
-    // 00:00:00에 끝나면 실제로는 전날 종료된 것으로 처리
-    d.setDate(d.getDate() - 1);
-  }
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${dd}`;
-}
-
 // 행사 정보 카드 컴포넌트 (관리자 페이지와 동일)
 function InformationalEventCard({
   title,
   startTime,
   endTime,
+  isAllDay,
 }: {
   title: string;
   startTime: string;
   endTime: string;
+  isAllDay?: boolean;
 }) {
-  const startDate = new Date(startTime);
-  const endDate = new Date(endTime);
-  const isSingleDay = formatLocalDate(startDate) === formatLocalDate(endDate);
-
-  const dateRangeLabel = isSingleDay
-    ? `${startDate.getMonth() + 1}월 ${startDate.getDate()}일`
-    : `${startDate.getMonth() + 1}월 ${startDate.getDate()}일 ~ ${endDate.getMonth() + 1}월 ${endDate.getDate()}일`;
+  const dateRangeLabel = formatExternalEventDateRangeLabel(
+    { startTime, endTime, isAllDay },
+    { includeAllDaySuffix: true }
+  );
 
   return (
     <div className="border-b border-blue-100/50 bg-blue-50/30 p-4 text-blue-700 last:border-0">
@@ -156,6 +142,19 @@ export function ReserveView({ userName }: ReserveViewProps) {
   const [draftFloorId, setDraftFloorId] = useState<number | null>(null);
   const [draftTagId, setDraftTagId] = useState<number | null>(null);
 
+  const refreshCounts = useCallback(() => {
+    const [sy, sm, sd] = weekStartStr.split('-').map(Number);
+    const weekEndDate = new Date(sy, sm - 1, sd + 6);
+    const params = new URLSearchParams();
+    params.set('startDate', weekStartStr);
+    params.set('endDate', formatLocalDate(weekEndDate));
+
+    fetch(`/api/reservations/counts?${params}`, { cache: 'no-store' })
+      .then((r) => r.json())
+      .then(setCountsMap)
+      .catch(() => {});
+  }, [weekStartStr]);
+
   // 정적 데이터 — 마운트 시 1회
   useEffect(() => {
     fetch('/api/floors')
@@ -175,37 +174,53 @@ export function ReserveView({ userName }: ReserveViewProps) {
       .catch(() => setLoadingPlaces(false));
   }, []);
 
+  const viewMonthKey = useMemo(() => {
+    return `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}`;
+  }, [selectedDate]);
+
   // 외부 행사 로딩 (선택된 날짜의 월 기준)
   useEffect(() => {
-    const monthStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}`;
-    fetch(`/api/external-events?month=${monthStr}`)
+    fetch(`/api/external-events?month=${viewMonthKey}`)
       .then((r) => r.json())
       .then((data: ExternalEventResponse[]) => {
         setExternalEvents(
-          (data || []).map((ev) => ({
-            id: ev.id,
-            title: ev.title,
-            startDate: toEffectiveYMD(ev.startTime, false),
-            endDate: toEffectiveYMD(ev.endTime, true),
-            variant: 'accent',
-          }))
+          (data || []).map((ev) => {
+            const { startDate, endDate } = getExternalEventDateRange(ev);
+            return {
+              id: ev.id,
+              title: ev.title,
+              startDate,
+              endDate,
+              variant: 'accent',
+            };
+          })
         );
       })
       .catch(console.error);
-  }, [selectedDate.getFullYear(), selectedDate.getMonth()]);
+  }, [viewMonthKey]);
 
   // 예약 건수 — 주 변경 시에만
   useEffect(() => {
-    const [sy, sm, sd] = weekStartStr.split('-').map(Number);
-    const weekEndDate = new Date(sy, sm - 1, sd + 6);
-    const params = new URLSearchParams();
-    params.set('startDate', weekStartStr);
-    params.set('endDate', formatLocalDate(weekEndDate));
-    fetch(`/api/reservations/counts?${params}`)
-      .then((r) => r.json())
-      .then(setCountsMap)
-      .catch(() => {});
-  }, [weekStartStr]);
+    refreshCounts();
+  }, [refreshCounts]);
+
+  useEffect(() => {
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        refreshCounts();
+      }
+    }
+
+    window.addEventListener('focus', refreshCounts);
+    window.addEventListener('pageshow', refreshCounts);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', refreshCounts);
+      window.removeEventListener('pageshow', refreshCounts);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [refreshCounts]);
 
   function pushUrl(date: Date, floorId: number | null, tagId: number | null) {
     const params = new URLSearchParams();
@@ -218,8 +233,18 @@ export function ReserveView({ userName }: ReserveViewProps) {
   function handleDateSelect(date: Date) {
     setSelectedDate(date);
     const newWeekStart = getWeekStartStr(date);
-    if (newWeekStart !== weekStartStr) setWeekStartStr(newWeekStart);
+    if (newWeekStart !== weekStartStr) {
+      setWeekStartStr(newWeekStart);
+    }
     pushUrl(date, selectedFloorId, selectedTagId);
+  }
+
+  function handleWeekChange(date: Date) {
+    const newWeekStart = formatLocalDate(date);
+    if (newWeekStart !== weekStartStr) {
+      setWeekStartStr(newWeekStart);
+      // refreshCounts is automatically called via useEffect dependency on weekStartStr
+    }
   }
 
   function handleFloorChipClick(id: number | null) {
@@ -301,6 +326,7 @@ export function ReserveView({ userName }: ReserveViewProps) {
             defaultDate={selectedDate}
             selectedDate={selectedDate}
             onDateSelect={handleDateSelect}
+            onWeekChange={handleWeekChange}
             getIndicator={getIndicator}
           />
         </div>

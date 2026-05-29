@@ -7,6 +7,7 @@ import {
   pgEnum,
   timestamp, // 추가
   boolean, // 추가
+  unique,
 } from 'drizzle-orm/pg-core';
 
 // Enum 정의
@@ -15,6 +16,7 @@ export const userStatusEnum = pgEnum('user_status', [
   'pending',
   'approved',
   'rejected',
+  'withdrawn',
 ]);
 export const reservationStatusEnum = pgEnum('reservation_status', [
   'active',
@@ -216,3 +218,21 @@ export const calendarSyncItems = pgTable('calendar_sync_items', {
     .notNull()
     .defaultNow(),
 });
+
+// 12. 목적 테이블
+export const purposes = pgTable(
+  'purposes',
+  {
+    id: serial('id').primaryKey(),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    purpose: text('purpose').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    unique('purposes_user_id_purpose_unique').on(table.userId, table.purpose),
+  ]
+);
