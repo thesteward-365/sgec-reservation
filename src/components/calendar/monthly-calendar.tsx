@@ -84,7 +84,7 @@ export function MonthlyCalendar({
     );
   }
   function goToday() {
-    const next = new Date();
+    const next = new Date(today);
     onSelectDate(next);
     onChangeMonth(new Date(next.getFullYear(), next.getMonth(), 1));
   }
