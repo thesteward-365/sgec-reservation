@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import { useState, type ComponentProps } from 'react';
 import { MonthlyCalendar } from './monthly-calendar';
-import { useState } from 'react';
 
 const meta: Meta<typeof MonthlyCalendar> = {
   component: MonthlyCalendar,
@@ -12,8 +12,9 @@ const meta: Meta<typeof MonthlyCalendar> = {
 
 export default meta;
 type Story = StoryObj<typeof MonthlyCalendar>;
+type MonthlyCalendarProps = ComponentProps<typeof MonthlyCalendar>;
 
-const Template = (args: any) => {
+const Template = (args: MonthlyCalendarProps) => {
   const [selectedDate, setSelectedDate] = useState(new Date(2026, 4, 9));
   const [viewMonth, setViewMonth] = useState(new Date(2026, 4, 1)); // May 2026
 
@@ -29,6 +30,33 @@ const Template = (args: any) => {
     </div>
   );
 };
+
+function WeekendTodayCalendar({
+  label,
+  today,
+}: {
+  label: string;
+  today: Date;
+}) {
+  const [selectedDate, setSelectedDate] = useState(new Date(2026, 4, 13));
+  const [viewMonth, setViewMonth] = useState(new Date(2026, 4, 1));
+
+  return (
+    <div className="w-[375px] bg-neutral-50 p-4">
+      <p className="text-muted-foreground mb-2 text-[12px] font-semibold">
+        {label}
+      </p>
+      <MonthlyCalendar
+        selectedDate={selectedDate}
+        viewMonth={viewMonth}
+        onSelectDate={setSelectedDate}
+        onChangeMonth={setViewMonth}
+        today={today}
+        showEvents={false}
+      />
+    </div>
+  );
+}
 
 export const Default: Story = {
   render: (args) => <Template {...args} />,
@@ -118,4 +146,19 @@ export const EventsOff: Story = {
       },
     ],
   },
+};
+
+export const WeekendTodayHighlight: Story = {
+  render: () => (
+    <div className="flex flex-wrap gap-4">
+      <WeekendTodayCalendar
+        label="오늘이 토요일인 경우"
+        today={new Date(2026, 4, 16)}
+      />
+      <WeekendTodayCalendar
+        label="오늘이 일요일인 경우"
+        today={new Date(2026, 4, 17)}
+      />
+    </div>
+  ),
 };
