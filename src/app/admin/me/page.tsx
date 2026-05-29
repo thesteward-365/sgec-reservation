@@ -12,9 +12,8 @@ import {
   CalendarDaysIcon,
   ArrowRightStartOnRectangleIcon,
   ChevronRightIcon,
+  UserCircleIcon,
 } from '@heroicons/react/24/outline';
-import { formatPhoneNumber, normalizePhoneNumber } from '@/lib/utils';
-import { AccountDialog } from '@/app/(user)/settings/_components/settings-dialogs';
 import Link from 'next/link';
 import pkg from '../../../../package.json';
 import { AppVersion } from '@/components/layout/app-version';
@@ -22,6 +21,7 @@ import { AppVersion } from '@/components/layout/app-version';
 interface Me {
   id: number;
   name: string;
+  username: string;
   phoneNumber: string;
   role: 'user' | 'admin';
 }
@@ -30,65 +30,16 @@ export default function AdminMePage() {
   const router = useRouter();
   const [me, setMe] = useState<Me | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showAccountDialog, setShowAccountDialog] = useState(false);
-  const [accountForm, setAccountForm] = useState({ name: '', phoneNumber: '' });
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetch('/api/account')
       .then((r) => r.json())
       .then((data: { user: Me }) => {
         setMe(data.user);
-        setAccountForm({
-          name: data.user.name,
-          phoneNumber: formatPhoneNumber(data.user.phoneNumber),
-        });
       })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
-
-  async function handleSaveAccount() {
-    if (!me) return;
-
-    const trimmedName = accountForm.name.trim();
-    const trimmedPhoneNumber = normalizePhoneNumber(accountForm.phoneNumber);
-
-    if (!trimmedName || !trimmedPhoneNumber) {
-      toast.error('이름과 휴대전화번호를 입력해주세요.');
-      return;
-    }
-
-    if (trimmedPhoneNumber.length !== 11) {
-      toast.error('전화번호 11자리를 입력해주세요.');
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const res = await fetch('/api/account', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: trimmedName,
-          phoneNumber: trimmedPhoneNumber,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error ?? '저장에 실패했습니다.');
-        return;
-      }
-      setMe(data.user);
-      setShowAccountDialog(false);
-      toast.success('계정 정보를 저장했어요.');
-      router.refresh();
-    } catch (error) {
-      toast.error('저장에 실패했습니다.');
-    } finally {
-      setSaving(false);
-    }
-  }
 
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -111,33 +62,32 @@ export default function AdminMePage() {
             <List className="rounded-xl shadow-(--shadow-1)">
               <ListItem className="p-0">
                 <button
-                  onClick={() => {
-                    setAccountForm({
-                      name: me.name,
-                      phoneNumber: formatPhoneNumber(me.phoneNumber),
-                    });
-                    setShowAccountDialog(true);
-                  }}
+                  onClick={() => router.push('/settings/profile')}
                   className="flex w-full items-center justify-between p-5 text-left transition-colors hover:bg-neutral-50"
                 >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-body text-foreground font-bold">
-                        {me.name}
-                      </span>
-                      {me.role === 'admin' && (
-                        <Badge
-                          variant="subtle"
-                          color="blue"
-                          className="text-[11px] font-bold"
-                        >
-                          관리자
-                        </Badge>
-                      )}
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-200">
+                      <UserCircleIcon className="h-7 w-7 text-neutral-500" />
                     </div>
-                    <span className="text-muted-foreground block text-[14px] font-medium">
-                      {formatPhoneNumber(me.phoneNumber)}
-                    </span>
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-body text-foreground font-bold">
+                          {me.username}
+                        </span>
+                        {me.role === 'admin' && (
+                          <Badge
+                            variant="subtle"
+                            color="blue"
+                            className="text-[11px] font-bold"
+                          >
+                            관리자
+                          </Badge>
+                        )}
+                      </div>
+                      <span className="text-muted-foreground block text-[13px] font-medium">
+                        {me.name}님
+                      </span>
+                    </div>
                   </div>
                   <ChevronRightIcon className="text-muted-foreground size-5 shrink-0" />
                 </button>
@@ -147,7 +97,7 @@ export default function AdminMePage() {
 
           {/* 메뉴 섹션 */}
           <List className="rounded-xl shadow-(--shadow-1)">
-            <ListItem className="p-0">
+            <ListItem className="p-0 border-b border-border-subtle/50">
               <Link
                 href="/reserve"
                 className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-neutral-50"
@@ -192,16 +142,6 @@ export default function AdminMePage() {
           <AppVersion />
         </div>
       </main>
-
-      <AccountDialog
-        open={showAccountDialog}
-        form={accountForm}
-        disabled={saving}
-        onOpenChange={setShowAccountDialog}
-        onFormChange={setAccountForm}
-        onSave={handleSaveAccount}
-        onCancel={() => setShowAccountDialog(false)}
-      />
     </>
   );
 }

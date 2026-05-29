@@ -31,6 +31,8 @@ type CalendarStatus = {
   calendarId: string | null;
   eventCalendarId: string | null;
   lastSync: string | null;
+  pendingCount?: number;
+  failedCount?: number;
 };
 
 type CalendarOption = { id: string; summary: string };
@@ -49,19 +51,6 @@ type SyncRunSummary = {
     failed: number;
   };
 };
-
-function formatScopeStatus(
-  status: SyncRunSummary['reservationSyncStatus'] | SyncRunSummary['eventSyncStatus']
-) {
-  switch (status) {
-    case 'success':
-      return '성공';
-    case 'skipped':
-      return '변경 없음';
-    case 'failed':
-      return '실패';
-  }
-}
 
 function getRunBadge(run: SyncRunSummary) {
   if (
@@ -85,16 +74,18 @@ function formatLastSync(iso: string | null): string {
   if (!iso) return '없음';
   const diffMs = Date.now() - new Date(iso).getTime();
   const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return '방금 전';
   if (diffMin < 60) return `${diffMin}분 전`;
-  return `${Math.floor(diffMin / 60)}시간 전`;
-}
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour}시간 전`;
 
-function formatRunDate(iso: string): string {
+  const diffDay = Math.floor(diffHour / 24);
+  if (diffDay < 7) return `${diffDay}일 전`;
+
   return new Intl.DateTimeFormat('ko-KR', {
+    year: 'numeric',
     month: 'long',
     day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
   }).format(new Date(iso));
 }
 
@@ -185,7 +176,11 @@ function CalendarPageContent() {
       });
       const data = await res.json();
       if (res.ok) {
-        toast.success(data.message);
+        if (data.status === 'success') {
+          toast.success('동기화가 완료되었습니다.');
+        } else {
+          toast.error('동기화에 실패했습니다.');
+        }
         await fetchStatus();
         await fetchRecentRuns();
       } else {
@@ -320,16 +315,23 @@ function CalendarPageContent() {
                 <p className="text-caption text-muted-foreground px-1 font-bold">
                   Google 계정
                 </p>
-                
+
                 {status.needsReauth && (
-                  <div className="mb-4 flex items-start gap-3 rounded-2xl bg-red-50 p-4 border border-red-100 shadow-sm">
+                  <div className="mb-4 flex items-start gap-3 rounded-2xl border border-red-100 bg-red-50 p-4 shadow-sm">
                     <ExclamationCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
                     <div className="flex-1">
-                      <p className="text-[14px] font-bold text-red-900 leading-tight">연동 정보가 만료되었습니다</p>
-                      <p className="text-[13px] text-red-700 mt-1 leading-relaxed">
-                        보안 정책이나 비밀번호 변경으로 인해 Google 연결이 끊어졌습니다. 정상적인 동기화를 위해 다시 로그인이 필요합니다.
+                      <p className="text-[14px] leading-tight font-bold text-red-900">
+                        연동 정보가 만료되었습니다
                       </p>
-                      <a href="/api/auth/google" className="mt-3 inline-block px-4 py-1.5 bg-red-600 text-white text-[13px] font-bold rounded-full hover:bg-red-700 transition-colors shadow-sm">
+                      <p className="mt-1 text-[13px] leading-relaxed text-red-700">
+                        보안 정책이나 비밀번호 변경으로 인해 Google 연결이
+                        끊어졌습니다. 정상적인 동기화를 위해 다시 로그인이
+                        필요합니다.
+                      </p>
+                      <a
+                        href="/api/auth/google"
+                        className="mt-3 inline-block rounded-full bg-red-600 px-4 py-1.5 text-[13px] font-bold text-white shadow-sm transition-colors hover:bg-red-700"
+                      >
                         다시 로그인하기
                       </a>
                     </div>
@@ -500,13 +502,27 @@ function CalendarPageContent() {
                     <div className="flex items-center justify-between gap-4">
                       <div className="min-w-0 flex-1">
                         <div className="mb-1 flex items-center gap-1.5">
-                          <CheckCircleIcon className="text-muted-foreground h-4 w-4" />
-                          <span className="text-body text-foreground font-bold">
-                            정상 동작 중
-                          </span>
+                          {(status.failedCount ?? 0) > 0 ? (
+                            <>
+                              <ExclamationCircleIcon className="text-red-500 h-4 w-4" />
+                              <span className="text-body text-red-600 font-bold">
+                                오류 {status.failedCount}건 발생
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircleIcon className="text-muted-foreground h-4 w-4" />
+                              <span className="text-body text-foreground font-bold">
+                                정상 동작 중
+                              </span>
+                            </>
+                          )}
                         </div>
                         <p className="text-caption text-muted-foreground">
                           마지막 동기화: {formatLastSync(status.lastSync)}
+                        </p>
+                        <p className="text-caption text-muted-foreground mt-0.5">
+                          대기 {status.pendingCount ?? 0}건 · 실패 {status.failedCount ?? 0}건
                         </p>
                       </div>
                       <Button
@@ -518,7 +534,7 @@ function CalendarPageContent() {
                         <ArrowPathIcon
                           className={`mr-1 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`}
                         />
-                        {isSyncing ? '동기화중' : '동가화'}
+                        {isSyncing ? '동기화중' : '전체 동기화'}
                       </Button>
                     </div>
                   </Card>
@@ -540,27 +556,22 @@ function CalendarPageContent() {
                             href={`/admin/calendar/history/${run.id}`}
                             className="text-foreground block px-5 py-4"
                           >
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex min-w-0 items-center gap-2">
                                 <p className="text-body text-foreground min-w-0 truncate font-bold">
-                                  {formatRunDate(run.startedAt)}
+                                  {formatLastSync(run.startedAt)}
                                 </p>
                                 {badge ? (
-                                  <Badge color={badge.color} className="shrink-0">
+                                  <Badge
+                                    color={badge.color}
+                                    className="shrink-0"
+                                  >
                                     {badge.label}
                                   </Badge>
                                 ) : null}
                               </div>
-                              <p className="text-caption text-muted-foreground mt-1">
-                                {formatLastSync(run.startedAt)}
-                              </p>
-                              <p className="text-caption text-muted-foreground mt-1">
-                                {`예약 ${formatScopeStatus(run.reservationSyncStatus)} · 행사 ${formatScopeStatus(run.eventSyncStatus)}`}
-                              </p>
+                              <ChevronRightIcon className="text-muted-foreground size-4 shrink-0" />
                             </div>
-                            <ChevronRightIcon className="text-muted-foreground size-4 shrink-0" />
-                          </div>
                           </Link>
                         </ListItem>
                       );

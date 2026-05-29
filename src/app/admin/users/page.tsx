@@ -16,13 +16,15 @@ import {
 } from '@/components/ui/drawer';
 import { Switch } from '@/components/ui/switch';
 import { Chip } from '@/components/ui/chip';
+import { Button } from '@/components/ui/button';
 
 interface User {
   id: number;
   name: string;
+  username: string | null;
   phoneNumber: string;
   role: 'user' | 'admin';
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected' | 'withdrawn';
   createdAt: string | null;
 }
 
@@ -171,7 +173,8 @@ export default function UsersPage() {
     return (
       <List>
         {users.map((user) => {
-          const isDisabled = user.status === 'rejected';
+          const isDisabled =
+            user.status === 'rejected' || user.status === 'withdrawn';
 
           return (
             <ListItem
@@ -192,13 +195,22 @@ export default function UsersPage() {
                       관리자
                     </Badge>
                   )}
-                  {isDisabled && (
+                  {user.status === 'rejected' && (
                     <Badge
                       variant="subtle"
                       color="neutral"
                       className="text-[11px] font-bold"
                     >
-                      비활성화
+                      거절됨
+                    </Badge>
+                  )}
+                  {user.status === 'withdrawn' && (
+                    <Badge
+                      variant="subtle"
+                      color="neutral"
+                      className="text-[11px] font-bold"
+                    >
+                      탈퇴함
                     </Badge>
                   )}
                 </div>
@@ -265,6 +277,7 @@ export default function UsersPage() {
                   {(
                     [
                       { label: '이름', value: menuUser.name },
+                      { label: '아이디', value: menuUser.username || '-' },
                       { label: '전화번호', value: menuUser.phoneNumber },
                       {
                         label: '가입일',
@@ -289,56 +302,98 @@ export default function UsersPage() {
               </div>
 
               {/* 토글 액션 */}
-              <div className="space-y-1 px-4">
-                {/* 관리자 권한 */}
-                <div className="flex items-center justify-between gap-4 rounded-xl px-4 py-3.5">
-                  <div>
-                    <span className="text-body-sm text-foreground block font-semibold">
-                      관리자 권한
-                    </span>
-                    <span className="text-caption text-muted-foreground mt-0.5 block">
-                      관리자 페이지에 접근할 수 있습니다
-                    </span>
+              <div className="px-5 pb-8">
+                <div className="border-border-subtle/50 mb-6 space-y-0">
+                  {/* 관리자 권한 */}
+                  <div className="flex items-center justify-between gap-4 py-4">
+                    <div>
+                      <span className="text-foreground block text-[15px] font-semibold">
+                        관리자 권한
+                      </span>
+                      <span className="text-caption text-muted-foreground mt-0.5 block">
+                        관리자 페이지에 접근할 수 있습니다
+                      </span>
+                    </div>
+                    <Switch
+                      checked={menuUser.role === 'admin'}
+                      onCheckedChange={(checked) =>
+                        callPatch(menuUser.id, {
+                          action: 'set-role',
+                          role: checked ? 'admin' : 'user',
+                        })
+                      }
+                    />
                   </div>
-                  <Switch
-                    checked={menuUser.role === 'admin'}
-                    onCheckedChange={(checked) =>
-                      callPatch(menuUser.id, {
-                        action: 'set-role',
-                        role: checked ? 'admin' : 'user',
-                      })
-                    }
-                  />
+
+                  {/* 계정 활성화 */}
+                  <div className="flex items-center justify-between gap-4 py-4">
+                    <div>
+                      <span className="text-foreground block text-[15px] font-semibold">
+                        계정 활성화
+                      </span>
+                      <span className="text-caption text-muted-foreground mt-0.5 block">
+                        비활성화 시 로그인이 차단됩니다
+                      </span>
+                    </div>
+                    <Switch
+                      checked={menuUser.status === 'approved'}
+                      onCheckedChange={(checked) =>
+                        callPatch(menuUser.id, {
+                          action: 'set-status',
+                          status: checked ? 'approved' : 'rejected',
+                        })
+                      }
+                    />
+                  </div>
                 </div>
 
-                {/* 계정 활성화 */}
-                <div className="flex items-center justify-between gap-4 rounded-xl px-4 py-3.5">
-                  <div>
-                    <span className="text-body-sm text-foreground block font-semibold">
-                      계정 활성화
-                    </span>
-                    <span className="text-caption text-muted-foreground mt-0.5 block">
-                      비활성화 시 로그인이 차단됩니다
-                    </span>
-                  </div>
-                  <Switch
-                    checked={menuUser.status === 'approved'}
-                    onCheckedChange={(checked) =>
-                      callPatch(menuUser.id, {
-                        action: 'set-status',
-                        status: checked ? 'approved' : 'rejected',
-                      })
-                    }
-                  />
+                {/* 강제 수정 액션 */}
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    variant="secondary"
+                    className="h-12 w-full"
+                    onClick={() => {
+                      const newName = window.prompt(
+                        '새 이름을 입력하세요',
+                        menuUser.name
+                      );
+                      const newPhone = window.prompt(
+                        '새 전화번호를 입력하세요 (숫자만)',
+                        menuUser.phoneNumber
+                      );
+                      if (newName !== null || newPhone !== null) {
+                        callPatch(menuUser.id, {
+                          action: 'force-update',
+                          name: newName || undefined,
+                          phoneNumber: newPhone || undefined,
+                        });
+                      }
+                    }}
+                  >
+                    정보 수정
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive h-12 w-full"
+                    onClick={() => {
+                      const newPassword = window.prompt(
+                        '재설정할 비밀번호를 입력하세요 (최소 4자)'
+                      );
+                      if (newPassword && newPassword.length >= 4) {
+                        callPatch(menuUser.id, {
+                          action: 'reset-password',
+                          newPassword,
+                        });
+                        alert('비밀번호가 변경되었습니다.');
+                      } else if (newPassword) {
+                        alert('비밀번호는 4자 이상이어야 합니다.');
+                      }
+                    }}
+                  >
+                    비밀번호 재설정
+                  </Button>
                 </div>
               </div>
-
-              {/* 닫기 */}
-              <DrawerClose asChild>
-                <button className="rounded-pill border-border text-body-sm text-muted-foreground hover:text-foreground mx-4 mt-4 mb-6 w-[calc(100%-2rem)] border py-3 font-semibold transition-colors">
-                  닫기
-                </button>
-              </DrawerClose>
             </>
           )}
         </DrawerContent>

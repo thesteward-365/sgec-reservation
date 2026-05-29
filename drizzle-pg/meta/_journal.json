@@ -29,6 +29,20 @@
       "when": 1778761923595,
       "tag": "0003_red_wolfpack",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1779545832405,
+      "tag": "0004_light_roxanne_simpson",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1780044815074,
+      "tag": "0005_oval_clea",
+      "breakpoints": true
     }
   ]
 }

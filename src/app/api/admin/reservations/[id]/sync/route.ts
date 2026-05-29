@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getIronSession } from 'iron-session';
 import { sessionOptions, SessionData } from '@/lib/session';
 import { cookies } from 'next/headers';
-import { syncReservation } from '@/lib/calendar/calendar-service';
+import { syncReservationWithRun } from '@/lib/calendar/calendar-service';
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -22,7 +22,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
     }
 
-    const result = await syncReservation(reservationId);
+    const result = await syncReservationWithRun(reservationId, 'manual');
     
     return NextResponse.json(result);
   } catch (error) {

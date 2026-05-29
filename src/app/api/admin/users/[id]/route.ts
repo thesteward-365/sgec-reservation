@@ -9,7 +9,9 @@ type Params = { params: Promise<{ id: string }> };
 type PatchBody =
   | { action: 'approve' | 'reject' }
   | { action: 'set-role'; role: 'user' | 'admin' }
-  | { action: 'set-status'; status: 'approved' | 'rejected' };
+  | { action: 'set-status'; status: 'approved' | 'rejected' }
+  | { action: 'force-update'; name?: string; phoneNumber?: string }
+  | { action: 'reset-password'; newPassword: string };
 
 export async function PATCH(request: NextRequest, { params }: Params) {
   try {
@@ -45,6 +47,15 @@ export async function PATCH(request: NextRequest, { params }: Params) {
           return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
         }
         updated = await UserService.updateUserStatus(userId, body.status, session.user);
+        break;
+      case 'force-update':
+        updated = await UserService.forceUpdateUserProfile(userId, { name: body.name, phoneNumber: body.phoneNumber }, session.user);
+        break;
+      case 'reset-password':
+        if (!body.newPassword || body.newPassword.length < 4) {
+          return NextResponse.json({ error: 'Password too short' }, { status: 400 });
+        }
+        updated = await UserService.forceResetUserPassword(userId, body.newPassword, session.user);
         break;
       default:
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 });

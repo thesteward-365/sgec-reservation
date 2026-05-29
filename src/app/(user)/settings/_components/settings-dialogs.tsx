@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -142,6 +143,150 @@ export function AccountDialog({
             className="order-1 w-full sm:order-2 sm:w-auto"
           >
             저장
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={onCancel}
+            className="order-2 w-full sm:order-1 sm:w-auto"
+          >
+            취소
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+type PasswordDialogProps = {
+  open: boolean;
+  disabled: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSave: (currentPassword: string, newPassword: string) => void;
+  onCancel: () => void;
+};
+
+export function PasswordDialog({
+  open,
+  disabled,
+  onOpenChange,
+  onSave,
+  onCancel,
+}: PasswordDialogProps) {
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[95dvh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>비밀번호 변경</DialogTitle>
+          <DialogDescription>
+            보안을 위해 비밀번호를 주기적으로 변경해주세요.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col gap-4 py-2">
+          <div className="space-y-1.5">
+            <label className="text-caption text-muted-foreground ml-1">
+              현재 비밀번호
+            </label>
+            <Input
+              type="password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              placeholder="현재 비밀번호"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-caption text-muted-foreground ml-1">
+              새 비밀번호
+            </label>
+            <Input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="새 비밀번호 (8자 이상)"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-caption text-muted-foreground ml-1">
+              새 비밀번호 확인
+            </label>
+            <Input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="새 비밀번호 다시 입력"
+            />
+          </div>
+        </div>
+        <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-end">
+          <Button
+            onClick={() => {
+              if (newPassword !== confirmPassword) {
+                alert('새 비밀번호가 일치하지 않습니다.');
+                return;
+              }
+              onSave(currentPassword, newPassword);
+            }}
+            disabled={
+              disabled || !currentPassword || !newPassword || !confirmPassword
+            }
+            className="order-1 w-full sm:order-2 sm:w-auto"
+          >
+            변경하기
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setCurrentPassword('');
+              setNewPassword('');
+              setConfirmPassword('');
+              onCancel();
+            }}
+            className="order-2 w-full sm:order-1 sm:w-auto"
+          >
+            취소
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+type WithdrawDialogProps = {
+  open: boolean;
+  disabled: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: () => void;
+  onCancel: () => void;
+};
+
+export function WithdrawDialog({
+  open,
+  disabled,
+  onOpenChange,
+  onConfirm,
+  onCancel,
+}: WithdrawDialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="text-destructive">회원 탈퇴</DialogTitle>
+          <DialogDescription>
+            정말로 탈퇴하시겠습니까? 탈퇴 시 계정 정보는 복구할 수 없으며, 기존
+            예약 내역의 개인정보는 익명화됩니다.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-end">
+          <Button
+            variant="destructive"
+            onClick={onConfirm}
+            disabled={disabled}
+            className="order-1 w-full sm:order-2 sm:w-auto"
+          >
+            탈퇴하기
           </Button>
           <Button
             variant="secondary"

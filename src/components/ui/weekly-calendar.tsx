@@ -31,6 +31,7 @@ interface WeeklyCalendarProps {
   defaultDate?: Date
   selectedDate?: Date
   onDateSelect?: (date: Date) => void
+  onWeekChange?: (weekStart: Date) => void
   /** 날짜에 예약 점 표시 여부를 반환하는 함수 */
   getIndicator?: (date: Date) => boolean
   className?: string
@@ -40,6 +41,7 @@ function WeeklyCalendar({
   defaultDate,
   selectedDate,
   onDateSelect,
+  onWeekChange,
   getIndicator,
   className,
 }: WeeklyCalendarProps) {
@@ -55,6 +57,18 @@ function WeeklyCalendar({
 
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
 
+  const handlePrevWeek = () => {
+    const next = addDays(weekStart, -7)
+    setWeekStart(next)
+    onWeekChange?.(next)
+  }
+
+  const handleNextWeek = () => {
+    const next = addDays(weekStart, 7)
+    setWeekStart(next)
+    onWeekChange?.(next)
+  }
+
   const weekLabel = React.useMemo(() => {
     const start = days[0]
     const end = days[6]
@@ -68,7 +82,7 @@ function WeeklyCalendar({
     <div className={cn("flex flex-col", className)}>
       <div className="flex items-center justify-between px-2 py-2">
         <button
-          onClick={() => setWeekStart((d) => addDays(d, -7))}
+          onClick={handlePrevWeek}
           className="p-1.5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-120 ease-(--ease-standard)"
           aria-label="이전 주"
         >
@@ -78,7 +92,7 @@ function WeeklyCalendar({
           {weekLabel}
         </span>
         <button
-          onClick={() => setWeekStart((d) => addDays(d, 7))}
+          onClick={handleNextWeek}
           className="p-1.5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-120 ease-(--ease-standard)"
           aria-label="다음 주"
         >

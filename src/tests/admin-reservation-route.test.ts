@@ -127,6 +127,9 @@ describe('/api/admin/reservations/[id] route', () => {
         processedAt: new Date('2026-05-20T09:30:00.000Z'),
         externalEventId: 'evt-1',
         runId: 'sync_run_1',
+        status: 'success',
+        errorMessage: null,
+        payload: null,
       },
     ];
     state.googleEventUrl = 'https://calendar.google.com/event?eid=abc';
@@ -162,6 +165,55 @@ describe('/api/admin/reservations/[id] route', () => {
       status: 'pending',
       label: '동기화 필요',
       runId: null,
+    });
+  });
+
+  it('returns failed google sync status with the latest failure reason', async () => {
+    state.syncItemRows = [
+      {
+        processedAt: new Date('2026-05-20T09:40:00.000Z'),
+        externalEventId: 'evt-1',
+        runId: 'sync_run_failed',
+        status: 'failed',
+        errorMessage:
+          '예약 #1 동기화 실패: 연결된 Google 계정에 캘린더 수정 권한이 없습니다. 캘린더 권한을 확인해주세요.',
+        payload: JSON.stringify({
+          syncError: {
+            code: 'permission_denied',
+            label: '권한 오류',
+            message:
+              '연결된 Google 계정에 캘린더 수정 권한이 없습니다. 캘린더 권한을 확인해주세요.',
+            detail: 'Forbidden',
+            retryable: false,
+          },
+        }),
+      },
+      {
+        processedAt: new Date('2026-05-20T09:30:00.000Z'),
+        externalEventId: 'evt-1',
+        runId: 'sync_run_1',
+        status: 'success',
+        errorMessage: null,
+        payload: null,
+      },
+    ];
+    const { GET } = await import('../app/api/admin/reservations/[id]/route');
+
+    const response = await GET(new Request('http://localhost') as never, {
+      params: Promise.resolve({ id: '1' }),
+    });
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json.googleSync).toMatchObject({
+      status: 'failed',
+      label: '동기화 실패',
+      runId: 'sync_run_failed',
+      errorCode: 'permission_denied',
+      errorLabel: '권한 오류',
+      errorMessage:
+        '연결된 Google 계정에 캘린더 수정 권한이 없습니다. 캘린더 권한을 확인해주세요.',
+      retryable: false,
     });
   });
 

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db, reservations, places, floors, users, fromDbDate } from '@/lib/db';
-import { eq, asc } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { getIronSession } from 'iron-session';
 import { sessionOptions, SessionData } from '@/lib/session';
 import { cookies } from 'next/headers';
@@ -29,7 +29,7 @@ export async function GET() {
     .leftJoin(places, eq(reservations.placeId, places.id))
     .leftJoin(floors, eq(places.floorId, floors.id))
     .leftJoin(users, eq(reservations.userId, users.id))
-    .orderBy(asc(reservations.startTime));
+    .orderBy(desc(reservations.startTime), desc(reservations.endTime));
 
   return NextResponse.json(
     rows.map((r) => ({

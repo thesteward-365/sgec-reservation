@@ -16,6 +16,7 @@ export async function GET() {
     .select({
       id: users.id,
       name: users.name,
+      username: users.username,
       phoneNumber: users.phoneNumber,
       role: users.role,
       status: users.status,
