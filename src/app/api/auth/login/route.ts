@@ -40,11 +40,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (user.status === 'rejected') {
-      return NextResponse.json(
-        { error: '가입이 거절되었습니다. 관리자에게 문의해주세요.' },
-        { status: 403 }
-      );
+    if (user.status === 'rejected' || user.status === 'withdrawn') {
+      const message =
+        user.status === 'withdrawn'
+          ? '탈퇴한 계정입니다. 재가입이 필요하시면 관리자에게 문의해주세요.'
+          : '가입 승인이 거절되었습니다. 관리자에게 문의해주세요.';
+      return NextResponse.json({ error: message }, { status: 403 });
     }
 
     const options = {
@@ -59,6 +60,7 @@ export async function POST(request: NextRequest) {
     session.user = {
       id: user.id,
       name: user.name,
+      username: user.username || '',
       phoneNumber: user.phoneNumber,
       role: user.role,
       status: user.status,

@@ -16,6 +16,7 @@ export const userStatusEnum = pgEnum('user_status', [
   'pending',
   'approved',
   'rejected',
+  'withdrawn',
 ]);
 export const reservationStatusEnum = pgEnum('reservation_status', [
   'active',
