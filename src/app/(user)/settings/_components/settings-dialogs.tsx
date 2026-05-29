@@ -193,7 +193,7 @@ export function PasswordDialog({
             <Input
               type="password"
               value={currentPassword}
-              onChange={(e) => setCurrentPassword(event.target.value)}
+              onChange={(e) => setCurrentPassword(e.target.value)}
               placeholder="현재 비밀번호"
             />
           </div>
@@ -204,7 +204,7 @@ export function PasswordDialog({
             <Input
               type="password"
               value={newPassword}
-              onChange={(e) => setNewPassword(event.target.value)}
+              onChange={(e) => setNewPassword(e.target.value)}
               placeholder="새 비밀번호 (8자 이상)"
             />
           </div>
@@ -215,7 +215,7 @@ export function PasswordDialog({
             <Input
               type="password"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(event.target.value)}
+              onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="새 비밀번호 다시 입력"
             />
           </div>
@@ -229,7 +229,9 @@ export function PasswordDialog({
               }
               onSave(currentPassword, newPassword);
             }}
-            disabled={disabled || !currentPassword || !newPassword || !confirmPassword}
+            disabled={
+              disabled || !currentPassword || !newPassword || !confirmPassword
+            }
             className="order-1 w-full sm:order-2 sm:w-auto"
           >
             변경하기
@@ -273,7 +275,8 @@ export function WithdrawDialog({
         <DialogHeader>
           <DialogTitle className="text-destructive">회원 탈퇴</DialogTitle>
           <DialogDescription>
-            정말로 탈퇴하시겠습니까? 탈퇴 시 계정 정보는 복구할 수 없으며, 기존 예약 내역의 개인정보는 익명화됩니다.
+            정말로 탈퇴하시겠습니까? 탈퇴 시 계정 정보는 복구할 수 없으며, 기존
+            예약 내역의 개인정보는 익명화됩니다.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-end">

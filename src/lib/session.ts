@@ -7,7 +7,7 @@ export interface SessionData {
     username: string;
     phoneNumber: string;
     role: 'user' | 'admin';
-    status: 'pending' | 'approved' | 'rejected';
+    status: 'pending' | 'approved' | 'rejected' | 'withdrawn';
   };
 }
 
