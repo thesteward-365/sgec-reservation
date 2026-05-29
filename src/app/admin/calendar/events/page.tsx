@@ -2,13 +2,15 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import {
-  ArrowPathIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-} from '@heroicons/react/24/outline';
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
 import { Card } from '@/components/ui/card';
+import { List, ListItem } from '@/components/ui/list';
+import { ListSkeleton } from '@/components/ui/list-skeleton';
+import {
+  getExternalEventDateRange,
+  isExternalEventAllDay,
+} from '@/lib/external-event-dates';
 
 type ExternalEventResponse = {
   id: number;
@@ -30,29 +32,34 @@ function formatMonthLabel(date: Date) {
   }).format(date);
 }
 
-function formatDateLabel(iso: string) {
-  return new Intl.DateTimeFormat('ko-KR', {
-    month: 'long',
-    day: 'numeric',
-    weekday: 'short',
-  }).format(new Date(iso));
+function formatKstTime(iso: string) {
+  const date = new Date(iso);
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
 }
 
-function formatTimeRange(event: ExternalEventResponse) {
-  if (event.isAllDay) return '종일';
-
+function EventDateSide({ event }: { event: ExternalEventResponse }) {
+  const { startDate, endDate } = getExternalEventDateRange(event);
   const start = new Date(event.startTime);
-  const end = new Date(event.endTime);
-  const startLabel = new Intl.DateTimeFormat('ko-KR', {
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(start);
-  const endLabel = new Intl.DateTimeFormat('ko-KR', {
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(end);
+  const isAllDay = isExternalEventAllDay(event);
+  const isMultiDay = startDate !== endDate;
 
-  return `${startLabel} - ${endLabel}`;
+  const day = start.getDate();
+  const weekday = new Intl.DateTimeFormat('ko-KR', { weekday: 'short' }).format(
+    start
+  );
+
+  return (
+    <div className="flex min-w-16 flex-col items-center justify-center rounded-lg bg-neutral-50 px-3 py-2 text-center">
+      <span className="text-foreground text-[18px] font-bold tabular-nums">
+        {day}
+      </span>
+      <span className="text-muted-foreground text-[12px] font-medium">
+        {weekday}
+      </span>
+    </div>
+  );
 }
 
 export default function AdminCalendarEventsPage() {
@@ -91,16 +98,8 @@ export default function AdminCalendarEventsPage() {
     };
   }, [viewMonth]);
 
-  const groupedEvents = useMemo(() => {
-    const groups = new Map<string, ExternalEventResponse[]>();
-
-    for (const event of events) {
-      const key = event.startTime.slice(0, 10);
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key)!.push(event);
-    }
-
-    return Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b));
+  const sortedEvents = useMemo(() => {
+    return [...events].sort((a, b) => a.startTime.localeCompare(b.startTime));
   }, [events]);
 
   return (
@@ -140,7 +139,7 @@ export default function AdminCalendarEventsPage() {
                 {formatMonthLabel(viewMonth)}
               </p>
               <p className="text-muted-foreground text-caption mt-1">
-                Google 행사 일정 캘린더 기준
+                월별 행사 일정
               </p>
             </div>
             <button
@@ -159,42 +158,61 @@ export default function AdminCalendarEventsPage() {
         </Card>
 
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <ArrowPathIcon className="text-muted-foreground h-6 w-6 animate-spin" />
-          </div>
-        ) : groupedEvents.length === 0 ? (
+          <ListSkeleton count={5} />
+        ) : sortedEvents.length === 0 ? (
           <div className="bg-card rounded-xl px-4 py-10 text-center shadow-(--shadow-1)">
             <p className="text-foreground text-[15px] font-semibold">
               이 달의 행사 일정이 없습니다
             </p>
           </div>
         ) : (
-          groupedEvents.map(([date, dayEvents]) => (
-            <section key={date} className="space-y-2">
-              <p className="text-caption text-muted-foreground px-1 font-bold">
-                {formatDateLabel(date)}
-              </p>
-              <div className="space-y-3">
-                {dayEvents.map((event) => (
-                  <Card key={event.id} className="gap-3 p-5 shadow-(--shadow-1)">
-                    <div className="space-y-1">
-                      <p className="text-foreground text-base font-bold">
-                        {event.title}
-                      </p>
-                      <p className="text-caption text-muted-foreground">
-                        {formatTimeRange(event)}
-                      </p>
+          <div className="bg-card overflow-hidden rounded-xl shadow-(--shadow-1)">
+            <List>
+              {sortedEvents.map((event) => {
+                const { startDate, endDate } = getExternalEventDateRange(event);
+                const isAllDay = isExternalEventAllDay(event);
+                const isMultiDay = startDate !== endDate;
+
+                return (
+                  <ListItem key={event.id} className="p-0">
+                    <div className="flex w-full items-start gap-4 px-4 py-4">
+                      <EventDateSide event={event} />
+                      <div className="min-w-0 flex-1 py-0.5">
+                        <p className="text-foreground text-base leading-tight font-bold">
+                          {event.title}
+                        </p>
+                        {event.description ? (
+                          <p className="text-muted-foreground mt-1.5 line-clamp-2 text-[14px] leading-snug whitespace-pre-wrap">
+                            {event.description}
+                          </p>
+                        ) : null}
+                        <p className="text-muted-foreground mt-2 text-[12px]">
+                          {new Intl.DateTimeFormat('ko-KR', {
+                            month: 'long',
+                            day: 'numeric',
+                            weekday: 'short',
+                            hour: isAllDay ? undefined : 'numeric',
+                            minute: isAllDay ? undefined : '2-digit',
+                          }).format(new Date(event.startTime))}
+                          {isMultiDay && (
+                            <>
+                              {' '}
+                              ~{' '}
+                              {new Intl.DateTimeFormat('ko-KR', {
+                                month: 'long',
+                                day: 'numeric',
+                                weekday: 'short',
+                              }).format(new Date(event.endTime))}
+                            </>
+                          )}
+                        </p>
+                      </div>
                     </div>
-                    {event.description ? (
-                      <p className="text-body text-muted-foreground whitespace-pre-wrap">
-                        {event.description}
-                      </p>
-                    ) : null}
-                  </Card>
-                ))}
-              </div>
-            </section>
-          ))
+                  </ListItem>
+                );
+              })}
+            </List>
+          </div>
         )}
       </main>
     </div>
