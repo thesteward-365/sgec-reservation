@@ -784,17 +784,33 @@ async function pushReservationsDetailed(
 
   for (const row of candidateRows) {
     const title = reservationTitle(row);
-    const lastSync = await getLatestSyncItemForReservation(row.id);
+    const lastSuccess = await getLatestSyncItemForReservation(row.id);
+
+    // 절대적인 가장 최근 동기화 시도 결과 확인
+    const [absoluteLatest] = await db
+      .select({ status: calendarSyncItems.status })
+      .from(calendarSyncItems)
+      .where(
+        and(
+          eq(calendarSyncItems.reservationId, row.id),
+          eq(calendarSyncItems.category, 'reservation')
+        )
+      )
+      .orderBy(desc(calendarSyncItems.processedAt))
+      .limit(1);
 
     if (row.status === 'active') {
       const action: SyncAction = row.googleEventId ? 'updated' : 'created';
 
       const isOutdated =
         !row.googleEventId ||
-        !lastSync ||
-        row.updatedAt.getTime() > lastSync.processedAt.getTime();
+        !lastSuccess ||
+        row.updatedAt.getTime() > lastSuccess.processedAt.getTime();
 
-      if (!isOutdated) {
+      const hasFailed = absoluteLatest?.status === 'failed';
+
+      // 업데이트가 필요하지 않고, 마지막 시도도 성공이었다면 건너뜀
+      if (!isOutdated && !hasFailed) {
         result.items.push({
           category: 'reservation',
           action,

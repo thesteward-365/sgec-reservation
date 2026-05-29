@@ -312,7 +312,49 @@ describe('calendar-service new sync logic', () => {
 
     expect(state.calendarClient.events.update).not.toHaveBeenCalled();
     expect(result.counts.reservationUpdated).toBe(0);
-    expect(state.insertedItems.find(i => i.reservationId === 3)?.status).toBe('skipped');
+    expect(state.insertedItems.find((i) => i.reservationId === 3)?.status).toBe(
+      'skipped'
+    );
+  });
+
+  it('SyncAll: retries previously failed reservation even if not modified', async () => {
+    state.reservationRows = [
+      {
+        ...baseRes,
+        id: 4,
+        status: 'active',
+        googleEventId: 'existing-id',
+        updatedAt: new Date('2026-05-14T09:00:00.000Z'),
+      },
+    ];
+    // latest success was newer than updatedAt, but latest attempt was a failure
+    state.itemRows = [
+      {
+        processedAt: new Date('2026-05-14T10:00:00.000Z'),
+        status: 'failed', // absolute latest was failed
+        action: 'updated',
+      },
+      {
+        processedAt: new Date('2026-05-14T08:00:00.000Z'),
+        status: 'success', // previous success
+        action: 'created',
+      },
+    ];
+    vi.mocked(state.calendarClient.events.update).mockResolvedValue({
+      data: {},
+    });
+    vi.mocked(state.calendarClient.events.list).mockResolvedValue({
+      data: { items: [] },
+    });
+
+    const result = await syncAll('manual');
+
+    // Should NOT skip, because it failed last time
+    expect(state.calendarClient.events.update).toHaveBeenCalled();
+    expect(result.counts.reservationUpdated).toBe(1);
+    expect(state.insertedItems.find((i) => i.reservationId === 4)?.status).toBe(
+      'success'
+    );
   });
 
   it('SyncAll: recreates reservation when missing in Google (404)', async () => {
