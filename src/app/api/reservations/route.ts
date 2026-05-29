@@ -87,7 +87,8 @@ export async function POST(request: NextRequest) {
       purpose: purpose.trim(),
     });
 
-    return NextResponse.json(created, { status: 201 });
+    const { googleEventId: _, ...response } = created;
+    return NextResponse.json(response, { status: 201 });
   } catch (error: any) {
     console.error('[API] POST /api/reservations error:', error);
     const status = error.message.includes('이미 예약이 있습니다') ? 409 : 500;
