@@ -27,6 +27,12 @@ import {
   ExternalEventsSheet,
   type ExternalEventSheetItem,
 } from '@/components/reservations/external-events-sheet';
+import {
+  formatExternalEventDateRangeLabel,
+  formatExternalEventTimeRangeLabel,
+  getExternalEventDateRange,
+  isExternalEventAllDay,
+} from '@/lib/external-event-dates';
 
 type ReservationStatus = 'active' | 'cancelled';
 type AdminReservation = {
@@ -64,21 +70,6 @@ type MainView = 'calendar' | 'list';
 function toYMD(dt: Date | string): string {
   const d = typeof dt === 'string' ? new Date(dt) : dt;
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-// 구글 캘린더 종일 일정(00:00:00 종료) 처리를 위한 헬퍼
-function toEffectiveYMD(isoString: string, isEnd: boolean): string {
-  const d = new Date(isoString);
-  if (
-    isEnd &&
-    d.getHours() === 0 &&
-    d.getMinutes() === 0 &&
-    d.getSeconds() === 0
-  ) {
-    // 00:00:00에 끝나면 실제로는 전날 종료된 것으로 처리
-    d.setDate(d.getDate() - 1);
-  }
-  return toYMD(d);
 }
 
 function isSameDay(a: Date | string, b: Date): boolean {
@@ -130,25 +121,21 @@ function InformationalEventCard({
   title,
   startTime,
   endTime,
+  isAllDay,
 }: {
   title: string;
   startTime: string;
   endTime: string;
+  isAllDay?: boolean;
 }) {
-  const start = new Date(startTime);
-  const end = new Date(endTime);
-
-  // 종일 일정 판별 (KST 기준 00:00:00 시작 ~ 00:00:00 종료)
-  const isAllDay =
-    start.getHours() === 0 &&
-    start.getMinutes() === 0 &&
-    end.getHours() === 0 &&
-    end.getMinutes() === 0 &&
-    end.getTime() - start.getTime() >= 24 * 60 * 60 * 1000;
-
-  const timeLabel = isAllDay
-    ? '종일'
-    : `${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')} - ${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`;
+  const event = {
+    startTime,
+    endTime,
+    isAllDay,
+  };
+  const timeLabel = isExternalEventAllDay(event)
+    ? formatExternalEventDateRangeLabel(event, { includeAllDaySuffix: true })
+    : formatExternalEventTimeRangeLabel(event);
 
   return (
     <div className="border-b border-blue-100/50 bg-blue-50/30 p-4 text-blue-700 last:border-0">
@@ -229,14 +216,17 @@ export default function ReservationsPage() {
       .then((r) => r.json())
       .then((data: ExternalEventResponse[]) => {
         setExternalEvents(
-          (data || []).map((ev) => ({
-            id: ev.id,
-            title: ev.title,
-            startDate: toEffectiveYMD(ev.startTime, false),
-            endDate: toEffectiveYMD(ev.endTime, true),
-            variant: 'accent', // 기본 테마색
-            raw: ev,
-          }))
+          (data || []).map((ev) => {
+            const { startDate, endDate } = getExternalEventDateRange(ev);
+            return {
+              id: ev.id,
+              title: ev.title,
+              startDate,
+              endDate,
+              variant: 'accent', // 기본 테마색
+              raw: ev,
+            };
+          })
         );
       })
       .catch(console.error);
@@ -299,9 +289,7 @@ export default function ReservationsPage() {
   }, [externalEvents, selectedDate]);
 
   const activeFilter =
-    filter.floorId !== null ||
-    filter.tagId !== null ||
-    filter.onlyMine;
+    filter.floorId !== null || filter.tagId !== null || filter.onlyMine;
 
   const listViewReservations = filteredReservations.filter((reservation) => {
     if (!reservation.startTime) return listTab === '전체';
@@ -394,7 +382,7 @@ export default function ReservationsPage() {
                     sortOrder: e.target.value as 'asc' | 'desc',
                   }))
                 }
-                className="text-foreground bg-transparent text-[14px] font-medium outline-none cursor-pointer"
+                className="text-foreground cursor-pointer bg-transparent text-[14px] font-medium outline-none"
               >
                 <option value="desc">최신순</option>
                 <option value="asc">오래된순</option>
@@ -461,6 +449,7 @@ export default function ReservationsPage() {
                         title={ev.title}
                         startTime={ev.raw.startTime}
                         endTime={ev.raw.endTime}
+                        isAllDay={ev.raw.isAllDay}
                       />
                     ))}
 
@@ -555,109 +544,113 @@ export default function ReservationsPage() {
                     const eventSummary = getExternalEventsSummary(dateKey);
 
                     return (
-                    <div key={dateKey} className="mb-8 space-y-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-foreground text-body! font-bold">
-                            {items[0].startTime
-                              ? formatDateHeader(items[0].startTime)
-                              : dateKey}
-                          </h3>
+                      <div key={dateKey} className="mb-8 space-y-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-foreground text-body! font-bold">
+                              {items[0].startTime
+                                ? formatDateHeader(items[0].startTime)
+                                : dateKey}
+                            </h3>
 
-                          {dateKey === toYMD(now) && (
-                            <Badge
-                              variant="subtle"
-                              className="bg-transparent px-2 py-0.5 text-[14px]! font-bold"
-                            >
-                              오늘
-                            </Badge>
-                          )}
-
-                          {/* 리스트 뷰 날짜 헤더 옆 행사 배지 */}
-                          {eventSummary && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setActiveExternalEvents({
-                                  dateLabel: items[0].startTime
-                                    ? formatDateHeader(items[0].startTime)
-                                    : dateKey,
-                                  events: eventSummary.events,
-                                })
-                              }
-                              className="rounded-full transition-opacity hover:opacity-80"
-                            >
-                              <Badge className="border-none bg-blue-50 px-2 py-0.5 text-[12px]! text-blue-700">
-                                {eventSummary.label}
+                            {dateKey === toYMD(now) && (
+                              <Badge
+                                variant="subtle"
+                                className="bg-transparent px-2 py-0.5 text-[14px]! font-bold"
+                              >
+                                오늘
                               </Badge>
-                            </button>
-                          )}
+                            )}
+
+                            {/* 리스트 뷰 날짜 헤더 옆 행사 배지 */}
+                            {eventSummary && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setActiveExternalEvents({
+                                    dateLabel: items[0].startTime
+                                      ? formatDateHeader(items[0].startTime)
+                                      : dateKey,
+                                    events: eventSummary.events,
+                                  })
+                                }
+                                className="rounded-full transition-opacity hover:opacity-80"
+                              >
+                                <Badge className="border-none bg-blue-50 px-2 py-0.5 text-[12px]! text-blue-700">
+                                  {eventSummary.label}
+                                </Badge>
+                              </button>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground text-[13px]">
+                              {items.length}건
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground text-[13px]">
-                            {items.length}건
-                          </span>
-                        </div>
-                      </div>
-                      <List>
-                        {items.map((reservation) => (
-                          <ListItem key={reservation.id} className="px-0 py-0">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                router.push(
-                                  `/admin/reservations/${reservation.id}`
-                                )
-                              }
-                              className="w-full rounded-none px-4 py-4 text-left transition hover:bg-neutral-50 active:bg-neutral-100"
+                        <List>
+                          {items.map((reservation) => (
+                            <ListItem
+                              key={reservation.id}
+                              className="px-0 py-0"
                             >
-                              <div className="flex items-center gap-3">
-                                <div className="flex min-w-18 flex-col items-center justify-center rounded-lg bg-neutral-50 px-3 py-2 text-center">
-                                  <span className="text-foreground font-bold tabular-nums">
-                                    {formatTime(reservation.startTime!)}
-                                  </span>
-                                  <span className="text-muted-foreground mt-1 text-[14px] tabular-nums">
-                                    {formatTime(reservation.endTime!)}
-                                  </span>
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <div className="flex items-start gap-3">
-                                    <p className="text-foreground truncate text-[16px]! font-bold">
-                                      {reservation.placeName
-                                        ? `${reservation.floorName} ${reservation.placeName}`
-                                        : '장소 없음'}
-                                    </p>
-                                    {reservation.status === 'cancelled' && (
-                                      <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-medium text-red-600">
-                                        취소됨
-                                      </span>
-                                    )}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  router.push(
+                                    `/admin/reservations/${reservation.id}`
+                                  )
+                                }
+                                className="w-full rounded-none px-4 py-4 text-left transition hover:bg-neutral-50 active:bg-neutral-100"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="flex min-w-18 flex-col items-center justify-center rounded-lg bg-neutral-50 px-3 py-2 text-center">
+                                    <span className="text-foreground font-bold tabular-nums">
+                                      {formatTime(reservation.startTime!)}
+                                    </span>
+                                    <span className="text-muted-foreground mt-1 text-[14px] tabular-nums">
+                                      {formatTime(reservation.endTime!)}
+                                    </span>
                                   </div>
-                                  <p className="text-muted-foreground mt-2 text-[14px]! leading-snug">
-                                    {reservation.userName ? (
-                                      <span
-                                        className={cn(
-                                          currentUser?.id ===
-                                            reservation.userId &&
-                                            'font-bold text-blue-600'
-                                        )}
-                                      >
-                                        {reservation.userName}
-                                      </span>
-                                    ) : (
-                                      ''
-                                    )}
-                                    {reservation.userName ? ' · ' : ''}
-                                    {reservation.purpose}
-                                  </p>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-start gap-3">
+                                      <p className="text-foreground truncate text-[16px]! font-bold">
+                                        {reservation.placeName
+                                          ? `${reservation.floorName} ${reservation.placeName}`
+                                          : '장소 없음'}
+                                      </p>
+                                      {reservation.status === 'cancelled' && (
+                                        <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-medium text-red-600">
+                                          취소됨
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="text-muted-foreground mt-2 text-[14px]! leading-snug">
+                                      {reservation.userName ? (
+                                        <span
+                                          className={cn(
+                                            currentUser?.id ===
+                                              reservation.userId &&
+                                              'font-bold text-blue-600'
+                                          )}
+                                        >
+                                          {reservation.userName}
+                                        </span>
+                                      ) : (
+                                        ''
+                                      )}
+                                      {reservation.userName ? ' · ' : ''}
+                                      {reservation.purpose}
+                                    </p>
+                                  </div>
                                 </div>
-                              </div>
-                            </button>
-                          </ListItem>
-                        ))}
-                      </List>
-                    </div>
-                  )})}
+                              </button>
+                            </ListItem>
+                          ))}
+                        </List>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

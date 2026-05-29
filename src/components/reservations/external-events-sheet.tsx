@@ -7,6 +7,11 @@ import {
   DrawerTitle,
 } from '@/components/ui/drawer';
 import { CalendarIcon } from '@heroicons/react/24/outline';
+import {
+  formatExternalEventDateRangeLabel,
+  formatExternalEventTimeRangeLabel,
+  isExternalEventAllDay,
+} from '@/lib/external-event-dates';
 
 export type ExternalEventSheetItem = {
   id: number | string;
@@ -25,46 +30,11 @@ type Props = {
 };
 
 function formatEventLabel(event: ExternalEventSheetItem) {
-  const start = new Date(event.startTime);
-  const end = new Date(event.endTime);
-
-  const isAllDay =
-    event.isAllDay ||
-    (start.getHours() === 0 &&
-      start.getMinutes() === 0 &&
-      end.getHours() === 0 &&
-      end.getMinutes() === 0 &&
-      end.getTime() - start.getTime() >= 24 * 60 * 60 * 1000);
-
-  if (isAllDay) {
-    const endDisplay = new Date(end);
-    if (
-      endDisplay.getHours() === 0 &&
-      endDisplay.getMinutes() === 0 &&
-      endDisplay.getSeconds() === 0
-    ) {
-      endDisplay.setDate(endDisplay.getDate() - 1);
-    }
-
-    if (start.toDateString() === endDisplay.toDateString()) {
-      return `${start.getMonth() + 1}월 ${start.getDate()}일`;
-    }
-
-    return `${start.getMonth() + 1}월 ${start.getDate()}일 ~ ${endDisplay.getMonth() + 1}월 ${endDisplay.getDate()}일`;
+  if (isExternalEventAllDay(event)) {
+    return formatExternalEventDateRangeLabel(event);
   }
 
-  const startLabel = `${String(start.getHours()).padStart(2, '0')}:${String(
-    start.getMinutes()
-  ).padStart(2, '0')}`;
-  const endLabel = `${String(end.getHours()).padStart(2, '0')}:${String(
-    end.getMinutes()
-  ).padStart(2, '0')}`;
-
-  if (start.toDateString() === end.toDateString()) {
-    return `${startLabel} - ${endLabel}`;
-  }
-
-  return `${start.getMonth() + 1}월 ${start.getDate()}일 ${startLabel} - ${end.getMonth() + 1}월 ${end.getDate()}일 ${endLabel}`;
+  return formatExternalEventTimeRangeLabel(event);
 }
 
 export function ExternalEventsSheet({
