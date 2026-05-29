@@ -325,28 +325,28 @@
   - [ ] 예약별 Google Calendar 상태를 `pending` / `syncing` / `synced` / `failed` / `disabled` 등으로 관리할지, 기존 `calendar_sync_items` 최신 결과로 계산할지 결정
   - [ ] 관리자에게 보여줄 상태 라벨과 원인 분류 정의: 연결 필요, 캘린더 설정 오류, 권한 오류, 토큰 갱신 실패, Google API 오류, 네트워크 오류, 알 수 없는 오류
   - [ ] 일반 사용자 화면/API 응답에는 Google Calendar 동기화 상태와 상세 오류를 노출하지 않는 기준 확정
-- [ ] 예약 변경 시 `updatedAt` 갱신 보장
-  - [ ] 예약 생성/수정/취소 시 `reservations.updatedAt`이 반드시 변경되도록 저장소/DB 갱신 규칙 정리
-  - [ ] `googleEventId`만 변경되는 동기화 메타데이터 갱신과 예약 본문 변경 시간을 구분할 필요가 있는지 검토
-  - [ ] 전체 동기화의 skip 판단이 `updatedAt` 누락 때문에 실패 예약을 놓치지 않도록 기준 보강
-- [ ] CRUD 직후 Google 반영 경로 통일
-  - [ ] `ReservationService`의 생성/수정/취소 후 호출을 `updateGoogleEvent()` / `deleteGoogleEvent()` 직접 호출이 아니라 DB 기준 `syncReservation()` 계열로 통일
-  - [ ] 자동 반영, 개별 수동 재시도, 전체 수동 동기화가 모두 같은 판정 로직을 사용하도록 정리
-  - [ ] `catch(() => {})`처럼 실패를 숨기는 경로 제거 또는 최소한 관리자용 실패 기록을 남기도록 변경
+- [x] 예약 변경 시 `updatedAt` 갱신 보장
+  - [x] 예약 생성/수정/취소 시 `reservations.updatedAt`이 반드시 변경되도록 저장소/DB 갱신 규칙 정리
+  - [x] `googleEventId`만 변경되는 동기화 메타데이터 갱신과 예약 본문 변경 시간을 구분할 필요가 있는지 검토
+  - [x] 전체 동기화의 skip 판단이 `updatedAt` 누락 때문에 실패 예약을 놓치지 않도록 기준 보강
+- [x] CRUD 직후 Google 반영 경로 통일
+  - [x] `ReservationService`의 생성/수정/취소 후 호출을 `updateGoogleEvent()` / `deleteGoogleEvent()` 직접 호출이 아니라 DB 기준 `syncReservation()` 계열로 통일
+  - [x] 자동 반영, 개별 수동 재시도, 전체 수동 동기화가 모두 같은 판정 로직을 사용하도록 정리
+  - [x] `catch(() => {})`처럼 실패를 숨기는 경로 제거 또는 최소한 관리자용 실패 기록을 남기도록 변경
 - [ ] DB 상태 기준 동기화 판정 로직 강화
-  - [ ] `active + googleEventId 없음` → Google 이벤트 생성 후 DB에 `googleEventId` 저장
-  - [ ] `active + googleEventId 있음` → Google 이벤트를 DB의 장소/시간/목적/예약자 기준으로 업데이트
-  - [ ] `active + googleEventId 있음 + Google 404/410` → 새 이벤트 생성 후 DB의 `googleEventId` 교체
-  - [ ] `cancelled + googleEventId 있음` → Google 이벤트 삭제 후 DB의 `googleEventId = null`
-  - [ ] `cancelled + Google 404/410` → 이미 삭제된 것으로 보고 성공 처리 후 DB의 `googleEventId = null`
+  - [x] `active + googleEventId 없음` → Google 이벤트 생성 후 DB에 `googleEventId` 저장
+  - [x] `active + googleEventId 있음` → Google 이벤트를 DB의 장소/시간/목적/예약자 기준으로 업데이트
+  - [x] `active + googleEventId 있음 + Google 404/410` → 새 이벤트 생성 후 DB의 `googleEventId` 교체
+  - [x] `cancelled + googleEventId 있음` → Google 이벤트 삭제 후 DB의 `googleEventId = null`
+  - [x] `cancelled + Google 404/410` → 이미 삭제된 것으로 보고 성공 처리 후 DB의 `googleEventId = null`
   - [ ] 캘린더 연결 없음/권한 없음/토큰 오류/API 제한/네트워크 오류는 실패로 기록하고 재시도 대상 유지
 - [ ] 실패 기록 및 관리자 노출
-  - [ ] 자동 동기화 실패도 `calendar_sync_runs` / `calendar_sync_items` 또는 별도 예약 동기화 상태에 기록
+  - [x] 자동 동기화 실패도 `calendar_sync_runs` / `calendar_sync_items` 또는 별도 예약 동기화 상태에 기록
   - [ ] 실패 시 마지막 시도 시각, 실패 원인 코드, 관리자용 메시지, 재시도 가능 여부를 저장
   - [ ] 관리자 예약 상세에서 동기화 상태, 마지막 성공/실패 시각, 실패 원인, 재시도 버튼을 표시
   - [ ] 관리자 Google Calendar 연동 페이지에서 실패/대기 예약 요약과 전체 재시도 진입점을 제공
 - [ ] 재시도 및 보정 동기화
-  - [ ] 개별 예약 재시도 API가 실패 원인을 반환하고 관리자 화면에서 확인 가능하도록 정리
+  - [x] 개별 예약 재시도 API가 실패 원인을 반환하고 관리자 화면에서 확인 가능하도록 정리
   - [ ] 전체 수동 동기화는 `pending` / `failed` / `googleEventId 없음` / 취소 후 미삭제 예약을 반드시 다시 처리
   - [ ] 주기적 보정 동기화에서 DB 기준으로 미래 활성 예약과 미정리 취소 예약을 반복 점검
   - [ ] Google 연결이 끊긴 동안 쌓인 변경 사항이 재연결 후 한 번에 복구되는지 확인

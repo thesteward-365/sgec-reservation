@@ -111,6 +111,13 @@ export class ReservationRepository {
     if (data.startTime) dbData.startTime = toDbDate(data.startTime);
     if (data.endTime) dbData.endTime = toDbDate(data.endTime);
 
+    const touchesReservationState = Object.keys(data).some(
+      (key) => key !== 'googleEventId'
+    );
+    if (touchesReservationState) {
+      dbData.updatedAt = toDbDate(new Date());
+    }
+
     const query = tx
       .update(reservations)
       .set(dbData)

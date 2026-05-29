@@ -6,8 +6,7 @@ import {
   hasReservationHistoryChanges,
 } from './reservation-history';
 import {
-  updateGoogleEvent,
-  deleteGoogleEvent,
+  syncReservationWithRun,
 } from '@/lib/calendar/calendar-service';
 import { PlaceRepository } from '../repositories/place-repository';
 
@@ -40,6 +39,14 @@ function buildReservationHistorySnapshot(data: {
     endTime: data.endTime,
     purpose: data.purpose,
   };
+}
+
+async function syncReservationForAdminReview(reservationId: number) {
+  try {
+    await syncReservationWithRun(reservationId, 'system');
+  } catch (error) {
+    console.error('Reservation calendar sync failed:', error);
+  }
 }
 
 export class ReservationService {
@@ -90,8 +97,7 @@ export class ReservationService {
       return reservation;
     });
 
-    // Google Calendar 비동기 업데이트
-    updateGoogleEvent(result.id).catch(() => {});
+    await syncReservationForAdminReview(result.id);
 
     return result;
   }
@@ -169,8 +175,7 @@ export class ReservationService {
       return updated;
     });
 
-    // Google Calendar 비동기 업데이트
-    updateGoogleEvent(reservationId).catch(() => {});
+    await syncReservationForAdminReview(reservationId);
 
     return result;
   }
@@ -230,10 +235,7 @@ export class ReservationService {
       return updated;
     });
 
-    // Google Calendar 이벤트 삭제
-    if (current.googleEventId) {
-      deleteGoogleEvent(current.googleEventId).catch(() => {});
-    }
+    await syncReservationForAdminReview(reservationId);
 
     return result;
   }
