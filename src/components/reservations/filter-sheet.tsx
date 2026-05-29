@@ -134,24 +134,6 @@ export function FilterSheet({ open, onClose, current, onApply }: Props) {
               </div>
             </div>
           )}
-          {/* 정렬 순서 */}
-          <div className="flex flex-col gap-2.5">
-            <SectionLabel>정렬</SectionLabel>
-            <div className="flex gap-2">
-              <Chip
-                variant={draft.sortOrder === 'asc' ? 'active' : 'inactive'}
-                onClick={() => setDraft((d) => ({ ...d, sortOrder: 'asc' }))}
-              >
-                오래된순
-              </Chip>
-              <Chip
-                variant={draft.sortOrder === 'desc' ? 'active' : 'inactive'}
-                onClick={() => setDraft((d) => ({ ...d, sortOrder: 'desc' }))}
-              >
-                최신순
-              </Chip>
-            </div>
-          </div>
           {/* 기타 */}
           <div className="flex flex-col gap-2.5">
             <SectionLabel>기타</SectionLabel>

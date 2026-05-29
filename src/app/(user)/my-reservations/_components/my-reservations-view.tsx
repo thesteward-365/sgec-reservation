@@ -300,7 +300,6 @@ export function MyReservationsView({ user }: Props) {
   const isFilterActive =
     filter.floorId !== null ||
     filter.tagId !== null ||
-    filter.sortOrder !== 'desc' ||
     filter.onlyMine;
 
   return (
@@ -321,17 +320,35 @@ export function MyReservationsView({ user }: Props) {
       </div>
 
       {/* 탭 */}
-      <div className="flex gap-2 px-5 pb-4">
-        {(['calendar', 'list'] as const).map((t) => (
-          <Chip
-            key={t}
-            size="md"
-            variant={tab === t ? 'active' : 'inactive'}
-            onClick={() => setTab(t)}
+      <div className="flex items-center justify-between px-5 pb-4">
+        <div className="flex gap-2">
+          {(['calendar', 'list'] as const).map((t) => (
+            <Chip
+              key={t}
+              size="md"
+              variant={tab === t ? 'active' : 'inactive'}
+              onClick={() => setTab(t)}
+            >
+              {t === 'calendar' ? '캘린더' : '전체 목록'}
+            </Chip>
+          ))}
+        </div>
+
+        {tab === 'list' && (
+          <select
+            value={filter.sortOrder}
+            onChange={(e) =>
+              setFilter((f) => ({
+                ...f,
+                sortOrder: e.target.value as 'asc' | 'desc',
+              }))
+            }
+            className="text-foreground bg-transparent text-[14px] font-medium outline-none cursor-pointer"
           >
-            {t === 'calendar' ? '캘린더' : '전체 목록'}
-          </Chip>
-        ))}
+            <option value="desc">최신순</option>
+            <option value="asc">오래된순</option>
+          </select>
+        )}
       </div>
 
       {/* 콘텐츠 */}
