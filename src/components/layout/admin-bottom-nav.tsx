@@ -47,8 +47,16 @@ function AdminBottomNav() {
   const pathname = usePathname();
 
   // 하단 탭을 숨길 경로들
-  const hideNavPaths = ['/admin/places', '/admin/calendar', '/admin/activities', '/admin/changelog'];
-  const isReservationDetail = /^\/admin\/reservations\/\d+$/.test(pathname || '');
+  const hideNavPaths = [
+    '/admin/places',
+    '/admin/calendar',
+    '/admin/calendar/events',
+    '/admin/activities',
+    '/admin/changelog',
+  ];
+  const isReservationDetail = /^\/admin\/reservations\/\d+$/.test(
+    pathname || ''
+  );
 
   if (hideNavPaths.includes(pathname || '') || isReservationDetail) {
     return null;
@@ -56,7 +64,7 @@ function AdminBottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 inset-x-0 z-40 mx-auto w-full max-w-107.5 bg-card"
+      className="bg-card fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-107.5"
       style={{ boxShadow: '0 -1px 0 var(--color-border-subtle)' }}
     >
       <div
