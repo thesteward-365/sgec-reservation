@@ -431,12 +431,6 @@ export async function syncReservation(
   reservationId: number,
   runId?: string
 ): Promise<SyncItemResult> {
-  const calendar = await getCalendarClient();
-  const settings = await getCalendarSettings();
-  if (!calendar || !settings?.calendarId) {
-    throw new Error('Google Calendar connection not configured');
-  }
-
   const [row] = await db
     .select({
       id: reservations.id,
@@ -466,7 +460,14 @@ export async function syncReservation(
         : 'created';
 
   try {
+    const calendar = await getCalendarClient();
+    const settings = await getCalendarSettings();
+    if (!calendar || !settings?.calendarId) {
+      throw new Error('Google Calendar connection not configured');
+    }
+
     let eventId = row.googleEventId;
+    let finalAction = action;
 
     if (row.status === 'cancelled') {
       if (row.googleEventId) {
@@ -510,6 +511,7 @@ export async function syncReservation(
             requestBody: buildEventBody(row as ReservationRow),
           });
           eventId = recreated.data.id!;
+          finalAction = 'created';
           await db
             .update(reservations)
             .set({ googleEventId: eventId })
@@ -524,6 +526,7 @@ export async function syncReservation(
         requestBody: buildEventBody(row as ReservationRow),
       });
       eventId = event.data.id!;
+      finalAction = 'created';
       await db
         .update(reservations)
         .set({ googleEventId: eventId })
@@ -533,12 +536,12 @@ export async function syncReservation(
     const payload =
       (await getLatestReservationHistoryPayload(
         row.id,
-        action === 'updated' ? 'updated' : 'created'
+        finalAction === 'updated' ? 'updated' : 'created'
       )) ?? buildReservationPayload(row as ReservationRow);
 
     return {
       category: 'reservation',
-      action,
+      action: finalAction,
       status: 'success',
       reservationId: row.id,
       externalEventId: eventId ?? undefined,
@@ -555,8 +558,36 @@ export async function syncReservation(
       reservationId: row.id,
       externalEventId: row.googleEventId ?? undefined,
       title,
+      payload: buildReservationPayload(row as ReservationRow),
       errorMessage: message,
     };
+  }
+}
+
+function addReservationSyncItemToScope(
+  result: SyncScopeResult,
+  item: SyncItemResult
+) {
+  result.items.push(item);
+
+  if (item.status === 'failed') {
+    result.counts.failed += 1;
+    if (item.errorMessage) result.errors.push(item.errorMessage);
+    return;
+  }
+
+  if (item.status !== 'success') return;
+
+  switch (item.action) {
+    case 'created':
+      result.counts.created += 1;
+      break;
+    case 'updated':
+      result.counts.updated += 1;
+      break;
+    case 'cancelled':
+      result.counts.deleted += 1;
+      break;
   }
 }
 
@@ -614,11 +645,9 @@ async function pushReservationsDetailed(
     const title = reservationTitle(row);
     const lastSync = await getLatestSyncItemForReservation(row.id);
 
-    // 1. 활성 예약 처리
     if (row.status === 'active') {
       const action: SyncAction = row.googleEventId ? 'updated' : 'created';
 
-      // 변경 사항 여부 확인 (Google ID가 없거나, updatedAt이 마지막 동기화보다 뒤인 경우)
       const isOutdated =
         !row.googleEventId ||
         !lastSync ||
@@ -635,131 +664,10 @@ async function pushReservationsDetailed(
         });
         continue;
       }
-
-      try {
-        let eventId = row.googleEventId;
-        if (row.googleEventId) {
-          try {
-            await calendar.events.update({
-              calendarId: settings.calendarId,
-              eventId: row.googleEventId,
-              requestBody: buildEventBody(row as ReservationRow),
-            });
-            result.counts.updated += 1;
-          } catch (error) {
-            const status = getErrorStatus(error);
-            if (status === 404 || status === 410) {
-              const recreated = await calendar.events.insert({
-                calendarId: settings.calendarId,
-                requestBody: buildEventBody(row as ReservationRow),
-              });
-              eventId = recreated.data.id!;
-              await db
-                .update(reservations)
-                .set({ googleEventId: eventId })
-                .where(eq(reservations.id, row.id));
-              result.counts.created += 1;
-            } else {
-              throw error;
-            }
-          }
-        } else {
-          const event = await calendar.events.insert({
-            calendarId: settings.calendarId,
-            requestBody: buildEventBody(row as ReservationRow),
-          });
-          eventId = event.data.id!;
-          await db
-            .update(reservations)
-            .set({ googleEventId: eventId })
-            .where(eq(reservations.id, row.id));
-          result.counts.created += 1;
-        }
-
-        result.items.push({
-          category: 'reservation',
-          action,
-          status: 'success',
-          reservationId: row.id,
-          externalEventId: eventId ?? undefined,
-          title,
-          payload:
-            (await getLatestReservationHistoryPayload(
-              row.id,
-              action === 'updated' ? 'updated' : 'created'
-            )) ?? buildReservationPayload(row as ReservationRow),
-        });
-      } catch (error) {
-        const message = `예약 #${row.id} ${action === 'created' ? '생성' : '수정'} 실패: ${formatError(error)}`;
-        result.counts.failed += 1;
-        result.errors.push(message);
-        result.items.push({
-          category: 'reservation',
-          action,
-          status: 'failed',
-          reservationId: row.id,
-          externalEventId: row.googleEventId ?? undefined,
-          title,
-          payload: buildReservationPayload(row as ReservationRow),
-          errorMessage: message,
-        });
-        await logSync('error', message, runId);
-      }
     }
-    // 2. 취소된 예약 처리
-    else if (row.status === 'cancelled' && row.googleEventId) {
-      try {
-        await calendar.events.delete({
-          calendarId: settings.calendarId,
-          eventId: row.googleEventId,
-        });
-        await db
-          .update(reservations)
-          .set({ googleEventId: null })
-          .where(eq(reservations.id, row.id));
 
-        result.counts.deleted += 1;
-        result.items.push({
-          category: 'reservation',
-          action: 'cancelled',
-          status: 'success',
-          reservationId: row.id,
-          externalEventId: row.googleEventId,
-          title,
-        });
-      } catch (error) {
-        const status = getErrorStatus(error);
-        if (status === 404 || status === 410) {
-          await db
-            .update(reservations)
-            .set({ googleEventId: null })
-            .where(eq(reservations.id, row.id));
-          result.counts.deleted += 1;
-          result.items.push({
-            category: 'reservation',
-            action: 'cancelled',
-            status: 'success',
-            reservationId: row.id,
-            externalEventId: row.googleEventId,
-            title,
-          });
-        } else {
-          const message = `예약 #${row.id} 취소 이벤트 삭제 실패: ${formatError(error)}`;
-          result.counts.failed += 1;
-          result.errors.push(message);
-          result.items.push({
-            category: 'reservation',
-            action: 'cancelled',
-            status: 'failed',
-            reservationId: row.id,
-            externalEventId: row.googleEventId,
-            title,
-            errorMessage: message,
-          });
-          await logSync('error', message, runId);
-        }
-      }
-    }
+    const item = await syncReservation(row.id, runId);
+    addReservationSyncItemToScope(result, item);
   }
 
   result.status = computeScopeStatus(result.counts, result.errors);
@@ -1047,6 +955,69 @@ export async function syncAll(
     },
     items: [...reservationSync.items, ...eventPull.items],
     errors: [...reservationSync.errors, ...eventPull.errors],
+  };
+
+  await finalizeSyncRun(result);
+  return result;
+}
+
+export async function syncReservationWithRun(
+  reservationId: number,
+  triggeredBy: SyncTrigger = 'system'
+): Promise<SyncResult> {
+  const startedAt = new Date();
+  const runId = `sync_${randomUUID()}`;
+
+  await createSyncRun(runId, triggeredBy, startedAt);
+
+  const scope: SyncScopeResult = {
+    status: 'skipped',
+    counts: { created: 0, updated: 0, deleted: 0, pulled: 0, failed: 0 },
+    items: [],
+    errors: [],
+  };
+
+  try {
+    const item = await syncReservation(reservationId, runId);
+    addReservationSyncItemToScope(scope, item);
+  } catch (error) {
+    const message = `예약 #${reservationId} 동기화 실행 실패: ${formatError(error)}`;
+    scope.counts.failed += 1;
+    scope.errors.push(message);
+    scope.items.push({
+      category: 'reservation',
+      action: 'updated',
+      status: 'failed',
+      reservationId,
+      title: `예약 #${reservationId}`,
+      errorMessage: message,
+    });
+    await logSync('error', message, runId);
+  }
+
+  scope.status = computeScopeStatus(scope.counts, scope.errors);
+
+  const eventScope: SyncScopeResult = {
+    status: 'skipped',
+    counts: { created: 0, updated: 0, deleted: 0, pulled: 0, failed: 0 },
+    items: [],
+    errors: [],
+  };
+
+  const result: SyncResult = {
+    runId,
+    status: computeRunStatus(scope, eventScope),
+    reservationSyncStatus: scope.status,
+    eventSyncStatus: 'skipped',
+    counts: {
+      reservationCreated: scope.counts.created,
+      reservationUpdated: scope.counts.updated,
+      reservationDeleted: scope.counts.deleted,
+      eventPulled: 0,
+      failed: scope.counts.failed,
+    },
+    items: scope.items,
+    errors: scope.errors,
   };
 
   await finalizeSyncRun(result);

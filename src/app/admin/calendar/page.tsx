@@ -50,21 +50,6 @@ type SyncRunSummary = {
   };
 };
 
-function formatScopeStatus(
-  status:
-    | SyncRunSummary['reservationSyncStatus']
-    | SyncRunSummary['eventSyncStatus']
-) {
-  switch (status) {
-    case 'success':
-      return '성공';
-    case 'skipped':
-      return '변경 없음';
-    case 'failed':
-      return '실패';
-  }
-}
-
 function getRunBadge(run: SyncRunSummary) {
   if (
     run.reservationSyncStatus === 'failed' ||
@@ -87,6 +72,7 @@ function formatLastSync(iso: string | null): string {
   if (!iso) return '없음';
   const diffMs = Date.now() - new Date(iso).getTime();
   const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return '방금 전';
   if (diffMin < 60) return `${diffMin}분 전`;
   const diffHour = Math.floor(diffMin / 60);
   if (diffHour < 24) return `${diffHour}시간 전`;
@@ -98,15 +84,6 @@ function formatLastSync(iso: string | null): string {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-  }).format(new Date(iso));
-}
-
-function formatRunDate(iso: string): string {
-  return new Intl.DateTimeFormat('ko-KR', {
-    month: 'long',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
   }).format(new Date(iso));
 }
 
@@ -197,7 +174,11 @@ function CalendarPageContent() {
       });
       const data = await res.json();
       if (res.ok) {
-        toast.success(data.message);
+        if (data.status === 'success') {
+          toast.success('동기화가 완료되었습니다.');
+        } else {
+          toast.error('동기화에 실패했습니다.');
+        }
         await fetchStatus();
         await fetchRecentRuns();
       } else {
@@ -560,26 +541,18 @@ function CalendarPageContent() {
                             className="text-foreground block px-5 py-4"
                           >
                             <div className="flex items-center justify-between gap-3">
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <p className="text-body text-foreground min-w-0 truncate font-bold">
-                                    {formatRunDate(run.startedAt)}
-                                  </p>
-                                  {badge ? (
-                                    <Badge
-                                      color={badge.color}
-                                      className="shrink-0"
-                                    >
-                                      {badge.label}
-                                    </Badge>
-                                  ) : null}
-                                </div>
-                                <p className="text-caption text-muted-foreground mt-1">
+                              <div className="flex min-w-0 items-center gap-2">
+                                <p className="text-body text-foreground min-w-0 truncate font-bold">
                                   {formatLastSync(run.startedAt)}
                                 </p>
-                                <p className="text-caption text-muted-foreground mt-1">
-                                  {`예약 ${formatScopeStatus(run.reservationSyncStatus)} · 행사 ${formatScopeStatus(run.eventSyncStatus)}`}
-                                </p>
+                                {badge ? (
+                                  <Badge
+                                    color={badge.color}
+                                    className="shrink-0"
+                                  >
+                                    {badge.label}
+                                  </Badge>
+                                ) : null}
                               </div>
                               <ChevronRightIcon className="text-muted-foreground size-4 shrink-0" />
                             </div>

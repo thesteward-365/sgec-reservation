@@ -193,7 +193,11 @@ vi.mock('../lib/db', () => {
   };
 });
 
-import { syncAll, syncReservation } from '../lib/calendar/calendar-service';
+import {
+  syncAll,
+  syncReservation,
+  syncReservationWithRun,
+} from '../lib/calendar/calendar-service';
 
 describe('calendar-service new sync logic', () => {
   beforeEach(() => {
@@ -389,6 +393,27 @@ describe('calendar-service new sync logic', () => {
     expect(result.status).toBe('success');
     expect(result.externalEventId).toBe('indiv-id');
     expect(state.reservationUpdates).toContainEqual({ googleEventId: 'indiv-id' });
+  });
+
+  it('SyncReservationWithRun: records failure when Google connection is missing', async () => {
+    state.reservationRows = [
+      {
+        ...baseRes,
+        id: 8,
+        status: 'active',
+        googleEventId: null,
+        updatedAt: new Date(),
+      },
+    ];
+    state.calendarClient = null;
+
+    const result = await syncReservationWithRun(8, 'system');
+
+    expect(result.status).toBe('failed');
+    expect(result.counts.failed).toBe(1);
+    expect(state.insertedRuns.length).toBe(1);
+    expect(state.insertedItems.find(i => i.reservationId === 8)?.status).toBe('failed');
+    expect(state.logRows.some(log => log.level === 'error')).toBe(true);
   });
 
   describe('External Event Sync Range', () => {
