@@ -5,9 +5,7 @@ import Link from 'next/link';
 import {
   AdjustmentsHorizontalIcon,
   PlusIcon,
-  CalendarIcon,
 } from '@heroicons/react/24/outline';
-import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Chip } from '@/components/ui/chip';
 import { List, ListItem } from '@/components/ui/list';
@@ -30,7 +28,6 @@ import {
 import { SessionData } from '@/lib/session';
 import { compareReservationByDayAndTime } from '@/lib/services/reservation-sorting';
 import {
-  formatExternalEventDateRangeLabel,
   getExternalEventDateRange,
 } from '@/lib/external-event-dates';
 
@@ -71,43 +68,6 @@ function formatGroupHeader(ymd: string): string {
     day: 'numeric',
     weekday: 'short',
   });
-}
-
-function isToday(ymd: string): boolean {
-  return ymd === toYMD(new Date());
-}
-
-// 행사 정보 카드 컴포넌트 (관리자 페이지와 동일)
-function InformationalEventCard({
-  title,
-  startTime,
-  endTime,
-  isAllDay,
-}: {
-  title: string;
-  startTime: string;
-  endTime: string;
-  isAllDay?: boolean;
-}) {
-  const dateRangeLabel = formatExternalEventDateRangeLabel(
-    { startTime, endTime, isAllDay },
-    { includeAllDaySuffix: true }
-  );
-
-  return (
-    <div className="border-b border-blue-100/50 bg-blue-50/30 p-4 text-blue-700 last:border-0">
-      <div className="mb-1.5 flex items-center gap-1.5 opacity-80">
-        <CalendarIcon className="size-3.5 shrink-0" />
-        <span className="text-[12px] font-bold tracking-tight uppercase">
-          Event
-        </span>
-      </div>
-      <h4 className="text-foreground mb-0.5 text-[16px] leading-tight font-bold">
-        {title}
-      </h4>
-      <p className="text-[13px] font-medium opacity-60">{dateRangeLabel}</p>
-    </div>
-  );
 }
 
 type Props = {
@@ -218,14 +178,14 @@ export function MyReservationsView({ user }: Props) {
       list = list.filter((reservation) => reservation.status !== 'cancelled');
     }
 
-    if (filter.onlyMine && user) {
+    if (filter.onlyMine && user?.id) {
       list = list.filter((r) => r.userId === user.id);
     }
 
     return [...list].sort((a, b) => {
       return compareReservationByDayAndTime(a, b, filter.sortOrder);
     });
-  }, [allReservations, filter, placeTagMap, user?.id]);
+  }, [allReservations, filter, placeTagMap, user]);
 
   // 캘린더 인디케이터용 날짜 Set
   const indicatorDates = useMemo(
@@ -281,6 +241,14 @@ export function MyReservationsView({ user }: Props) {
 
     return { label, events };
   }
+
+  const selectedDateKey = toYMD(selectedDate);
+  const selectedDateLabel = selectedDate.toLocaleDateString('ko-KR', {
+    month: 'long',
+    day: 'numeric',
+    weekday: 'short',
+  });
+  const selectedDateEventSummary = getExternalEventsSummary(selectedDateKey);
 
   const isFilterActive =
     filter.floorId !== null || filter.tagId !== null || filter.onlyMine;
@@ -357,36 +325,40 @@ export function MyReservationsView({ user }: Props) {
             </div>
 
             <div className="mt-4 flex items-center justify-between gap-2">
-              <div>
-                <h3 className="text-foreground text-[16px]! font-bold">
-                  {selectedDate.toLocaleDateString('ko-KR', {
-                    month: 'long',
-                    day: 'numeric',
-                    weekday: 'short',
-                  })}
+              <div className="flex min-w-0 flex-1 items-center gap-2">
+                <h3 className="text-foreground shrink-0 text-[16px]! font-bold">
+                  {selectedDateLabel}
                 </h3>
+
+                {selectedDateEventSummary && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setActiveExternalEvents({
+                        dateLabel: selectedDateLabel,
+                        events: selectedDateEventSummary.events,
+                      })
+                    }
+                    className="min-w-0 rounded-full transition-opacity hover:opacity-80"
+                  >
+                    <Badge className="block max-w-full truncate border-none bg-blue-50 px-2 py-0.5 text-[12px]! text-blue-700">
+                      {selectedDateEventSummary.label}
+                    </Badge>
+                  </button>
+                )}
               </div>
-              <span className="text-muted-foreground text-[14px]!">
+              <span className="text-muted-foreground shrink-0 text-[14px]!">
                 {dailyList.length}건
               </span>
             </div>
 
             <div className="bg-card overflow-hidden rounded-xl shadow-(--shadow-1)">
-              {/* 행사 안내 카드 (관리자 페이지와 동일) */}
-              {dailyEvents.map((ev) => (
-                <InformationalEventCard
-                  key={ev.id}
-                  title={ev.title}
-                  startTime={ev.raw.startTime}
-                  endTime={ev.raw.endTime}
-                  isAllDay={ev.raw.isAllDay}
-                />
-              ))}
-
-              {dailyList.length === 0 && dailyEvents.length === 0 ? (
+              {dailyList.length === 0 ? (
                 <div className="bg-card flex flex-col items-center gap-1.5 rounded-2xl px-4 py-10">
                   <p className="text-foreground text-[15px] font-semibold">
-                    예약이 없는 날이에요
+                    {dailyEvents.length === 0
+                      ? '예약이 없는 날이에요'
+                      : '예약 내역이 없어요'}
                   </p>
                 </div>
               ) : (
@@ -416,8 +388,8 @@ export function MyReservationsView({ user }: Props) {
               return (
                 <div key={ymd} className="space-y-3">
                   <div className="flex items-center justify-between gap-2 px-5">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-foreground text-[15px]! font-bold">
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                      <h3 className="text-foreground shrink-0 text-[15px]! font-bold">
                         {formatGroupHeader(ymd)}
                       </h3>
 
@@ -430,15 +402,15 @@ export function MyReservationsView({ user }: Props) {
                               events: eventSummary.events,
                             })
                           }
-                          className="rounded-full transition-opacity hover:opacity-80"
+                          className="min-w-0 rounded-full transition-opacity hover:opacity-80"
                         >
-                          <Badge className="border-none bg-blue-50 px-2 py-0.5 text-[12px]! text-blue-700">
+                          <Badge className="block max-w-full truncate border-none bg-blue-50 px-2 py-0.5 text-[12px]! text-blue-700">
                             {eventSummary.label}
                           </Badge>
                         </button>
                       )}
                     </div>
-                    <span className="text-muted-foreground text-[13px]">
+                    <span className="text-muted-foreground shrink-0 text-[13px]">
                       {items.length}건
                     </span>
                   </div>
