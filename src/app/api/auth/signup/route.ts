@@ -66,6 +66,7 @@ export async function POST(request: NextRequest) {
     session.user = {
       id: newUser.id,
       name: newUser.name,
+      username: newUser.username || '',
       phoneNumber: newUser.phoneNumber,
       role: newUser.role,
       status: newUser.status,

@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation';
 import {
   ArrowRightStartOnRectangleIcon,
   InformationCircleIcon,
-  PencilSquareIcon,
   PlusIcon,
   ShieldCheckIcon,
   TrashIcon,
   ChevronRightIcon,
+  UserMinusIcon,
+  UserCircleIcon,
 } from '@heroicons/react/24/outline';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -18,45 +19,34 @@ import { Badge } from '@/components/ui/badge';
 import { Chip } from '@/components/ui/chip';
 import { List, ListItem } from '@/components/ui/list';
 import { ListSkeleton } from '@/components/ui/list-skeleton';
-import { formatPhoneNumber, normalizePhoneNumber } from '@/lib/utils';
-import { AccountDialog, GuideDialog, PurposeDialog } from './settings-dialogs';
-import { cn } from '@/lib/utils';
+import { GuideDialog, PurposeDialog, WithdrawDialog } from './settings-dialogs';
 import { AppVersion } from '@/components/layout/app-version';
 
 type Props = {
   name: string;
+  username: string;
   phoneNumber: string;
   role: 'user' | 'admin';
   version: string;
 };
 
-type AccountForm = { name: string; phoneNumber: string };
-
 const MAX_PURPOSE_COUNT = 3;
 
 export function SettingsView({
-  name: initialName,
-  phoneNumber: initialPhoneNumber,
+  name,
+  username,
   role,
   version,
 }: Props) {
   const router = useRouter();
-  const [name, setName] = useState(initialName);
-  const [phoneNumber, setPhoneNumber] = useState(
-    formatPhoneNumber(initialPhoneNumber)
-  );
   const [purposes, setPurposes] = useState<string[]>([]);
   const [isLoadingPurposes, setIsLoadingPurposes] = useState(true);
   const [showGuide, setShowGuide] = useState(false);
   const [showPurposeDialog, setShowPurposeDialog] = useState(false);
-  const [showAccountDialog, setShowAccountDialog] = useState(false);
+  const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
   const [newPurpose, setNewPurpose] = useState('');
-  const [accountForm, setAccountForm] = useState<AccountForm>({
-    name: initialName,
-    phoneNumber: formatPhoneNumber(initialPhoneNumber),
-  });
   const [isSavingPurpose, setIsSavingPurpose] = useState(false);
-  const [isSavingAccount, setIsSavingAccount] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
 
   async function fetchPurposes() {
     setIsLoadingPurposes(true);
@@ -69,11 +59,6 @@ export function SettingsView({
     } finally {
       setIsLoadingPurposes(false);
     }
-  }
-
-  function handleOpenAccountDialog() {
-    setAccountForm({ name, phoneNumber });
-    setShowAccountDialog(true);
   }
 
   async function handleRemovePurpose(targetPurpose: string) {
@@ -158,53 +143,24 @@ export function SettingsView({
     migrateAndFetch();
   }, []);
 
-  async function handleSaveAccount() {
-    const trimmedName = accountForm.name.trim();
-    const trimmedPhoneNumber = normalizePhoneNumber(accountForm.phoneNumber);
-
-    if (!trimmedName || !trimmedPhoneNumber) {
-      toast.error('이름과 휴대전화번호를 입력해주세요.');
-      return;
-    }
-
-    if (trimmedPhoneNumber.length !== 11) {
-      toast.error('전화번호 11자리를 입력해주세요.');
-      return;
-    }
-
-    setIsSavingAccount(true);
-
+  async function handleConfirmWithdraw() {
+    setIsWithdrawing(true);
     try {
-      const response = await fetch('/api/account', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: trimmedName,
-          phoneNumber: trimmedPhoneNumber,
-        }),
+      const response = await fetch('/api/account/withdraw', {
+        method: 'POST',
       });
 
-      const data = (await response.json()) as {
-        error?: string;
-        user?: AccountForm;
-      };
-
       if (!response.ok) {
-        toast.error(data.error ?? '계정 정보 저장에 실패했어요.');
-        return;
+        const data = await response.json();
+        throw new Error(data.error);
       }
 
-      setName(data.user?.name ?? trimmedName);
-      setPhoneNumber(
-        formatPhoneNumber(data.user?.phoneNumber ?? trimmedPhoneNumber)
-      );
-      setShowAccountDialog(false);
-      toast.success('계정 정보를 저장했어요.');
-      router.refresh();
-    } catch {
-      toast.error('계정 정보 저장에 실패했어요.');
+      toast.success('탈퇴가 완료되었습니다. 이용해주셔서 감사합니다.');
+      router.push('/login');
+    } catch (error: any) {
+      toast.error(error.message || '회원 탈퇴에 실패했어요.');
     } finally {
-      setIsSavingAccount(false);
+      setIsWithdrawing(false);
     }
   }
 
@@ -225,27 +181,32 @@ export function SettingsView({
         <List>
           <ListItem className="px-0 py-0">
             <button
-              onClick={handleOpenAccountDialog}
+              onClick={() => router.push('/settings/profile')}
               className="flex w-full items-center justify-between p-5 text-left transition-colors hover:bg-neutral-50"
             >
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-body text-foreground font-bold">
-                    {name}
-                  </span>
-                  {role === 'admin' && (
-                    <Badge
-                      variant="subtle"
-                      color="blue"
-                      className="text-[11px] font-bold"
-                    >
-                      관리자
-                    </Badge>
-                  )}
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-200">
+                  <UserCircleIcon className="h-7 w-7 text-neutral-500" />
                 </div>
-                <span className="text-muted-foreground block text-[14px] font-medium">
-                  {phoneNumber}
-                </span>
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-body text-foreground font-bold">
+                      {username}
+                    </span>
+                    {role === 'admin' && (
+                      <Badge
+                        variant="subtle"
+                        color="blue"
+                        className="text-[11px] font-bold"
+                      >
+                        관리자
+                      </Badge>
+                    )}
+                  </div>
+                  <span className="text-muted-foreground block text-[13px] font-medium">
+                    {name}님
+                  </span>
+                </div>
               </div>
               <ChevronRightIcon className="text-muted-foreground size-5 shrink-0" />
             </button>
@@ -335,7 +296,7 @@ export function SettingsView({
             </button>
           </ListItem>
 
-          <ListItem className="px-0 py-0">
+          <ListItem className="px-0 py-0 border-b-0">
             <button
               onClick={() => router.push('/privacy')}
               className="flex w-full items-center gap-3 px-5 py-4 transition-colors hover:bg-neutral-50"
@@ -349,18 +310,31 @@ export function SettingsView({
           </ListItem>
         </List>
 
-        {/* 로그아웃 섹션 */}
-        <div className="bg-card rounded-xl shadow-(--shadow-1)">
-          <button
-            onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-3xl px-5 py-4 transition-colors hover:bg-neutral-50"
-          >
-            <ArrowRightStartOnRectangleIcon className="text-destructive size-5" />
-            <span className="text-destructive flex-1 text-left text-[15px] font-semibold">
-              로그아웃
-            </span>
-          </button>
-        </div>
+        {/* 로그아웃 및 탈퇴 섹션 */}
+        <List className="mt-2">
+          <ListItem className="px-0 py-0">
+            <button
+              onClick={handleLogout}
+              className="flex w-full items-center gap-3 px-5 py-4 transition-colors hover:bg-neutral-50"
+            >
+              <ArrowRightStartOnRectangleIcon className="text-foreground size-5" />
+              <span className="text-foreground flex-1 text-left text-[15px] font-semibold">
+                로그아웃
+              </span>
+            </button>
+          </ListItem>
+          <ListItem className="px-0 py-0 border-b-0">
+            <button
+              onClick={() => setShowWithdrawDialog(true)}
+              className="flex w-full items-center gap-3 px-5 py-4 transition-colors hover:bg-neutral-50"
+            >
+              <UserMinusIcon className="text-destructive size-5" />
+              <span className="text-destructive flex-1 text-left text-[15px] font-semibold">
+                회원 탈퇴
+              </span>
+            </button>
+          </ListItem>
+        </List>
 
         <AppVersion />
       </div>
@@ -377,14 +351,12 @@ export function SettingsView({
           setShowPurposeDialog(false);
         }}
       />
-      <AccountDialog
-        open={showAccountDialog}
-        form={accountForm}
-        disabled={isSavingAccount}
-        onOpenChange={setShowAccountDialog}
-        onFormChange={setAccountForm}
-        onSave={handleSaveAccount}
-        onCancel={() => setShowAccountDialog(false)}
+      <WithdrawDialog
+        open={showWithdrawDialog}
+        disabled={isWithdrawing}
+        onOpenChange={setShowWithdrawDialog}
+        onConfirm={handleConfirmWithdraw}
+        onCancel={() => setShowWithdrawDialog(false)}
       />
       <GuideDialog open={showGuide} onOpenChange={setShowGuide} />
     </>

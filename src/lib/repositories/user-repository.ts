@@ -9,9 +9,11 @@ export class UserRepository {
 
   static async update(id: number, data: Partial<{
     name: string;
+    username: string;
+    password: string;
     phoneNumber: string;
     role: 'user' | 'admin';
-    status: 'pending' | 'approved' | 'rejected';
+    status: 'pending' | 'approved' | 'rejected' | 'withdrawn';
   }>, tx: any = db) {
     const rows = await tx.update(users).set(data).where(eq(users.id, id)).returning();
     return rows[0];
