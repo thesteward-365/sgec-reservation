@@ -25,6 +25,10 @@ import { ListSkeleton } from '@/components/ui/list-skeleton';
 import { BrandHeader } from '@/components/layout/brand-header';
 import { cn } from '@/lib/utils';
 import type { CalendarEvent } from '@/components/calendar/monthly-calendar';
+import {
+  formatExternalEventDateRangeLabel,
+  getExternalEventDateRange,
+} from '@/lib/external-event-dates';
 
 type Floor = { id: number; name: string; order: number };
 type Tag = { id: number; name: string };
@@ -43,6 +47,7 @@ type ExternalEventResponse = {
   title: string;
   startTime: string;
   endTime: string;
+  isAllDay?: boolean;
   description: string | null;
 };
 
@@ -68,41 +73,22 @@ function getWeekStartStr(date: Date): string {
   return formatLocalDate(d);
 }
 
-// 구글 캘린더 종일 일정(00:00:00 종료) 처리를 위한 헬퍼
-function toEffectiveYMD(isoString: string, isEnd: boolean): string {
-  const d = new Date(isoString);
-  if (
-    isEnd &&
-    d.getHours() === 0 &&
-    d.getMinutes() === 0 &&
-    d.getSeconds() === 0
-  ) {
-    // 00:00:00에 끝나면 실제로는 전날 종료된 것으로 처리
-    d.setDate(d.getDate() - 1);
-  }
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${dd}`;
-}
-
 // 행사 정보 카드 컴포넌트 (관리자 페이지와 동일)
 function InformationalEventCard({
   title,
   startTime,
   endTime,
+  isAllDay,
 }: {
   title: string;
   startTime: string;
   endTime: string;
+  isAllDay?: boolean;
 }) {
-  const startDate = new Date(startTime);
-  const endDate = new Date(endTime);
-  const isSingleDay = formatLocalDate(startDate) === formatLocalDate(endDate);
-
-  const dateRangeLabel = isSingleDay
-    ? `${startDate.getMonth() + 1}월 ${startDate.getDate()}일`
-    : `${startDate.getMonth() + 1}월 ${startDate.getDate()}일 ~ ${endDate.getMonth() + 1}월 ${endDate.getDate()}일`;
+  const dateRangeLabel = formatExternalEventDateRangeLabel(
+    { startTime, endTime, isAllDay },
+    { includeAllDaySuffix: true }
+  );
 
   return (
     <div className="border-b border-blue-100/50 bg-blue-50/30 p-4 text-blue-700 last:border-0">
@@ -195,13 +181,16 @@ export function ReserveView({ userName }: ReserveViewProps) {
       .then((r) => r.json())
       .then((data: ExternalEventResponse[]) => {
         setExternalEvents(
-          (data || []).map((ev) => ({
-            id: ev.id,
-            title: ev.title,
-            startDate: toEffectiveYMD(ev.startTime, false),
-            endDate: toEffectiveYMD(ev.endTime, true),
-            variant: 'accent',
-          }))
+          (data || []).map((ev) => {
+            const { startDate, endDate } = getExternalEventDateRange(ev);
+            return {
+              id: ev.id,
+              title: ev.title,
+              startDate,
+              endDate,
+              variant: 'accent',
+            };
+          })
         );
       })
       .catch(console.error);

@@ -29,6 +29,10 @@ import {
 } from '@/components/reservations/external-events-sheet';
 import { SessionData } from '@/lib/session';
 import { compareReservationByDayAndTime } from '@/lib/services/reservation-sorting';
+import {
+  formatExternalEventDateRangeLabel,
+  getExternalEventDateRange,
+} from '@/lib/external-event-dates';
 
 type PlaceTagMap = Record<number, number[]>; // placeId -> tagId[]
 
@@ -48,21 +52,6 @@ type ExternalCalendarEvent = CalendarEvent & {
 function toYMD(dt: Date | string): string {
   const d = typeof dt === 'string' ? new Date(dt) : dt;
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-// 구글 캘린더 종일 일정(00:00:00 종료) 처리를 위한 헬퍼
-function toEffectiveYMD(isoString: string, isEnd: boolean): string {
-  const d = new Date(isoString);
-  if (
-    isEnd &&
-    d.getHours() === 0 &&
-    d.getMinutes() === 0 &&
-    d.getSeconds() === 0
-  ) {
-    // 00:00:00에 끝나면 실제로는 전날 종료된 것으로 처리
-    d.setDate(d.getDate() - 1);
-  }
-  return toYMD(d);
 }
 
 function isSameDay(a: Date | string, b: Date): boolean {
@@ -100,17 +89,10 @@ function InformationalEventCard({
   endTime: string;
   isAllDay?: boolean;
 }) {
-  const startDate = new Date(startTime);
-  const endDate = new Date(endTime);
-  const isSingleDay = toYMD(startDate) === toYMD(endDate);
-
-  let dateRangeLabel = isSingleDay
-    ? `${startDate.getMonth() + 1}월 ${startDate.getDate()}일`
-    : `${startDate.getMonth() + 1}월 ${startDate.getDate()}일 ~ ${endDate.getMonth() + 1}월 ${endDate.getDate()}일`;
-
-  if (isAllDay) {
-    dateRangeLabel += ' (종일)';
-  }
+  const dateRangeLabel = formatExternalEventDateRangeLabel(
+    { startTime, endTime, isAllDay },
+    { includeAllDaySuffix: true }
+  );
 
   return (
     <div className="border-b border-blue-100/50 bg-blue-50/30 p-4 text-blue-700 last:border-0">
@@ -190,14 +172,17 @@ export function MyReservationsView({ user }: Props) {
       .then((r) => r.json())
       .then((data: ExternalEventResponse[]) => {
         setExternalEvents(
-          (data || []).map((ev) => ({
-            id: ev.id,
-            title: ev.title,
-            startDate: toEffectiveYMD(ev.startTime, false),
-            endDate: toEffectiveYMD(ev.endTime, true),
-            variant: 'accent', // 기본 테마색
-            raw: ev,
-          }))
+          (data || []).map((ev) => {
+            const { startDate, endDate } = getExternalEventDateRange(ev);
+            return {
+              id: ev.id,
+              title: ev.title,
+              startDate,
+              endDate,
+              variant: 'accent', // 기본 테마색
+              raw: ev,
+            };
+          })
         );
       })
       .catch(console.error);
@@ -298,9 +283,7 @@ export function MyReservationsView({ user }: Props) {
   }
 
   const isFilterActive =
-    filter.floorId !== null ||
-    filter.tagId !== null ||
-    filter.onlyMine;
+    filter.floorId !== null || filter.tagId !== null || filter.onlyMine;
 
   return (
     <>
@@ -343,7 +326,7 @@ export function MyReservationsView({ user }: Props) {
                 sortOrder: e.target.value as 'asc' | 'desc',
               }))
             }
-            className="text-foreground bg-transparent text-[14px] font-medium outline-none cursor-pointer"
+            className="text-foreground cursor-pointer bg-transparent text-[14px] font-medium outline-none"
           >
             <option value="desc">최신순</option>
             <option value="asc">오래된순</option>
@@ -431,49 +414,50 @@ export function MyReservationsView({ user }: Props) {
               const eventSummary = getExternalEventsSummary(ymd);
 
               return (
-              <div key={ymd} className="space-y-3">
-                <div className="flex items-center justify-between gap-2 px-5">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-foreground text-[15px]! font-bold">
-                      {formatGroupHeader(ymd)}
-                    </h3>
+                <div key={ymd} className="space-y-3">
+                  <div className="flex items-center justify-between gap-2 px-5">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-foreground text-[15px]! font-bold">
+                        {formatGroupHeader(ymd)}
+                      </h3>
 
-                    {eventSummary && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setActiveExternalEvents({
-                            dateLabel: formatGroupHeader(ymd),
-                            events: eventSummary.events,
-                          })
-                        }
-                        className="rounded-full transition-opacity hover:opacity-80"
-                      >
-                        <Badge className="border-none bg-blue-50 px-2 py-0.5 text-[12px]! text-blue-700">
-                          {eventSummary.label}
-                        </Badge>
-                      </button>
-                    )}
+                      {eventSummary && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setActiveExternalEvents({
+                              dateLabel: formatGroupHeader(ymd),
+                              events: eventSummary.events,
+                            })
+                          }
+                          className="rounded-full transition-opacity hover:opacity-80"
+                        >
+                          <Badge className="border-none bg-blue-50 px-2 py-0.5 text-[12px]! text-blue-700">
+                            {eventSummary.label}
+                          </Badge>
+                        </button>
+                      )}
+                    </div>
+                    <span className="text-muted-foreground text-[13px]">
+                      {items.length}건
+                    </span>
                   </div>
-                  <span className="text-muted-foreground text-[13px]">
-                    {items.length}건
-                  </span>
+                  <List>
+                    {items.map((r) => (
+                      <ListItem key={r.id} className="px-0 py-0">
+                        <ReservationItem
+                          reservation={r}
+                          isPast={new Date(r.endTime) < now}
+                          isMine={r.userId === user?.id}
+                          onTap={() => setActiveRes(r)}
+                          flat
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
                 </div>
-                <List>
-                  {items.map((r) => (
-                    <ListItem key={r.id} className="px-0 py-0">
-                      <ReservationItem
-                        reservation={r}
-                        isPast={new Date(r.endTime) < now}
-                        isMine={r.userId === user?.id}
-                        onTap={() => setActiveRes(r)}
-                        flat
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              </div>
-            )})}
+              );
+            })}
           </div>
         )}
       </div>
