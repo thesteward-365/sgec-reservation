@@ -1,12 +1,29 @@
 'use client';
 
 import { List, ListItem } from '@/components/ui/list';
-import { CHANGELOG } from '@/lib/changelog';
-import { ChevronLeftIcon } from '@heroicons/react/24/outline';
+import { CHANGELOG, ChangelogItem } from '@/lib/changelog';
+import { cn } from '@/lib/utils';
+import { ChevronDownIcon, ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function AdminChangelogPage() {
   const router = useRouter();
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>(
+    {}
+  );
+
+  const toggleItem = (version: string, index: number) => {
+    const key = `${version}-${index}`;
+    setExpandedItems((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
+  const isExpanded = (version: string, index: number) => {
+    return !!expandedItems[`${version}-${index}`];
+  };
 
   return (
     <>
@@ -40,15 +57,69 @@ export default function AdminChangelogPage() {
               </div>
 
               <List className="overflow-hidden rounded-2xl border-none bg-white shadow-sm">
-                {entry.items.map((item, index) => (
-                  <ListItem
-                    key={index}
-                    className="text-foreground border-b border-neutral-100 px-5 py-4 text-[14.5px] leading-relaxed font-medium break-keep last:border-b-0"
-                  >
-                    <span className="mr-2 shrink-0 opacity-40">•</span>
-                    <span className="flex-1">{item}</span>
-                  </ListItem>
-                ))}
+                {entry.items.map((item, index) => {
+                  const isObject = typeof item !== 'string';
+                  const title = isObject ? (item as ChangelogItem).title : item;
+                  const details = isObject
+                    ? (item as ChangelogItem).details
+                    : null;
+                  const expanded = isExpanded(entry.version, index);
+
+                  return (
+                    <div
+                      key={index}
+                      className="border-b border-neutral-100 last:border-b-0"
+                    >
+                      <ListItem
+                        className={cn(
+                          'text-foreground flex items-start gap-2 px-5 py-4 text-[14.5px] leading-relaxed font-medium break-keep',
+                          details && 'cursor-pointer hover:bg-neutral-50/50'
+                        )}
+                        onClick={() =>
+                          details && toggleItem(entry.version, index)
+                        }
+                      >
+                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-neutral-300" />
+                        <span className="flex-1">{title}</span>
+                        {details && (
+                          <ChevronDownIcon
+                            className={cn(
+                              'mt-0.5 size-4 shrink-0 text-neutral-400 transition-transform duration-200',
+                              expanded && 'rotate-180'
+                            )}
+                          />
+                        )}
+                      </ListItem>
+
+                      {details && (
+                        <div
+                          className={cn(
+                            'grid transition-all duration-200 ease-in-out',
+                            expanded
+                              ? 'grid-rows-[1fr] opacity-100'
+                              : 'grid-rows-[0fr] opacity-0'
+                          )}
+                        >
+                          <div className="overflow-hidden">
+                            <div className="bg-neutral-50/50 px-5 pt-1 pb-4">
+                              <ul className="space-y-2.5 pl-3.5">
+                                {details.map((detail, dIndex) => (
+                                  <li
+                                    key={dIndex}
+                                    className="text-muted-foreground relative text-[13.5px] leading-relaxed break-keep"
+                                  >
+                                    <span className="absolute -left-3.5 top-2.5 h-1 w-1 rounded-full bg-neutral-300" />
+                                    {detail}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </List>
             </div>
           ))}
