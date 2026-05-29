@@ -117,7 +117,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       }
     );
 
-    return NextResponse.json(updated);
+    const { googleEventId: _, ...response } = updated;
+    return NextResponse.json(response);
   } catch (error: any) {
     console.error('PATCH /api/reservations/[id] error:', error);
     let status = 500;
