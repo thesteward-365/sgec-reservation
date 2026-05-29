@@ -11,6 +11,7 @@ import {
   getExternalEventDateRange,
   isExternalEventAllDay,
 } from '@/lib/external-event-dates';
+import { cn } from '@/lib/utils';
 
 type ExternalEventResponse = {
   id: number;
@@ -32,18 +33,8 @@ function formatMonthLabel(date: Date) {
   }).format(date);
 }
 
-function formatKstTime(iso: string) {
-  const date = new Date(iso);
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  return `${hours}:${minutes}`;
-}
-
-function EventDateSide({ event }: { event: ExternalEventResponse }) {
-  const { startDate, endDate } = getExternalEventDateRange(event);
-  const start = new Date(event.startTime);
-  const isAllDay = isExternalEventAllDay(event);
-  const isMultiDay = startDate !== endDate;
+function EventDateSide({ startTime }: { startTime: string }) {
+  const start = new Date(startTime);
 
   const day = start.getDate();
   const weekday = new Intl.DateTimeFormat('ko-KR', { weekday: 'short' }).format(
@@ -55,7 +46,16 @@ function EventDateSide({ event }: { event: ExternalEventResponse }) {
       <span className="text-foreground text-[18px] font-bold tabular-nums">
         {day}
       </span>
-      <span className="text-muted-foreground text-[12px] font-medium">
+      <span
+        className={cn(
+          'text-[12px] font-semibold',
+          weekday === '토'
+            ? 'text-blue-600'
+            : weekday === '일'
+              ? 'text-red-600'
+              : 'text-muted-foreground'
+        )}
+      >
         {weekday}
       </span>
     </div>
@@ -113,7 +113,7 @@ export default function AdminCalendarEventsPage() {
             <ChevronLeftIcon className="size-5 text-black" />
           </Link>
           <p className="text-body text-foreground flex-1 text-center font-bold!">
-            행사 일정 목록
+            행사 일정
           </p>
           <div className="size-10" />
         </div>
@@ -138,9 +138,6 @@ export default function AdminCalendarEventsPage() {
               <p className="text-foreground text-lg font-bold">
                 {formatMonthLabel(viewMonth)}
               </p>
-              <p className="text-muted-foreground text-caption mt-1">
-                월별 행사 일정
-              </p>
             </div>
             <button
               type="button"
@@ -157,63 +154,76 @@ export default function AdminCalendarEventsPage() {
           </div>
         </Card>
 
-        {loading ? (
-          <ListSkeleton count={5} />
-        ) : sortedEvents.length === 0 ? (
-          <div className="bg-card rounded-xl px-4 py-10 text-center shadow-(--shadow-1)">
-            <p className="text-foreground text-[15px] font-semibold">
-              이 달의 행사 일정이 없습니다
-            </p>
-          </div>
-        ) : (
-          <div className="bg-card overflow-hidden rounded-xl shadow-(--shadow-1)">
-            <List>
-              {sortedEvents.map((event) => {
-                const { startDate, endDate } = getExternalEventDateRange(event);
-                const isAllDay = isExternalEventAllDay(event);
-                const isMultiDay = startDate !== endDate;
+        <div
+          className={cn(
+            'transition-opacity duration-200',
+            loading && events.length > 0 ? 'opacity-50' : 'opacity-100'
+          )}
+        >
+          {loading && events.length === 0 ? (
+            <ListSkeleton count={5} />
+          ) : sortedEvents.length === 0 ? (
+            <div className="bg-card rounded-xl px-4 py-10 text-center shadow-(--shadow-1)">
+              <p className="text-foreground text-[15px] font-semibold">
+                이 달의 행사 일정이 없습니다
+              </p>
+            </div>
+          ) : (
+            <div className="bg-card overflow-hidden rounded-xl shadow-(--shadow-1)">
+              <List>
+                {sortedEvents.map((event) => {
+                  const { startDate, endDate } =
+                    getExternalEventDateRange(event);
+                  const isAllDay = isExternalEventAllDay(event);
+                  const isMultiDay = startDate !== endDate;
 
-                return (
-                  <ListItem key={event.id} className="p-0">
-                    <div className="flex w-full items-start gap-4 px-4 py-4">
-                      <EventDateSide event={event} />
-                      <div className="min-w-0 flex-1 py-0.5">
-                        <p className="text-foreground text-base leading-tight font-bold">
-                          {event.title}
-                        </p>
-                        {event.description ? (
-                          <p className="text-muted-foreground mt-1.5 line-clamp-2 text-[14px] leading-snug whitespace-pre-wrap">
-                            {event.description}
+                  return (
+                    <ListItem key={event.id} className="p-0">
+                      <a
+                        className="flex w-full items-start gap-4 px-4 py-4 transition-colors hover:bg-neutral-50 active:bg-neutral-100"
+                        href={`/api/admin/external-events/${event.id}/redirect`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <EventDateSide startTime={event.startTime} />
+                        <div className="min-w-0 flex-1 py-0.5">
+                          <p className="text-foreground text-base leading-tight font-bold">
+                            {event.title}
                           </p>
-                        ) : null}
-                        <p className="text-muted-foreground mt-2 text-[12px]">
-                          {new Intl.DateTimeFormat('ko-KR', {
-                            month: 'long',
-                            day: 'numeric',
-                            weekday: 'short',
-                            hour: isAllDay ? undefined : 'numeric',
-                            minute: isAllDay ? undefined : '2-digit',
-                          }).format(new Date(event.startTime))}
-                          {isMultiDay && (
-                            <>
-                              {' '}
-                              ~{' '}
-                              {new Intl.DateTimeFormat('ko-KR', {
-                                month: 'long',
-                                day: 'numeric',
-                                weekday: 'short',
-                              }).format(new Date(event.endTime))}
-                            </>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  </ListItem>
-                );
-              })}
-            </List>
-          </div>
-        )}
+                          {event.description ? (
+                            <p className="text-muted-foreground mt-1.5 line-clamp-2 text-[14px] leading-snug whitespace-pre-wrap">
+                              {event.description}
+                            </p>
+                          ) : null}
+                          <p className="text-muted-foreground mt-2 text-[12px]">
+                            {new Intl.DateTimeFormat('ko-KR', {
+                              month: 'long',
+                              day: 'numeric',
+                              weekday: 'short',
+                              hour: isAllDay ? undefined : 'numeric',
+                              minute: isAllDay ? undefined : '2-digit',
+                            }).format(new Date(event.startTime))}
+                            {isMultiDay && (
+                              <>
+                                {' '}
+                                ~{' '}
+                                {new Intl.DateTimeFormat('ko-KR', {
+                                  month: 'long',
+                                  day: 'numeric',
+                                  weekday: 'short',
+                                }).format(new Date(event.endTime))}
+                              </>
+                            )}
+                          </p>
+                        </div>
+                      </a>
+                    </ListItem>
+                  );
+                })}
+              </List>
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );

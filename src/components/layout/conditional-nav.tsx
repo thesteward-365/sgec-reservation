@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation'
 import { BottomNav } from './bottom-nav'
 
-const NO_NAV_RE = /^\/reserve\/\d/
+const NO_NAV_RE = /^\/reserve\/\d|^\/settings\/profile/
 
 export function ConditionalNav() {
   const pathname = usePathname()

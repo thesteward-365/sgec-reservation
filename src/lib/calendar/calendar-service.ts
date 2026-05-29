@@ -13,7 +13,16 @@ import {
   calendarSyncRuns,
   calendarSyncItems,
 } from '@/lib/db';
-import { eq, and, gte, sql, isNotNull, desc, or, notInArray } from 'drizzle-orm';
+import {
+  eq,
+  and,
+  gte,
+  sql,
+  isNotNull,
+  desc,
+  or,
+  notInArray,
+} from 'drizzle-orm';
 import { calendar_v3 } from 'googleapis';
 
 type ReservationRow = {
@@ -192,10 +201,7 @@ function getErrorStatus(error: unknown) {
   return withStatus.code ?? withStatus.response?.status ?? withStatus.status;
 }
 
-function makeCalendarSyncError(
-  message: string,
-  code: CalendarSyncErrorCode
-) {
+function makeCalendarSyncError(message: string, code: CalendarSyncErrorCode) {
   return Object.assign(new Error(message), { syncErrorCode: code });
 }
 
@@ -217,7 +223,8 @@ export function classifyCalendarSyncError(
     return {
       code: 'connection_required',
       label: '연결 필요',
-      message: 'Google Calendar 연결이 필요합니다. 관리자 설정에서 Google 계정을 다시 연결해주세요.',
+      message:
+        'Google Calendar 연결이 필요합니다. 관리자 설정에서 Google 계정을 다시 연결해주세요.',
       detail,
       retryable: false,
     };
@@ -227,7 +234,8 @@ export function classifyCalendarSyncError(
     return {
       code: 'calendar_not_configured',
       label: '캘린더 설정 오류',
-      message: '예약 캘린더가 선택되지 않았습니다. 관리자 설정에서 예약 캘린더를 저장해주세요.',
+      message:
+        '예약 캘린더가 선택되지 않았습니다. 관리자 설정에서 예약 캘린더를 저장해주세요.',
       detail,
       retryable: false,
     };
@@ -237,7 +245,8 @@ export function classifyCalendarSyncError(
     return {
       code: 'token_error',
       label: '토큰 갱신 실패',
-      message: 'Google 인증 정보가 만료되었거나 갱신에 실패했습니다. Google 계정을 다시 연결해주세요.',
+      message:
+        'Google 인증 정보가 만료되었거나 갱신에 실패했습니다. Google 계정을 다시 연결해주세요.',
       detail,
       retryable: false,
     };
@@ -247,7 +256,8 @@ export function classifyCalendarSyncError(
     return {
       code: 'permission_denied',
       label: '권한 오류',
-      message: '연결된 Google 계정에 캘린더 수정 권한이 없습니다. 캘린더 권한을 확인해주세요.',
+      message:
+        '연결된 Google 계정에 캘린더 수정 권한이 없습니다. 캘린더 권한을 확인해주세요.',
       detail,
       retryable: false,
     };
@@ -257,7 +267,8 @@ export function classifyCalendarSyncError(
     return {
       code: 'rate_limited',
       label: 'Google API 제한',
-      message: 'Google API 요청 한도에 도달했습니다. 잠시 후 다시 동기화해주세요.',
+      message:
+        'Google API 요청 한도에 도달했습니다. 잠시 후 다시 동기화해주세요.',
       detail,
       retryable: true,
     };
@@ -273,7 +284,8 @@ export function classifyCalendarSyncError(
     return {
       code: 'network_error',
       label: '네트워크 오류',
-      message: 'Google Calendar와 통신하는 중 네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+      message:
+        'Google Calendar와 통신하는 중 네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
       detail,
       retryable: true,
     };
@@ -283,7 +295,8 @@ export function classifyCalendarSyncError(
     return {
       code: 'google_api_error',
       label: 'Google API 오류',
-      message: 'Google Calendar API에서 일시적인 오류가 발생했습니다. 잠시 후 다시 동기화해주세요.',
+      message:
+        'Google Calendar API에서 일시적인 오류가 발생했습니다. 잠시 후 다시 동기화해주세요.',
       detail,
       retryable: true,
     };
@@ -292,7 +305,8 @@ export function classifyCalendarSyncError(
   return {
     code: 'unknown',
     label: '알 수 없는 오류',
-    message: 'Google Calendar 동기화 중 알 수 없는 오류가 발생했습니다. 상세 이력을 확인해주세요.',
+    message:
+      'Google Calendar 동기화 중 알 수 없는 오류가 발생했습니다. 상세 이력을 확인해주세요.',
     detail,
     retryable: true,
   };
@@ -1296,18 +1310,26 @@ export async function listCalendars(): Promise<
 }
 
 export async function getGoogleEventUrl(
+  calendarType: 'reservation' | 'event',
   googleEventId: string | null | undefined
 ): Promise<string | null> {
   if (!googleEventId) return null;
 
   const calendar = await getCalendarClient();
   const settings = await getCalendarSettings();
-  if (!calendar || !settings?.calendarId) return null;
+  if (!calendar || !settings) return null;
+
+  const targetCalendarId =
+    calendarType === 'reservation'
+      ? settings.calendarId
+      : settings.eventCalendarId;
+
+  if (!targetCalendarId) return null;
 
   try {
     const event: { data: calendar_v3.Schema$Event } = await calendar.events.get(
       {
-        calendarId: settings.calendarId,
+        calendarId: targetCalendarId,
         eventId: googleEventId,
       }
     );
