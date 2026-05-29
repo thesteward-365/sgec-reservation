@@ -13,7 +13,7 @@ import {
   calendarSyncRuns,
   calendarSyncItems,
 } from '@/lib/db';
-import { eq, and, gte, sql, isNotNull, desc, or } from 'drizzle-orm';
+import { eq, and, gte, sql, isNotNull, desc, or, notInArray } from 'drizzle-orm';
 import { calendar_v3 } from 'googleapis';
 
 type ReservationRow = {
@@ -911,25 +911,52 @@ async function pullExternalEventsDetailed(
       }
     }
 
-    if (googleIds.length > 0) {
-      await db
-        .delete(externalEvents)
-        .where(
-          and(
-            sql`${externalEvents.googleEventId} NOT IN ${googleIds}`,
+    const deleteWhere =
+      googleIds.length > 0
+        ? and(
+            notInArray(externalEvents.googleEventId, googleIds),
             gte(externalEvents.startTime, threeMonthsAgo)
           )
-        );
-    } else {
-      await db
-        .delete(externalEvents)
-        .where(gte(externalEvents.startTime, threeMonthsAgo));
+        : gte(externalEvents.startTime, threeMonthsAgo);
+
+    const deletedEvents = await db
+      .select({
+        googleEventId: externalEvents.googleEventId,
+        title: externalEvents.title,
+        startTime: externalEvents.startTime,
+        endTime: externalEvents.endTime,
+        isAllDay: externalEvents.isAllDay,
+        description: externalEvents.description,
+      })
+      .from(externalEvents)
+      .where(deleteWhere);
+
+    if (deletedEvents.length > 0) {
+      await db.delete(externalEvents).where(deleteWhere);
+
+      result.counts.deleted += deletedEvents.length;
+      for (const event of deletedEvents) {
+        result.items.push({
+          category: 'event',
+          action: 'cancelled',
+          status: 'success',
+          externalEventId: event.googleEventId,
+          title: event.title,
+          payload: {
+            title: event.title,
+            startTime: event.startTime.toISOString(),
+            endTime: event.endTime.toISOString(),
+            isAllDay: event.isAllDay,
+            description: event.description ?? null,
+          },
+        });
+      }
     }
 
     result.status = computeScopeStatus(result.counts, result.errors);
     await logSync(
       'info',
-      `행사 일정 pull 완료: ${result.counts.pulled}건, 건너뜀 ${result.items.filter((i) => i.status === 'skipped').length}건`,
+      `행사 일정 pull 완료: 가져옴 ${result.counts.pulled}건, 삭제 ${result.counts.deleted}건, 건너뜀 ${result.items.filter((i) => i.category === 'event' && i.status === 'skipped').length}건`,
       runId
     );
     return result;
