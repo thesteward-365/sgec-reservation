@@ -28,7 +28,9 @@ type SyncErrorPayload = {
   retryable: boolean;
 };
 
-function parseSyncErrorPayload(payload: string | null): SyncErrorPayload | null {
+function parseSyncErrorPayload(
+  payload: string | null
+): SyncErrorPayload | null {
   if (!payload) return null;
 
   try {
@@ -214,7 +216,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
         googleEventUrl:
           reservation.status === 'cancelled'
             ? null
-            : await getGoogleEventUrl(reservation.googleEventId),
+            : await getGoogleEventUrl('reservation', reservation.googleEventId),
         googleSync,
         isCancelled: reservation.status === 'cancelled',
       });
@@ -236,7 +238,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
     if (cancelledHistory) {
       const changes = JSON.parse(cancelledHistory.changes);
       const snapshot = changes.snapshot;
-      
+
       if (snapshot) {
         return NextResponse.json({
           id: reservationId,
@@ -265,7 +267,10 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
 export async function DELETE(_req: NextRequest, { params }: Params) {
   try {
-    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+    const session = await getIronSession<SessionData>(
+      await cookies(),
+      sessionOptions
+    );
     if (!session.user || session.user.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

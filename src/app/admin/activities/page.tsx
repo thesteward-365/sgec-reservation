@@ -2,19 +2,22 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  ChevronLeftIcon, 
+import {
+  ChevronLeftIcon,
   AdjustmentsHorizontalIcon,
 } from '@heroicons/react/24/outline';
 import { ActivityListSkeleton } from '@/components/admin/activity-list-skeleton';
-import { HistoryListItem, type HistoryItem } from '@/components/reservations/history-list-item';
+import {
+  HistoryListItem,
+  type HistoryItem,
+} from '@/components/reservations/history-list-item';
 import { Input } from '@/components/ui/input';
-import { 
-  Drawer, 
-  DrawerContent, 
-  DrawerHeader, 
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
   DrawerTitle,
-  DrawerFooter
+  DrawerFooter,
 } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { fromDbDate } from '@/lib/db/db-utils';
@@ -24,7 +27,7 @@ export default function ActivitiesPage() {
   const [activities, setActivities] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFilter, setShowFilter] = useState(false);
-  
+
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() - 7);
@@ -48,10 +51,13 @@ export default function ActivitiesPage() {
       if (response.ok) {
         const data = await response.json();
         // Standardize data format for HistoryListItem
-        const mapped = (data as any[]).map(item => ({
+        const mapped = (data as any[]).map((item) => ({
           ...item,
           createdAt: fromDbDate(item.createdAt),
-          changes: typeof item.changes === 'string' ? JSON.parse(item.changes) : item.changes
+          changes:
+            typeof item.changes === 'string'
+              ? JSON.parse(item.changes)
+              : item.changes,
         }));
         setActivities(mapped);
       }
@@ -73,8 +79,8 @@ export default function ActivitiesPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-neutral-150">
-      <header className="sticky top-0 z-10 flex h-14 items-center justify-between bg-neutral-150 px-4">
+    <div className="bg-neutral-150 flex min-h-screen flex-col">
+      <header className="bg-neutral-150 sticky top-0 z-10 flex h-14 items-center justify-between px-4">
         <button
           onClick={() => router.back()}
           className="flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-neutral-200"
@@ -104,15 +110,18 @@ export default function ActivitiesPage() {
           className="mb-4 flex w-full items-center justify-between px-1 text-left active:opacity-70"
         >
           <p className="text-caption text-muted-foreground font-medium">
-            {new Date(startDate).toLocaleDateString('ko-KR')} ~ {new Date(endDate).toLocaleDateString('ko-KR')}
+            {new Date(startDate).toLocaleDateString('ko-KR')} ~{' '}
+            {new Date(endDate).toLocaleDateString('ko-KR')}
           </p>
-          <p className="text-caption text-muted-foreground">{activities.length}건</p>
+          <p className="text-caption text-muted-foreground">
+            {activities.length}건
+          </p>
         </button>
 
         {loading ? (
           <ActivityListSkeleton count={5} />
         ) : activities.length === 0 ? (
-          <div className="py-20 text-center text-muted-foreground">
+          <div className="text-muted-foreground py-20 text-center">
             활동 내역이 없습니다.
           </div>
         ) : (
@@ -122,7 +131,9 @@ export default function ActivitiesPage() {
                 key={activity.id}
                 item={activity}
                 showPlaceName
-                onClick={() => router.push(`/admin/reservations/${activity.reservationId}`)}
+                onClick={() =>
+                  router.push(`/admin/reservations/${activity.reservationId}`)
+                }
               />
             ))}
           </div>
@@ -134,32 +145,36 @@ export default function ActivitiesPage() {
           <DrawerHeader>
             <DrawerTitle>기간 설정</DrawerTitle>
           </DrawerHeader>
-          <div className="px-6 py-4 space-y-6">
+          <div className="space-y-6 px-6 py-4">
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-caption text-muted-foreground font-medium uppercase">시작일</label>
+                <label className="text-caption text-muted-foreground font-medium uppercase">
+                  시작일
+                </label>
                 <div className="relative">
                   <Input
                     type="date"
                     value={tempStartDate}
                     onChange={(e) => setTempStartDate(e.target.value)}
-                    className="h-12 rounded-xl bg-neutral-100 border-none px-4"
+                    className="h-12 rounded-xl border-none bg-neutral-100 px-4"
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-caption text-muted-foreground font-medium uppercase">종료일</label>
+                <label className="text-caption text-muted-foreground font-medium uppercase">
+                  종료일
+                </label>
                 <div className="relative">
                   <Input
                     type="date"
                     value={tempEndDate}
                     onChange={(e) => setTempEndDate(e.target.value)}
-                    className="h-12 rounded-xl bg-neutral-100 border-none px-4"
+                    className="h-12 rounded-xl border-none bg-neutral-100 px-4"
                   />
                 </div>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-2">
               <Button
                 variant="secondary"
@@ -191,8 +206,11 @@ export default function ActivitiesPage() {
               </Button>
             </div>
           </div>
-          <DrawerFooter className="px-6 pb-10 pt-2">
-            <Button className="h-14 rounded-2xl text-body font-bold" onClick={handleApplyFilter}>
+          <DrawerFooter className="px-6 pt-2 pb-10">
+            <Button
+              className="text-body h-14 rounded-lg font-bold"
+              onClick={handleApplyFilter}
+            >
               적용하기
             </Button>
           </DrawerFooter>

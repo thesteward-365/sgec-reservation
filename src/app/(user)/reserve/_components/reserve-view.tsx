@@ -4,8 +4,6 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
-  Cog6ToothIcon,
-  ChevronRightIcon,
   AdjustmentsHorizontalIcon,
   CalendarIcon,
 } from '@heroicons/react/24/outline';
@@ -321,7 +319,7 @@ export function ReserveView({ userName }: ReserveViewProps) {
         style={{ willChange: 'transform' }}
       >
         {/* 캘린더 카드 */}
-        <div className="bg-card mx-5 mb-4 rounded-2xl px-2 py-3.5 shadow-(--shadow-1)">
+        <div className="bg-card mx-5 mb-4 rounded-lg px-2 py-3.5 shadow-(--shadow-1)">
           <WeeklyCalendar
             defaultDate={selectedDate}
             selectedDate={selectedDate}

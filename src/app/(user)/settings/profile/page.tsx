@@ -135,24 +135,27 @@ export default function ProfilePage() {
 
   return (
     <div className="bg-neutral-150 flex min-h-[100dvh] flex-col">
-      <header className="bg-neutral-150 sticky top-0 z-10 flex h-14 items-center px-2">
+      <header className="bg-neutral-150 sticky top-0 z-10 flex h-14 items-center px-4">
         <button
           onClick={() => router.back()}
-          className="flex h-10 w-10 items-center justify-center rounded-full transition-colors active:bg-neutral-200"
+          className="flex h-10 w-10 items-center justify-center rounded-xl transition-colors active:bg-neutral-200"
           aria-label="뒤로 가기"
         >
-          <ChevronLeftIcon className="text-foreground h-6 w-6" />
+          <ChevronLeftIcon className="text-foreground h-5 w-5" />
         </button>
-        <h1 className="text-foreground ml-1 text-[17px] font-bold">개인정보</h1>
+        <p className="text-body text-foreground flex-1 text-center font-bold!">
+          개인정보
+        </p>
+        <div className="h-10 w-10" />
       </header>
 
-      <main className="flex flex-1 flex-col gap-6 px-5 pt-2 pb-10">
+      <main className="mx-auto flex w-full max-w-107.5 flex-1 flex-col gap-6 px-5 pt-2 pb-10">
         {loading ? (
           <ListSkeleton count={3} className="bg-transparent shadow-none" />
         ) : user ? (
           <>
             {/* Tab Switcher */}
-            <div className="flex gap-1 rounded-2xl bg-neutral-200 p-1 shadow-inner">
+            <div className="flex gap-1 rounded-lg bg-neutral-200 p-1 shadow-inner">
               <button
                 onClick={() => setActiveTab('info')}
                 className={cn(
@@ -178,7 +181,7 @@ export default function ProfilePage() {
             </div>
 
             {activeTab === 'info' ? (
-              <section className="bg-card animate-in fade-in slide-in-from-bottom-2 rounded-2xl p-5 shadow-(--shadow-1) duration-300">
+              <section className="bg-card animate-in fade-in slide-in-from-bottom-2 rounded-lg p-5 shadow-(--shadow-1) duration-300">
                 <h2 className="text-foreground mb-4 text-[15px] font-bold">
                   기본 정보 수정
                 </h2>
@@ -231,7 +234,7 @@ export default function ProfilePage() {
                 </div>
               </section>
             ) : (
-              <section className="bg-card animate-in fade-in slide-in-from-bottom-2 rounded-2xl p-5 shadow-(--shadow-1) duration-300">
+              <section className="bg-card animate-in fade-in slide-in-from-bottom-2 rounded-lg p-5 shadow-(--shadow-1) duration-300">
                 <h2 className="text-foreground mb-4 text-[15px] font-bold">
                   비밀번호 변경
                 </h2>

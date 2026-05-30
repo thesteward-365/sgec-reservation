@@ -5,6 +5,7 @@ import { db, places, floors, placeTags, tags, reservations, fromDbDate } from '@
 import { and, eq } from 'drizzle-orm';
 import { notFound, redirect } from 'next/navigation';
 import { PlaceDetailView } from './_components/place-detail-view';
+import { isModifiable } from '@/lib/validations/reservation';
 
 type PageProps = {
   params: Promise<{ placeId: string }>;
@@ -67,7 +68,7 @@ export default async function PlaceDetailPage({
         ? eq(reservations.id, parsedReservationId)
         : and(
             eq(reservations.id, parsedReservationId),
-            eq(reservations.userId, session.user.id)
+            eq(reservations.userId, Number(session.user.id))
           );
 
     const [reservation] = await db
@@ -86,8 +87,8 @@ export default async function PlaceDetailPage({
     const start = fromDbDate(reservation.startTime);
     const end = fromDbDate(reservation.endTime);
 
-    // 관리자가 아니면서 종료 시간이 지난 예약은 수정할 수 없음
-    if (session.user.role !== 'admin' && end < new Date()) {
+    // 관리자가 아니면서 수정 가능 기간이 지난 예약은 수정할 수 없음
+    if (session.user.role !== 'admin' && !isModifiable(end)) {
       redirect(backUrl ?? '/my-reservations');
     }
 

@@ -46,10 +46,13 @@ interface Reservation extends BaseReservation {
 
 export default function ReservationDetailPage({
   params: paramsPromise,
+  searchParams: searchParamsPromise,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ backHref?: string }>;
 }) {
   const params = use(paramsPromise);
+  const searchParams = use(searchParamsPromise);
   const router = useRouter();
   const [reservation, setReservation] = useState<Reservation | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -68,7 +71,7 @@ export default function ReservationDetailPage({
           setReservation(data);
         } else {
           toast.error('예약 정보를 불러오는데 실패했습니다.');
-          router.back();
+          router.push('/admin/reservations');
         }
       } catch (error) {
         console.error('Failed to fetch reservation:', error);
@@ -127,11 +130,19 @@ export default function ReservationDetailPage({
       if (!res.ok) throw new Error();
       setConfirmOpen(false);
       toast.success('예약을 취소했어요');
-      router.back();
+      router.push('/admin/reservations');
     } catch {
       toast.error('예약 취소에 실패했어요');
     } finally {
       setCancelling(false);
+    }
+  };
+
+  const handleBack = () => {
+    if (searchParams.backHref) {
+      router.push(searchParams.backHref);
+    } else {
+      router.push('/admin/reservations');
     }
   };
 
@@ -199,7 +210,7 @@ export default function ReservationDetailPage({
       <header className="bg-neutral-150 sticky top-0 z-10 grid h-14 grid-cols-[5rem_1fr_5rem] items-center px-4">
         <div className="flex justify-start">
           <button
-            onClick={() => router.back()}
+            onClick={handleBack}
             className="flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-neutral-200"
           >
             <ChevronLeftIcon className="h-6 w-6" />
@@ -233,7 +244,7 @@ export default function ReservationDetailPage({
           onTabChange={(tab) => tab === 'history' && fetchHistory()}
           googleSyncSection={
             reservation.googleSync ? (
-              <div className="flex w-full flex-col overflow-hidden rounded-3xl bg-white shadow-(--shadow-1) transition hover:bg-neutral-50">
+              <div className="flex w-full flex-col overflow-hidden rounded-lg bg-white shadow-(--shadow-1) transition hover:bg-neutral-50">
                 <div className="flex w-full items-center justify-between px-6 py-5 text-left disabled:cursor-default">
                   <div className="min-w-0">
                     <p className="text-muted-foreground text-sm font-medium">
@@ -321,7 +332,7 @@ export default function ReservationDetailPage({
           }
         />
         {reservation.isCancelled && (
-          <div className="mt-8 rounded-2xl bg-red-50 p-6 text-center">
+          <div className="mt-8 rounded-lg bg-red-50 p-6 text-center">
             <p className="text-body-sm font-medium break-keep text-red-600">
               이 예약은 취소되어 상세 정보를 수정하거나 공유할 수 없습니다.
             </p>

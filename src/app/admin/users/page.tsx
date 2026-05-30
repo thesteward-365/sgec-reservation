@@ -98,7 +98,7 @@ export default function UsersPage() {
 
     if (pendingUsers.length === 0) {
       return (
-        <div className="bg-card rounded-xl p-10 text-center shadow-(--shadow-1)">
+        <div className="bg-card rounded-lg p-10 text-center shadow-(--shadow-1)">
           <p className="text-body text-muted-foreground font-medium">
             승인 대기 중인 사용자가 없습니다
           </p>
@@ -162,7 +162,7 @@ export default function UsersPage() {
 
     if (users.length === 0) {
       return (
-        <div className="bg-card rounded-xl p-10 text-center shadow-(--shadow-1)">
+        <div className="bg-card rounded-lg p-10 text-center shadow-(--shadow-1)">
           <p className="text-body text-muted-foreground font-medium">
             가입된 사용자가 없습니다
           </p>
@@ -272,7 +272,7 @@ export default function UsersPage() {
               </DrawerTitle>
 
               {/* 프로필 정보 — 배경으로 섹션 구분 */}
-              <div className="bg-muted/50 mx-4 mt-2 mb-4 rounded-xl px-4 py-4">
+              <div className="bg-muted/50 mx-4 mt-2 mb-4 rounded-lg px-4 py-4">
                 <div className="space-y-2.5">
                   {(
                     [

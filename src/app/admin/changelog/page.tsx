@@ -56,7 +56,7 @@ export default function AdminChangelogPage() {
                 </span>
               </div>
 
-              <List className="overflow-hidden rounded-2xl border-none bg-white shadow-sm">
+              <List className="overflow-hidden rounded-lg border-none bg-white shadow-sm">
                 {entry.items.map((item, index) => {
                   const isObject = typeof item !== 'string';
                   const title = isObject ? (item as ChangelogItem).title : item;
@@ -108,7 +108,7 @@ export default function AdminChangelogPage() {
                                     key={dIndex}
                                     className="text-muted-foreground relative text-[13.5px] leading-relaxed break-keep"
                                   >
-                                    <span className="absolute -left-3.5 top-2.5 h-1 w-1 rounded-full bg-neutral-300" />
+                                    <span className="absolute top-2.5 -left-3.5 h-1 w-1 rounded-full bg-neutral-300" />
                                     {detail}
                                   </li>
                                 ))}

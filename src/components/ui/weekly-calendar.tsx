@@ -1,22 +1,22 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import { cn } from "@/lib/utils"
+import * as React from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-const DAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"] as const
+const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'] as const;
 
 function startOfWeek(date: Date): Date {
-  const d = new Date(date)
-  d.setDate(d.getDate() - d.getDay())
-  d.setHours(0, 0, 0, 0)
-  return d
+  const d = new Date(date);
+  d.setDate(d.getDate() - d.getDay());
+  d.setHours(0, 0, 0, 0);
+  return d;
 }
 
 function addDays(date: Date, days: number): Date {
-  const d = new Date(date)
-  d.setDate(d.getDate() + days)
-  return d
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
 }
 
 function isSameDay(a: Date, b: Date): boolean {
@@ -24,17 +24,17 @@ function isSameDay(a: Date, b: Date): boolean {
     a.getFullYear() === b.getFullYear() &&
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate()
-  )
+  );
 }
 
 interface WeeklyCalendarProps {
-  defaultDate?: Date
-  selectedDate?: Date
-  onDateSelect?: (date: Date) => void
-  onWeekChange?: (weekStart: Date) => void
+  defaultDate?: Date;
+  selectedDate?: Date;
+  onDateSelect?: (date: Date) => void;
+  onWeekChange?: (weekStart: Date) => void;
   /** 날짜에 예약 점 표시 여부를 반환하는 함수 */
-  getIndicator?: (date: Date) => boolean
-  className?: string
+  getIndicator?: (date: Date) => boolean;
+  className?: string;
 }
 
 function WeeklyCalendar({
@@ -46,123 +46,123 @@ function WeeklyCalendar({
   className,
 }: WeeklyCalendarProps) {
   const today = React.useMemo(() => {
-    const d = new Date()
-    d.setHours(0, 0, 0, 0)
-    return d
-  }, [])
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
 
   const [weekStart, setWeekStart] = React.useState(() =>
     startOfWeek(defaultDate ?? today)
-  )
+  );
 
-  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
+  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   const handlePrevWeek = () => {
-    const next = addDays(weekStart, -7)
-    setWeekStart(next)
-    onWeekChange?.(next)
-  }
+    const next = addDays(weekStart, -7);
+    setWeekStart(next);
+    onWeekChange?.(next);
+  };
 
   const handleNextWeek = () => {
-    const next = addDays(weekStart, 7)
-    setWeekStart(next)
-    onWeekChange?.(next)
-  }
+    const next = addDays(weekStart, 7);
+    setWeekStart(next);
+    onWeekChange?.(next);
+  };
 
   const weekLabel = React.useMemo(() => {
-    const start = days[0]
-    const end = days[6]
+    const start = days[0];
+    const end = days[6];
     if (start.getMonth() === end.getMonth()) {
-      return `${start.getFullYear()}년 ${start.getMonth() + 1}월`
+      return `${start.getFullYear()}년 ${start.getMonth() + 1}월`;
     }
-    return `${start.getFullYear()}년 ${start.getMonth() + 1}월 – ${end.getMonth() + 1}월`
-  }, [days])
+    return `${start.getFullYear()}년 ${start.getMonth() + 1}월 – ${end.getMonth() + 1}월`;
+  }, [days]);
 
   return (
-    <div className={cn("flex flex-col", className)}>
+    <div className={cn('flex flex-col', className)}>
       <div className="flex items-center justify-between px-2 py-2">
         <button
           onClick={handlePrevWeek}
-          className="p-1.5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-120 ease-(--ease-standard)"
+          className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-sm p-1.5 transition-colors duration-120 ease-(--ease-standard)"
           aria-label="이전 주"
         >
           <ChevronLeft size={18} />
         </button>
-        <span className="text-body-sm font-semibold text-foreground">
+        <span className="text-body-sm text-foreground font-semibold">
           {weekLabel}
         </span>
         <button
           onClick={handleNextWeek}
-          className="p-1.5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-120 ease-(--ease-standard)"
+          className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-sm p-1.5 transition-colors duration-120 ease-(--ease-standard)"
           aria-label="다음 주"
         >
           <ChevronRight size={18} />
         </button>
       </div>
 
-      <div className="grid grid-cols-7">
+      <div className="grid grid-cols-7 py-2">
         {days.map((day, i) => {
-          const isToday = isSameDay(day, today)
-          const isSelected = selectedDate ? isSameDay(day, selectedDate) : false
-          const isSunday = i === 0
-          const isSaturday = i === 6
-          const hasIndicator = getIndicator ? getIndicator(day) : false
+          const isToday = isSameDay(day, today);
+          const isSelected = selectedDate
+            ? isSameDay(day, selectedDate)
+            : false;
+          const isSunday = i === 0;
+          const isSaturday = i === 6;
+          const hasIndicator = getIndicator ? getIndicator(day) : false;
 
           const dayTextColor = isSunday
-            ? "text-(--color-danger)"
+            ? 'text-(--color-danger)'
             : isSaturday
-              ? "text-primary"
-              : "text-muted-foreground"
+              ? 'text-primary'
+              : 'text-muted-foreground';
 
           const dateTextColor = isSunday
-            ? "text-(--color-danger)"
+            ? 'text-(--color-danger)'
             : isSaturday
-              ? "text-primary"
-              : "text-foreground"
+              ? 'text-primary'
+              : 'text-foreground';
 
           return (
             <button
               key={i}
               onClick={() => onDateSelect?.(day)}
-              className="flex items-center justify-center outline-none group"
+              className="group flex items-center justify-center outline-none"
             >
               <div
                 className={cn(
-                  "relative flex flex-col items-center gap-1.5 py-2.5 w-10 rounded-[14px] transition-colors duration-120 ease-(--ease-standard)",
-                  isSelected
-                    ? "bg-(--color-fg-strong)"
-                    : "group-hover:bg-muted"
+                  'relative flex w-10 flex-col items-center gap-1.5 rounded-md py-2.5 transition-colors duration-120 ease-(--ease-standard)',
+                  isSelected ? 'bg-(--color-fg-strong)' : 'group-hover:bg-muted'
                 )}
               >
                 <span
                   className={cn(
-                    "text-overline font-medium leading-none",
-                    isSelected ? "text-white/80" : dayTextColor
+                    'text-overline leading-none font-medium',
+                    isSelected ? 'text-white/80' : dayTextColor
                   )}
                 >
                   {DAY_LABELS[i]}
                 </span>
                 <span
                   className={cn(
-                    "text-h5 leading-none",
+                    'text-h5 leading-none',
                     isSelected
-                      ? "text-white font-bold"
-                      : cn(dateTextColor, isToday ? "font-bold" : "font-medium")
+                      ? 'font-bold text-white'
+                      : cn(dateTextColor, isToday ? 'font-bold' : 'font-medium')
                   )}
                 >
                   {day.getDate()}
                 </span>
                 {hasIndicator && !isSelected && (
-                  <span className="absolute bottom-1.5 w-1 h-1 rounded-full bg-primary" />
+                  <span className="bg-primary absolute bottom-1.5 h-1 w-1 rounded-full" />
                 )}
               </div>
             </button>
-          )
+          );
         })}
       </div>
     </div>
-  )
+  );
 }
 
-export { WeeklyCalendar }
-export type { WeeklyCalendarProps }
+export { WeeklyCalendar };
+export type { WeeklyCalendarProps };

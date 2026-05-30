@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
       endTime: externalEvents.endTime,
       isAllDay: externalEvents.isAllDay,
       description: externalEvents.description,
+      googleEventId: externalEvents.googleEventId,
     })
     .from(externalEvents)
     .where(
@@ -52,6 +53,7 @@ export async function GET(request: NextRequest) {
       endTime: fromDbDate(r.endTime).toISOString(),
       isAllDay: !!r.isAllDay, // 확실히 불리언으로 강제 변환하여 포함
       description: r.description,
+      googleEventId: r.googleEventId,
     }))
   );
 }
