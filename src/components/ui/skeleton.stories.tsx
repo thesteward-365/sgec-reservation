@@ -20,7 +20,7 @@ type Story = StoryObj<typeof Skeleton>;
 export const CardSkeleton: Story = {
   render: () => (
     <div
-      className="border-border-subtle flex flex-col gap-3 rounded-2xl border p-6"
+      className="border-border-subtle flex flex-col gap-3 rounded-lg border p-6"
       style={{ maxWidth: 360 }}
     >
       <div className="flex flex-col gap-1.5">

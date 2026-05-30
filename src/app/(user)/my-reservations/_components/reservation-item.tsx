@@ -54,7 +54,7 @@ export function ReservationItem({
         'flex w-full items-center gap-4 px-4 py-4 text-left transition-colors',
         flat
           ? 'rounded-none bg-transparent shadow-none'
-          : 'bg-card rounded-2xl shadow-(--shadow-1)',
+          : 'bg-card rounded-lg shadow-(--shadow-1)',
         (isPast || isCanceled) && 'opacity-50',
         onTap && !flat && 'hover:bg-neutral-50 active:bg-neutral-100',
         !onTap && 'cursor-default'

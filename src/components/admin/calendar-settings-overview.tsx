@@ -317,7 +317,7 @@ function CalendarPageContent() {
                 </p>
 
                 {status.needsReauth && (
-                  <div className="mb-4 flex items-start gap-3 rounded-2xl border border-red-100 bg-red-50 p-4 shadow-sm">
+                  <div className="mb-4 flex items-start gap-3 rounded-lg border border-red-100 bg-red-50 p-4 shadow-sm">
                     <ExclamationCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
                     <div className="flex-1">
                       <p className="text-[14px] leading-tight font-bold text-red-900">
@@ -504,8 +504,8 @@ function CalendarPageContent() {
                         <div className="mb-1 flex items-center gap-1.5">
                           {(status.failedCount ?? 0) > 0 ? (
                             <>
-                              <ExclamationCircleIcon className="text-red-500 h-4 w-4" />
-                              <span className="text-body text-red-600 font-bold">
+                              <ExclamationCircleIcon className="h-4 w-4 text-red-500" />
+                              <span className="text-body font-bold text-red-600">
                                 오류 {status.failedCount}건 발생
                               </span>
                             </>
@@ -522,7 +522,8 @@ function CalendarPageContent() {
                           마지막 동기화: {formatLastSync(status.lastSync)}
                         </p>
                         <p className="text-caption text-muted-foreground mt-0.5">
-                          대기 {status.pendingCount ?? 0}건 · 실패 {status.failedCount ?? 0}건
+                          대기 {status.pendingCount ?? 0}건 · 실패{' '}
+                          {status.failedCount ?? 0}건
                         </p>
                       </div>
                       <Button
@@ -582,7 +583,7 @@ function CalendarPageContent() {
 
               {/* 캘린더 미설정 경고 */}
               {!calendarSaved && (
-                <div className="flex items-start gap-2 rounded-2xl bg-amber-50 px-4 py-3">
+                <div className="flex items-start gap-2 rounded-lg bg-amber-50 px-4 py-3">
                   <ExclamationCircleIcon className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
                   <p className="text-caption text-amber-700">
                     캘린더를 선택하고 저장해야 예약 동기화가 시작됩니다.

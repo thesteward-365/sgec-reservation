@@ -27,9 +27,7 @@ import {
 } from '@/components/reservations/external-events-sheet';
 import { SessionData } from '@/lib/session';
 import { compareReservationByDayAndTime } from '@/lib/services/reservation-sorting';
-import {
-  getExternalEventDateRange,
-} from '@/lib/external-event-dates';
+import { getExternalEventDateRange } from '@/lib/external-event-dates';
 
 type PlaceTagMap = Record<number, number[]>; // placeId -> tagId[]
 
@@ -300,7 +298,7 @@ export function MyReservationsView({ user }: Props) {
         ) : tab === 'calendar' ? (
           <>
             {/* 월 달력 카드 */}
-            <div className="bg-card rounded-2xl px-4 py-4 shadow-(--shadow-1)">
+            <div className="bg-card rounded-lg px-4 py-4 shadow-(--shadow-1)">
               <MonthlyCalendar
                 selectedDate={selectedDate}
                 viewMonth={viewMonth}
@@ -358,7 +356,7 @@ export function MyReservationsView({ user }: Props) {
 
             <div className="bg-card overflow-hidden rounded-xl shadow-(--shadow-1)">
               {dailyList.length === 0 ? (
-                <div className="bg-card flex flex-col items-center gap-1.5 rounded-2xl px-4 py-10">
+                <div className="bg-card flex flex-col items-center gap-1.5 rounded-lg px-4 py-10">
                   <p className="text-foreground text-[15px] font-semibold">
                     {dailyEvents.length === 0
                       ? '예약이 없는 날이에요'
