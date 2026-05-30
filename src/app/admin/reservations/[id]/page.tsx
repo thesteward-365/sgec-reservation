@@ -244,7 +244,7 @@ export default function ReservationDetailPage({
           onTabChange={(tab) => tab === 'history' && fetchHistory()}
           googleSyncSection={
             reservation.googleSync ? (
-              <div className="flex w-full flex-col overflow-hidden rounded-3xl bg-white shadow-(--shadow-1) transition hover:bg-neutral-50">
+              <div className="flex w-full flex-col overflow-hidden rounded-lg bg-white shadow-(--shadow-1) transition hover:bg-neutral-50">
                 <div className="flex w-full items-center justify-between px-6 py-5 text-left disabled:cursor-default">
                   <div className="min-w-0">
                     <p className="text-muted-foreground text-sm font-medium">
@@ -332,7 +332,7 @@ export default function ReservationDetailPage({
           }
         />
         {reservation.isCancelled && (
-          <div className="mt-8 rounded-2xl bg-red-50 p-6 text-center">
+          <div className="mt-8 rounded-lg bg-red-50 p-6 text-center">
             <p className="text-body-sm font-medium break-keep text-red-600">
               이 예약은 취소되어 상세 정보를 수정하거나 공유할 수 없습니다.
             </p>

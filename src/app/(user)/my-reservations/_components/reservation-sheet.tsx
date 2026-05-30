@@ -143,7 +143,7 @@ export function ReservationSheet({
               <div className="flex gap-2 pt-1">
                 <Button
                   variant="secondary"
-                  className="h-12 flex-1 rounded-2xl"
+                  className="h-12 flex-1 rounded-lg"
                   onClick={handleEdit}
                   disabled={isPast && user?.role !== 'admin'}
                   title={
@@ -161,7 +161,7 @@ export function ReservationSheet({
                     cancelling ||
                     isCancelled
                   }
-                  className="h-12 flex-1 rounded-2xl"
+                  className="h-12 flex-1 rounded-lg"
                   onClick={() => setConfirmOpen(true)}
                 >
                   예약 취소

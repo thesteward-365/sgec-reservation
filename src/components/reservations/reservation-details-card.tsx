@@ -14,7 +14,7 @@ export function ReservationDetailsCard({ rows, tone = 'surface' }: Props) {
   return (
     <div
       className={cn(
-        'flex flex-col gap-4 rounded-3xl p-8',
+        'flex flex-col gap-4 rounded-lg p-8',
         tone === 'surface' && 'bg-gray-50',
         tone === 'subtle' && 'bg-neutral-50',
         tone === 'white' && 'bg-white! shadow-(--shadow-1)'

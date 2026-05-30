@@ -90,7 +90,7 @@ export function MonthlyCalendar({
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl bg-white p-4">
+    <div className="flex flex-col gap-3 rounded-lg bg-white p-4">
       {/* 월 네비게이션 */}
       <div className="mb-2 grid grid-cols-[auto_1fr_auto] items-center">
         <button
