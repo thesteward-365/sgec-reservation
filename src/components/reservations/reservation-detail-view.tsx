@@ -107,7 +107,7 @@ export function ReservationDetailView({
           ) : history.length > 0 ? (
             <div className="flex flex-col gap-3">
               {history.map((item) => (
-                <HistoryListItem key={item.id} item={item} />
+                <HistoryListItem key={item.id} item={item} showPlaceName />
               ))}
             </div>
           ) : (
