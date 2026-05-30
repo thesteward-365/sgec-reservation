@@ -56,7 +56,7 @@ export function ExternalEventsSheet({
               표시할 외부 행사가 없습니다.
             </div>
           ) : (
-            <div className="divide-border/50 bg-card flex flex-col divide-y overflow-hidden rounded-2xl shadow-(--shadow-1)">
+            <div className="divide-border/50 bg-card flex flex-col divide-y overflow-hidden rounded-lg shadow-(--shadow-1)">
               {events.map((event) => (
                 <div key={event.id} className="px-4 py-4">
                   <p className="text-foreground text-[16px] font-bold">

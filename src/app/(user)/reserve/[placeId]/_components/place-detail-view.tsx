@@ -25,6 +25,8 @@ import {
   overlapsExistingRange,
   parseLocalDate,
 } from '@/lib/services/reservation-slots';
+import { List, ListItem } from '@/components/ui/list';
+import { ListSkeleton } from '@/components/ui/list-skeleton';
 import { Chip } from '@/components/ui/chip';
 
 type PickerPlace = {
@@ -135,20 +137,20 @@ export function PlaceDetailView({
     if (initialReservation) {
       const start = toDate(initialReservation.startTime);
       const end = toDate(initialReservation.endTime);
-      
+
       // Extract KST hours/minutes
       const startKst = new Date(start.getTime() + 9 * 60 * 60 * 1000);
       const endKst = new Date(end.getTime() + 9 * 60 * 60 * 1000);
-      
+
       let startMin = startKst.getUTCHours() * 60 + startKst.getUTCMinutes();
       let endMin = endKst.getUTCHours() * 60 + endKst.getUTCMinutes();
-      
+
       // Handle midnight ending on the next day
       // If end time is technically after start time but minute-of-day is 0, it's 24:00 (1440 min)
       if (endMin === 0 && end.getTime() > start.getTime()) {
         endMin = 24 * 60;
       }
-      
+
       return { startMin, endMin };
     }
     return {
@@ -211,7 +213,9 @@ export function PlaceDetailView({
 
                 // selectedDate is 'YYYY-MM-DD' in KST.
                 const dayStart = new Date(`${selectedDate}T00:00:00+09:00`);
-                const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+                const dayEnd = new Date(
+                  dayStart.getTime() + 24 * 60 * 60 * 1000
+                );
 
                 const startMin = Math.max(
                   0,
@@ -342,6 +346,16 @@ export function PlaceDetailView({
     });
   }
 
+  const handleBack = () => {
+    if (backUrl) {
+      router.push(backUrl);
+    } else if (isEditMode) {
+      router.push('/my-reservations');
+    } else {
+      router.push(`/reserve?date=${selectedDate}`);
+    }
+  };
+
   const filteredPickerPlaces = pickerPlaces.filter((p) => {
     if (pickerFloorId !== null && p.floorId !== pickerFloorId) return false;
     if (pickerTagId !== null && !p.tags.some((t) => t.id === pickerTagId)) {
@@ -354,17 +368,12 @@ export function PlaceDetailView({
     <>
       <div className="fixed inset-x-0 top-0 z-30 bg-(--color-neutral-150)">
         <div className="mx-auto flex h-14 max-w-107.5 items-center px-4">
-          <Link
-            href={
-              backUrl ??
-              (isEditMode
-                ? '/my-reservations'
-                : `/reserve?date=${selectedDate}`)
-            }
-            className="text-foreground flex size-10 items-center justify-center rounded-xl transition-colors duration-120 ease-(--ease-standard) hover:bg-neutral-200"
+          <button
+            onClick={handleBack}
+            className="text-foreground flex size-10 items-center justify-center rounded-md transition-colors duration-120 ease-(--ease-standard) hover:bg-neutral-200"
           >
             <ChevronLeftIcon className="size-5" />
-          </Link>
+          </button>
           <p className="text-body text-foreground flex-1 text-center font-bold">
             {isEditMode ? '예약 수정' : '예약하기'}
           </p>
@@ -375,7 +384,7 @@ export function PlaceDetailView({
       <div className="pt-14 pb-44">
         <div className="px-5 pt-3 pb-1">
           <p className="text-body text-foreground mb-2 pl-1 font-bold">장소</p>
-          <div className="bg-card rounded-2xl shadow-(--shadow-1)">
+          <div className="bg-card rounded-lg shadow-(--shadow-1)">
             <button
               className="flex w-full items-center px-4 py-4"
               onClick={() => setPlacePickerOpen(true)}
@@ -409,7 +418,7 @@ export function PlaceDetailView({
           <p className="text-body text-foreground mb-2 pl-1 font-bold">시간</p>
           <div
             ref={timelineRef}
-            className="bg-card rounded-2xl px-3 py-4 shadow-(--shadow-1)"
+            className="bg-card rounded-lg px-3 py-4 shadow-(--shadow-1)"
           >
             <div className="flex items-baseline justify-between px-1 pb-3">
               <button
@@ -423,7 +432,7 @@ export function PlaceDetailView({
               </button>
             </div>
             {loading ? (
-              <div className="bg-muted h-40 animate-pulse rounded-xl" />
+              <div className="bg-muted h-40 animate-pulse rounded-md" />
             ) : (
               <ReservationTimeline
                 key={`${place.id}-${selectedDate}-${editReservationId ?? 'new'}`}
@@ -443,7 +452,7 @@ export function PlaceDetailView({
                   }))
                 }
                 disabled={selection.endMin - selection.startMin <= 30}
-                className="text-caption text-foreground bg-card flex-1 cursor-pointer rounded-xl border border-neutral-300 py-2 font-semibold shadow-sm transition-colors duration-120 ease-(--ease-standard) select-none hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-40"
+                className="text-caption text-foreground bg-card flex-1 cursor-pointer rounded-md border border-neutral-300 py-2 font-semibold shadow-xs transition-colors duration-120 ease-(--ease-standard) select-none hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 −30분
               </button>
@@ -458,7 +467,7 @@ export function PlaceDetailView({
                   }))
                 }
                 disabled={selection.endMin >= 24 * 60}
-                className="text-caption text-foreground bg-card flex-1 cursor-pointer rounded-xl border border-neutral-300 py-2 font-semibold shadow-sm transition-colors duration-120 ease-(--ease-standard) select-none hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-40"
+                className="text-caption text-foreground bg-card flex-1 cursor-pointer rounded-md border border-neutral-300 py-2 font-semibold shadow-xs transition-colors duration-120 ease-(--ease-standard) select-none hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 +30분
               </button>
@@ -470,7 +479,7 @@ export function PlaceDetailView({
           <p className="text-body text-foreground mb-2 pl-1 font-bold">
             사용 목적
           </p>
-          <div className="bg-card flex flex-col gap-3 rounded-2xl px-4 py-4 shadow-(--shadow-1)">
+          <div className="bg-card flex flex-col gap-3 rounded-lg px-4 py-4 shadow-(--shadow-1)">
             <div className="flex flex-wrap gap-2">
               {[...frequentPurposes].map((p) => (
                 <Chip
@@ -504,7 +513,7 @@ export function PlaceDetailView({
         </div>
       </div>
 
-      <div className="bg-background fixed bottom-0 inset-x-0 z-50 mx-auto w-full max-w-107.5 border-t border-(--color-border-subtle)">
+      <div className="bg-background fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-107.5 border-t border-(--color-border-subtle)">
         <div
           className="px-5 pt-3"
           style={{
@@ -559,7 +568,7 @@ export function PlaceDetailView({
           <button
             onClick={handleCtaClick}
             className={cn(
-              'rounded-pill text-body-sm w-full px-6 py-3.5 font-semibold tracking-wide transition-all duration-120 ease-(--ease-standard)',
+              'text-body-sm w-full rounded-lg px-6 py-3.5 font-semibold tracking-wide transition-all duration-120 ease-(--ease-standard)',
               canSubmit && !isPending
                 ? 'bg-primary text-primary-foreground hover:bg-accent-hover'
                 : 'bg-muted text-muted-foreground'
@@ -621,75 +630,67 @@ export function PlaceDetailView({
             )}
           </div>
           <div className="min-h-72 flex-1 overflow-y-auto px-5 pt-2 pb-6">
-            <div className="flex flex-col gap-2">
-              {!pickerLoaded ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="bg-muted h-16 animate-pulse rounded-2xl"
-                  />
-                ))
-              ) : filteredPickerPlaces.length === 0 ? (
-                <p className="text-body-sm text-muted-foreground py-8 text-center">
-                  등록된 장소가 없습니다.
-                </p>
-              ) : (
-                filteredPickerPlaces.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => {
-                      setPlacePickerOpen(false);
-                      const nextParams = new URLSearchParams({
-                        date: selectedDate,
-                        startMin: String(selection.startMin),
-                        endMin: String(selection.endMin),
-                      });
-                      if (isEditMode && editReservationId !== null) {
-                        nextParams.set(
-                          'reservationId',
-                          String(editReservationId)
-                        );
-                      }
-                      router.replace(`/reserve/${p.id}?${nextParams}`);
-                    }}
-                    className={cn(
-                      'flex items-center gap-3 rounded-2xl px-4 py-3.5 text-left shadow-(--shadow-1) transition-colors',
-                      p.id === place.id
-                        ? 'bg-primary/10'
-                        : 'bg-card hover:bg-muted'
-                    )}
-                  >
-                    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                      <span className="text-foreground text-[15px] font-bold">
-                        {p.name}
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {p.floorName && (
-                          <span className="text-muted-foreground rounded-full bg-neutral-200 px-2 py-0.5 text-[11px] font-medium">
-                            {p.floorName}
-                          </span>
-                        )}
-                        {p.tags
-                          .filter((t) => t.name)
-                          .map((t, i) => (
-                            <span
-                              key={i}
-                              className="text-muted-foreground rounded-full bg-neutral-200 px-2 py-0.5 text-[11px] font-medium"
-                            >
-                              #{t.name}
+            {!pickerLoaded ? (
+              <ListSkeleton count={5} />
+            ) : (
+              <List emptyMessage="등록된 장소가 없습니다.">
+                {filteredPickerPlaces.map((p) => (
+                  <ListItem key={p.id} className="p-0">
+                    <button
+                      onClick={() => {
+                        setPlacePickerOpen(false);
+                        const nextParams = new URLSearchParams({
+                          date: selectedDate,
+                          startMin: String(selection.startMin),
+                          endMin: String(selection.endMin),
+                        });
+                        if (isEditMode && editReservationId !== null) {
+                          nextParams.set(
+                            'reservationId',
+                            String(editReservationId)
+                          );
+                        }
+                        router.replace(`/reserve/${p.id}?${nextParams}`);
+                      }}
+                      className={cn(
+                        'flex w-full items-center gap-3 px-5 py-4 text-left transition-colors',
+                        p.id === place.id
+                          ? 'bg-primary/10'
+                          : 'hover:bg-neutral-50'
+                      )}
+                    >
+                      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                        <span className="text-foreground text-[15px] font-bold">
+                          {p.name}
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {p.floorName && (
+                            <span className="text-muted-foreground rounded-full bg-neutral-200 px-2 py-0.5 text-[11px] font-medium">
+                              {p.floorName}
                             </span>
-                          ))}
+                          )}
+                          {p.tags
+                            .filter((t) => t.name)
+                            .map((t, i) => (
+                              <span
+                                key={i}
+                                className="text-muted-foreground rounded-full bg-neutral-200 px-2 py-0.5 text-[11px] font-medium"
+                              >
+                                #{t.name}
+                              </span>
+                            ))}
+                        </div>
                       </div>
-                    </div>
-                    {p.id === place.id && (
-                      <span className="text-primary shrink-0 text-[11px] font-semibold">
-                        현재
-                      </span>
-                    )}
-                  </button>
-                ))
-              )}
-            </div>
+                      {p.id === place.id && (
+                        <span className="text-primary shrink-0 text-[11px] font-semibold">
+                          현재
+                        </span>
+                      )}
+                    </button>
+                  </ListItem>
+                ))}
+              </List>
+            )}
           </div>
         </DrawerContent>
       </Drawer>
@@ -699,7 +700,7 @@ export function PlaceDetailView({
           <DrawerHeader>
             <DrawerTitle>날짜 선택</DrawerTitle>
           </DrawerHeader>
-          <div className="bg-card mx-5 mb-4 rounded-2xl px-4 pb-6 shadow-(--shadow-1)">
+          <div className="bg-card mx-5 mb-4 rounded-lg px-4 py-3 shadow-(--shadow-1)">
             <WeeklyCalendar
               key={selectedDate}
               defaultDate={parseLocalDate(selectedDate) ?? new Date()}

@@ -3,7 +3,8 @@ import { getIronSession } from 'iron-session';
 import { sessionOptions, SessionData } from '@/lib/session';
 import { cookies } from 'next/headers';
 
-const PUBLIC_PATHS = ['/login', '/signup', '/privacy'];
+const AUTH_PATHS = ['/login', '/signup'];
+const PUBLIC_PATHS = [...AUTH_PATHS, '/privacy'];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -23,11 +24,16 @@ export async function proxy(request: NextRequest) {
   );
   const user = session.user;
 
-  // /login, /signup: approved 사용자는 /reserve로
-  if (PUBLIC_PATHS.includes(pathname)) {
+  // /login, /signup: approved 사용자는 /reserve로 (이미 로그인됨)
+  if (AUTH_PATHS.includes(pathname)) {
     if (user?.status === 'approved') {
       return NextResponse.redirect(new URL('/reserve', request.url));
     }
+    return NextResponse.next();
+  }
+
+  // 그 외 공개 경로 (/privacy 등)는 무조건 통과
+  if (PUBLIC_PATHS.includes(pathname)) {
     return NextResponse.next();
   }
 

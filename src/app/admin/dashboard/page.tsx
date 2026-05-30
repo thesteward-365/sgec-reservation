@@ -91,7 +91,7 @@ export default function DashboardPage() {
         <section className="space-y-4 px-5 pb-6">
           {!loading && stats?.calendarNeedsReauth && (
             <Link href="/admin/calendar">
-              <div className="group mb-3 overflow-hidden rounded-xl bg-white">
+              <div className="group mb-3 overflow-hidden rounded-lg bg-white">
                 <div
                   className="flex items-center justify-between gap-3 p-4 transition-colors active:opacity-80"
                   style={{ backgroundColor: 'var(--color-danger-subtle)' }}

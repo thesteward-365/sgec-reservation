@@ -214,7 +214,7 @@ export function SettingsView({
         </List>
 
         {/* 빠른 목적 섹션 */}
-        <div className="bg-card rounded-xl p-5 shadow-(--shadow-1)">
+        <div className="bg-card rounded-lg p-5 shadow-(--shadow-1)">
           <div className="mb-4">
             <p className="text-foreground text-[15px] font-bold">
               자주 사용하는 목적
@@ -226,7 +226,7 @@ export function SettingsView({
             </p>
           </div>
 
-          <div className="rounded-2xl bg-neutral-50 px-4 py-4">
+          <div className="rounded-lg bg-neutral-50 px-4 py-4">
             {isLoadingPurposes ? (
               <ListSkeleton count={2} className="bg-transparent shadow-none" />
             ) : purposes.length === 0 ? (
@@ -254,7 +254,7 @@ export function SettingsView({
             <Button
               variant="secondary"
               size="md"
-              className="mt-4 h-11 w-full rounded-xl"
+              className="mt-4 h-11 w-full rounded-lg"
               onClick={() => setShowPurposeDialog(true)}
               disabled={purposes.length >= MAX_PURPOSE_COUNT}
             >

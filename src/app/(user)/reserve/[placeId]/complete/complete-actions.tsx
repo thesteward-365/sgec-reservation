@@ -27,13 +27,15 @@ export function CompleteActions({
       className="mx-auto flex max-w-107.5 flex-col gap-2 px-5 pt-4"
       style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
     >
-      <Button variant="default" className="w-full" onClick={handleShare}>
-        <ShareIcon className="size-4" />
-        공유하기
-      </Button>
-      <Button variant="secondary" className="w-full" asChild>
-        <Link href={backUrl}>동일 장소 예약하기</Link>
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button variant="default" className="w-full" onClick={handleShare}>
+          <ShareIcon className="size-4" />
+          공유하기
+        </Button>
+        <Button variant="secondary" className="w-full" asChild>
+          <Link href={backUrl}>동일 장소 예약하기</Link>
+        </Button>
+      </div>
       <Link
         href={returnUrl}
         className="text-body-sm text-muted-foreground flex justify-center py-2 font-semibold"

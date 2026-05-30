@@ -52,7 +52,7 @@ export default async function PendingPage() {
         </p>
       </div>
 
-      <div className="border-border-subtle bg-muted/40 mt-10 w-full max-w-xs rounded-2xl border bg-white px-5 py-4 text-left">
+      <div className="border-border-subtle bg-muted/40 mt-10 w-full max-w-xs rounded-lg border bg-white px-5 py-4 text-left">
         <div className="flex justify-between">
           <span className="text-body-sm text-muted-foreground">이름</span>
           <span className="text-body-sm text-foreground font-medium">

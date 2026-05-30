@@ -1,6 +1,5 @@
 import { Metadata } from 'next';
-import Link from 'next/link';
-import { ChevronLeftIcon } from '@heroicons/react/24/outline';
+import { PrivacyHeader } from './privacy-header';
 
 export const metadata: Metadata = {
   title: '개인정보 처리방침 | 샘깊은교회',
@@ -9,16 +8,7 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <div className="flex min-h-screen flex-col bg-white">
-      <header className="sticky top-0 z-10 flex h-14 items-center border-b bg-white px-4">
-        <Link
-          href="/login"
-          className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-sm font-medium"
-        >
-          <ChevronLeftIcon className="h-5 w-5" />
-          <span>뒤로가기</span>
-        </Link>
-        <h1 className="ml-4 text-lg font-bold">개인정보 처리방침</h1>
-      </header>
+      <PrivacyHeader />
 
       <main className="flex-1 overflow-auto">
         <style
