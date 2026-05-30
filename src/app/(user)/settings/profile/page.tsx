@@ -155,7 +155,7 @@ export default function ProfilePage() {
         ) : user ? (
           <>
             {/* Tab Switcher */}
-            <div className="flex gap-1 rounded-2xl bg-neutral-200 p-1 shadow-inner">
+            <div className="flex gap-1 rounded-lg bg-neutral-200 p-1 shadow-inner">
               <button
                 onClick={() => setActiveTab('info')}
                 className={cn(
@@ -181,7 +181,7 @@ export default function ProfilePage() {
             </div>
 
             {activeTab === 'info' ? (
-              <section className="bg-card animate-in fade-in slide-in-from-bottom-2 rounded-2xl p-5 shadow-(--shadow-1) duration-300">
+              <section className="bg-card animate-in fade-in slide-in-from-bottom-2 rounded-lg p-5 shadow-(--shadow-1) duration-300">
                 <h2 className="text-foreground mb-4 text-[15px] font-bold">
                   기본 정보 수정
                 </h2>
@@ -234,7 +234,7 @@ export default function ProfilePage() {
                 </div>
               </section>
             ) : (
-              <section className="bg-card animate-in fade-in slide-in-from-bottom-2 rounded-2xl p-5 shadow-(--shadow-1) duration-300">
+              <section className="bg-card animate-in fade-in slide-in-from-bottom-2 rounded-lg p-5 shadow-(--shadow-1) duration-300">
                 <h2 className="text-foreground mb-4 text-[15px] font-bold">
                   비밀번호 변경
                 </h2>
