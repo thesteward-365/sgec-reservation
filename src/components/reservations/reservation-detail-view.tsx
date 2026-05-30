@@ -65,11 +65,11 @@ export function ReservationDetailView({
   return (
     <div className="flex flex-col gap-6">
       {/* Tab Switcher - Using bg-neutral-200 for container to contrast with grey page and white tabs */}
-      <div className="flex gap-1 rounded-2xl bg-neutral-200 p-1 shadow-inner">
+      <div className="flex gap-1 rounded-lg bg-neutral-200 p-1 shadow-inner">
         <button
           onClick={() => handleTabChange('info')}
           className={cn(
-            "flex-1 rounded-xl py-2.5 text-sm font-bold transition-all duration-200",
+            "flex-1 rounded-md py-2.5 text-sm font-bold transition-all duration-200",
             activeTab === 'info' 
               ? "bg-white text-foreground shadow-sm" 
               : "text-muted-foreground hover:text-foreground"
@@ -80,7 +80,7 @@ export function ReservationDetailView({
         <button
           onClick={() => handleTabChange('history')}
           className={cn(
-            "flex-1 rounded-xl py-2.5 text-sm font-bold transition-all duration-200",
+            "flex-1 rounded-md py-2.5 text-sm font-bold transition-all duration-200",
             activeTab === 'history' 
               ? "bg-white text-foreground shadow-sm" 
               : "text-muted-foreground hover:text-foreground"
@@ -102,7 +102,7 @@ export function ReservationDetailView({
         <div className="space-y-4">
           {loadingHistory ? (
             [1, 2, 3].map((i) => (
-              <div key={i} className="h-24 w-full animate-pulse rounded-2xl bg-white shadow-1" />
+              <div key={i} className="h-24 w-full animate-pulse rounded-lg bg-white shadow-1" />
             ))
           ) : history.length > 0 ? (
             <div className="flex flex-col gap-3">
@@ -111,7 +111,7 @@ export function ReservationDetailView({
               ))}
             </div>
           ) : (
-            <div className="py-20 text-center text-muted-foreground bg-white rounded-3xl shadow-(--shadow-1)">
+            <div className="py-20 text-center text-muted-foreground bg-white rounded-lg shadow-(--shadow-1)">
               변경 이력이 없습니다.
             </div>
           )}

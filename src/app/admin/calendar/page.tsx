@@ -302,7 +302,7 @@ function CalendarPageContent() {
                   </p>
                 </div>
                 <a href="/api/auth/google" className="w-full">
-                  <Button className="rounded-pill bg-foreground text-background hover:bg-foreground/90 w-full font-bold">
+                  <Button className="bg-foreground text-background hover:bg-foreground/90 w-full font-bold">
                     Google로 연동하기
                   </Button>
                 </a>
