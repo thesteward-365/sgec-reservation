@@ -84,7 +84,7 @@ const getActionLabel = (type: string) => {
   }
 };
 
-export function HistoryListItem({ item, onClick }: Props) {
+export function HistoryListItem({ item, onClick, showPlaceName }: Props) {
   const changes =
     typeof item.changes === 'string'
       ? item.changes
@@ -114,14 +114,15 @@ export function HistoryListItem({ item, onClick }: Props) {
   };
 
   // Extract snapshot if available (for created/cancelled)
-  const snapshot = actionTypeToSnapshot(item.actionType, changes);
-  const displayPlaceName = item.placeName || snapshot?.placeName || '-';
-
   function actionTypeToSnapshot(type: string, changes: any) {
-    if (type === 'created') return changes.created?.to || changes.snapshot;
-    if (type === 'cancelled') return changes.snapshot;
+    // Prioritize snapshot which contains placeName at the time of event
+    if (changes.snapshot) return changes.snapshot;
+    if (type === 'created') return changes.created?.to;
     return null;
   }
+
+  const snapshot = actionTypeToSnapshot(item.actionType, changes);
+  const displayPlaceName = item.placeName || snapshot?.placeName || '-';
 
   const dateChanged =
     item.actionType === 'updated' &&
@@ -156,7 +157,8 @@ export function HistoryListItem({ item, onClick }: Props) {
             {getActionLabel(item.actionType)}
           </span>
           <span className="truncate font-bold">
-            {item.actorUserName}-{displayPlaceName}
+            {item.actorUserName}
+            {showPlaceName && `-${displayPlaceName}`}
           </span>
         </div>
         <span className="text-caption text-muted-foreground ml-2 shrink-0">
