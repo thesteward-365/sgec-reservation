@@ -90,18 +90,15 @@ export default async function ReservationCompletePage({
   ];
 
   return (
-    <>
+    <div className="flex flex-1 flex-col bg-white">
       {/* 콘텐츠 */}
-      <div className="px-5 pt-14 pb-48">
+      <div className="px-5 pt-10 pb-10">
         {/* 성공 아이콘 */}
-        <div className="flex flex-col items-center gap-3 pt-8 pb-6">
-          <div
-            className="flex size-18 items-center justify-center rounded-full"
-            style={{ background: 'var(--color-success-subtle)' }}
-          >
+        <div className="flex flex-col items-center gap-2 pb-6">
+          <div className="bg-primary flex size-16 items-center justify-center rounded-full">
             <CheckIcon
-              className="size-9"
-              style={{ color: 'var(--color-success)', strokeWidth: 2.5 }}
+              className="size-8"
+              style={{ color: 'white', strokeWidth: 3 }}
             />
           </div>
           <h2 className="text-h2 text-foreground text-center font-bold">
@@ -113,11 +110,11 @@ export default async function ReservationCompletePage({
         </div>
 
         {/* 상세 정보 카드 */}
-        <ReservationDetailsCard rows={rows} tone="white" />
+        <ReservationDetailsCard rows={rows} tone="subtle" />
       </div>
 
       {/* 고정 하단 CTA */}
-      <div className="sticky bottom-0 z-50 mt-auto w-full bg-(--color-neutral-150)">
+      <div className="sticky bottom-0 z-50 mt-auto w-full">
         <CompleteActions
           placeId={placeId}
           shareText={`장소: ${placeLabel}\n날짜: ${dateLabel}\n시간: ${timeLabel}\n목적: ${purpose || '–'}`}
@@ -125,6 +122,6 @@ export default async function ReservationCompletePage({
           returnUrl={returnUrl}
         />
       </div>
-    </>
+    </div>
   );
 }
