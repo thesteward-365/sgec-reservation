@@ -120,19 +120,25 @@ export default function UsersPage() {
               </p>
             </div>
             <div className="mt-5 flex gap-2">
-              <button
-                className="text-body-sm rounded-pill border-border text-foreground flex flex-1 items-center justify-center border py-3 font-semibold transition-colors hover:bg-neutral-50"
+              <Button
+                variant="outlined"
+                color="secondary"
+                size="large"
+                className="flex-1"
                 onClick={() => callPatch(user.id, { action: 'reject' })}
               >
                 거절
-              </button>
-              <button
-                className="text-body-sm rounded-pill bg-primary hover:bg-accent-hover flex flex-1 items-center justify-center gap-1.5 py-3 font-semibold text-white transition-colors"
+              </Button>
+              <Button
+                variant="contained"
+                color="primary"
+                size="large"
+                className="flex-1"
                 onClick={() => callPatch(user.id, { action: 'approve' })}
               >
                 <CheckIcon className="h-4 w-4" />
                 승인
-              </button>
+              </Button>
             </div>
           </ListItem>
         ))}
@@ -350,8 +356,10 @@ export default function UsersPage() {
                 {/* 강제 수정 액션 */}
                 <div className="grid grid-cols-2 gap-3">
                   <Button
-                    variant="secondary"
-                    className="h-12 w-full"
+                    variant="outlined"
+                    color="secondary"
+                    size="large"
+                    className="w-full"
                     onClick={() => {
                       const newName = window.prompt(
                         '새 이름을 입력하세요',
@@ -373,8 +381,10 @@ export default function UsersPage() {
                     정보 수정
                   </Button>
                   <Button
-                    variant="secondary"
-                    className="text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive h-12 w-full"
+                    variant="outlined"
+                    color="error"
+                    size="large"
+                    className="w-full"
                     onClick={() => {
                       const newPassword = window.prompt(
                         '재설정할 비밀번호를 입력하세요 (최소 4자)'

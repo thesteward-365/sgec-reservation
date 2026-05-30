@@ -1,4 +1,4 @@
-import { Button } from './Button';
+import { Button } from '@/components/ui/button';
 import './header.css';
 
 type User = {
@@ -12,11 +12,21 @@ export interface HeaderProps {
   onCreateAccount?: () => void;
 }
 
-export const Header = ({ user, onLogin, onLogout, onCreateAccount }: HeaderProps) => (
+export const Header = ({
+  user,
+  onLogin,
+  onLogout,
+  onCreateAccount,
+}: HeaderProps) => (
   <header>
     <div className="storybook-header">
       <div>
-        <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+        <svg
+          width="32"
+          height="32"
+          viewBox="0 0 32 32"
+          xmlns="http://www.w3.org/2000/svg"
+        >
           <g fill="none" fillRule="evenodd">
             <path
               d="M10 0h12a10 10 0 0110 10v12a10 10 0 01-10 10H10A10 10 0 010 22V10A10 10 0 0110 0z"
@@ -40,13 +50,34 @@ export const Header = ({ user, onLogin, onLogout, onCreateAccount }: HeaderProps
             <span className="welcome">
               Welcome, <b>{user.name}</b>!
             </span>
-            <Button size="small" onClick={onLogout} label="Log out" />
+            <Button
+              size="small"
+              variant="outlined"
+              color="secondary"
+              onClick={onLogout}
+            >
+              Log out
+            </Button>
           </>
         ) : (
-          <>
-            <Button size="small" onClick={onLogin} label="Log in" />
-            <Button primary size="small" onClick={onCreateAccount} label="Sign up" />
-          </>
+          <div className="flex gap-2">
+            <Button
+              size="small"
+              variant="outlined"
+              color="secondary"
+              onClick={onLogin}
+            >
+              Log in
+            </Button>
+            <Button
+              size="small"
+              variant="contained"
+              color="primary"
+              onClick={onCreateAccount}
+            >
+              Sign up
+            </Button>
+          </div>
         )}
       </div>
     </div>

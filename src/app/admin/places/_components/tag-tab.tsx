@@ -21,13 +21,13 @@ export function TagTab({ tags, editMode, onDelete, onOpenSheet }: Props) {
             등록된 태그가 없습니다.
           </p>
           <Button
-            variant="ghost"
-            size="sm"
+            variant="outlined"
+            color="secondary"
+            size="small"
             onClick={onOpenSheet}
-            className="border-grey-900 rounded-full border border-dashed hover:rounded-full hover:bg-neutral-50"
+            className="rounded-full border-dashed"
           >
-            <PlusIcon className="size-3.5" />
-            첫 태그 추가
+            <PlusIcon className="size-3.5" />첫 태그 추가
           </Button>
         </div>
       ) : (
@@ -52,10 +52,11 @@ export function TagTab({ tags, editMode, onDelete, onOpenSheet }: Props) {
             </div>
           ))}
           <Button
-            variant="ghost"
-            size="sm"
+            variant="outlined"
+            color="secondary"
+            size="small"
             onClick={onOpenSheet}
-            className="border-grey-900 rounded-full border border-dashed hover:rounded-full hover:bg-neutral-50"
+            className="rounded-full border-dashed"
           >
             <PlusIcon className="size-3.5" />
             태그 추가

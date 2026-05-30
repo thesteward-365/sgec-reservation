@@ -67,8 +67,8 @@ function GoogleSyncFailureSection({
   if (!sync) return null;
 
   return (
-    <div className="flex w-full flex-col overflow-hidden rounded-3xl bg-white shadow-(--shadow-1)">
-      <div className="flex w-full items-center justify-between px-6 py-5 text-left">
+    <div className="flex w-full flex-col overflow-hidden rounded-3xl bg-white shadow-(--shadow-1) transition hover:bg-neutral-50">
+      <div className="flex w-full items-center justify-between px-6 py-5 text-left disabled:cursor-default">
         <div className="min-w-0">
           <p className="text-muted-foreground text-sm font-medium">
             Google 동기화
@@ -114,7 +114,7 @@ const meta: Meta<typeof ReservationDetailView> = {
   },
   decorators: [
     (Story) => (
-      <div className="min-h-dvh bg-neutral-150 p-5">
+      <div className="bg-neutral-150 min-h-dvh p-5">
         <div className="mx-auto max-w-107.5">
           <Story />
         </div>
@@ -135,15 +135,30 @@ export const GoogleSyncFailed: Story = {
     ),
     actions: (
       <div className="mt-4 flex w-full flex-col gap-3">
-        <Button className="h-14 w-full bg-(--color-fg-strong) text-white shadow-(--shadow-1)">
+        <Button
+          variant="contained"
+          color="secondary"
+          size="large"
+          className="w-full"
+        >
           <ArrowPathIcon className="h-5 w-5" />
           동일 장소 예약하기
         </Button>
         <div className="flex gap-2">
-          <Button variant="secondary" className="h-12 flex-1">
+          <Button
+            variant="outlined"
+            color="secondary"
+            size="large"
+            className="flex-1"
+          >
             예약 수정
           </Button>
-          <Button variant="secondary" className="h-12 flex-1 text-red-500">
+          <Button
+            variant="outlined"
+            color="error"
+            size="large"
+            className="flex-1"
+          >
             예약 취소
           </Button>
         </div>
