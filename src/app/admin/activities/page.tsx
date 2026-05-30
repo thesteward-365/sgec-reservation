@@ -177,8 +177,9 @@ export default function ActivitiesPage() {
 
             <div className="grid grid-cols-2 gap-2">
               <Button
-                variant="secondary"
-                className="h-12 rounded-xl"
+                variant="outlined"
+                color="secondary"
+                size="large"
                 onClick={() => {
                   const d = new Date();
                   const end = d.toISOString().split('T')[0];
@@ -191,8 +192,9 @@ export default function ActivitiesPage() {
                 최근 1주일
               </Button>
               <Button
-                variant="secondary"
-                className="h-12 rounded-xl"
+                variant="outlined"
+                color="secondary"
+                size="large"
                 onClick={() => {
                   const d = new Date();
                   const end = d.toISOString().split('T')[0];
@@ -208,7 +210,10 @@ export default function ActivitiesPage() {
           </div>
           <DrawerFooter className="px-6 pt-2 pb-10">
             <Button
-              className="text-body h-14 rounded-lg font-bold"
+              variant="contained"
+              color="primary"
+              size="large"
+              className="w-full"
               onClick={handleApplyFilter}
             >
               적용하기

@@ -227,6 +227,8 @@ export default function ProfilePage() {
                     disabled={
                       savingProfile || !name.trim() || !phoneNumber.trim()
                     }
+                    variant="contained"
+                    color="primary"
                     className="mt-2 w-full"
                   >
                     {savingProfile ? '저장 중...' : '기본 정보 저장'}
@@ -280,7 +282,8 @@ export default function ProfilePage() {
                       !newPassword ||
                       !confirmPassword
                     }
-                    variant="secondary"
+                    variant="outlined"
+                    color="primary"
                     className="mt-2 w-full"
                   >
                     {savingPassword ? '변경 중...' : '비밀번호 변경'}

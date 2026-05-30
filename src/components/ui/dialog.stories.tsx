@@ -33,7 +33,7 @@ export const CancelReservation: Story = {
   render: () => (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="secondary" size="md">
+        <Button variant="outlined" color="secondary" size="medium">
           예약 취소
         </Button>
       </DialogTrigger>
@@ -48,11 +48,11 @@ export const CancelReservation: Story = {
         </DialogHeader>
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="ghost" size="md">
+            <Button variant="text" color="primary" size="medium">
               돌아가기
             </Button>
           </DialogClose>
-          <Button variant="destructive" size="md">
+          <Button variant="contained" color="error" size="medium">
             예약 취소
           </Button>
         </DialogFooter>
@@ -65,7 +65,9 @@ export const ApproveUser: Story = {
   render: () => (
     <Dialog>
       <DialogTrigger asChild>
-        <Button size="md">승인 처리</Button>
+        <Button variant="contained" color="primary" size="medium">
+          승인 처리
+        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -78,11 +80,13 @@ export const ApproveUser: Story = {
         </DialogHeader>
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="ghost" size="md">
+            <Button variant="text" color="primary" size="medium">
               취소
             </Button>
           </DialogClose>
-          <Button size="md">승인</Button>
+          <Button variant="contained" color="primary" size="medium">
+            승인
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

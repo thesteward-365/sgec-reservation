@@ -156,11 +156,12 @@ export function FloorDeleteDialog({
         )}
 
         <DialogFooter>
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="outlined" color="secondary" onClick={onClose}>
             취소
           </Button>
           <Button
-            variant={hasLinkedPlaces ? 'destructive' : 'default'}
+            variant="contained"
+            color={hasLinkedPlaces ? 'error' : 'primary'}
             onClick={handleConfirm}
             disabled={
               saving ||

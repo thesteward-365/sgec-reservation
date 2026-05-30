@@ -34,7 +34,7 @@ export const PlaceFilter: Story = {
   render: () => (
     <Drawer>
       <DrawerTrigger asChild>
-        <Button variant="secondary" size="md">
+        <Button variant="outlined" color="secondary" size="medium">
           필터
         </Button>
       </DrawerTrigger>
@@ -72,9 +72,11 @@ export const PlaceFilter: Story = {
           </div>
         </div>
         <DrawerFooter>
-          <Button size="default">적용</Button>
+          <Button variant="contained" color="primary" size="large">
+            적용
+          </Button>
           <DrawerClose asChild>
-            <Button variant="ghost" size="default">
+            <Button variant="text" color="primary" size="large">
               닫기
             </Button>
           </DrawerClose>
@@ -88,7 +90,9 @@ export const ReservationDetail: Story = {
   render: () => (
     <Drawer>
       <DrawerTrigger asChild>
-        <Button size="md">예약 상세</Button>
+        <Button variant="contained" color="primary" size="medium">
+          예약 상세
+        </Button>
       </DrawerTrigger>
       <DrawerContent style={{ maxWidth: 430, margin: '0 auto' }}>
         <DrawerHeader>
@@ -119,10 +123,10 @@ export const ReservationDetail: Story = {
           </div>
         </div>
         <DrawerFooter>
-          <Button variant="secondary" size="default">
+          <Button variant="outlined" color="secondary" size="large">
             수정
           </Button>
-          <Button variant="destructive" size="default">
+          <Button variant="contained" color="error" size="large">
             예약 취소
           </Button>
         </DrawerFooter>

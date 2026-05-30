@@ -63,6 +63,8 @@ export function PurposeDialog({
           <Button
             onClick={onSave}
             disabled={disabled}
+            variant="contained"
+            color="primary"
             className="order-1 w-full sm:order-2 sm:w-auto"
           >
             추가
@@ -140,12 +142,15 @@ export function AccountDialog({
           <Button
             onClick={onSave}
             disabled={disabled}
+            variant="contained"
+            color="primary"
             className="order-1 w-full sm:order-2 sm:w-auto"
           >
             저장
           </Button>
           <Button
-            variant="secondary"
+            variant="outlined"
+            color="secondary"
             onClick={onCancel}
             className="order-2 w-full sm:order-1 sm:w-auto"
           >
@@ -232,12 +237,15 @@ export function PasswordDialog({
             disabled={
               disabled || !currentPassword || !newPassword || !confirmPassword
             }
+            variant="contained"
+            color="primary"
             className="order-1 w-full sm:order-2 sm:w-auto"
           >
             변경하기
           </Button>
           <Button
-            variant="secondary"
+            variant="outlined"
+            color="secondary"
             onClick={() => {
               setCurrentPassword('');
               setNewPassword('');
@@ -281,7 +289,8 @@ export function WithdrawDialog({
         </DialogHeader>
         <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-end">
           <Button
-            variant="destructive"
+            variant="contained"
+            color="error"
             onClick={onConfirm}
             disabled={disabled}
             className="order-1 w-full sm:order-2 sm:w-auto"
@@ -289,7 +298,8 @@ export function WithdrawDialog({
             탈퇴하기
           </Button>
           <Button
-            variant="secondary"
+            variant="outlined"
+            color="secondary"
             onClick={onCancel}
             className="order-2 w-full sm:order-1 sm:w-auto"
           >

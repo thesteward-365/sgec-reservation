@@ -3,7 +3,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -79,11 +85,14 @@ export function TagSheet({ open, onOpenChange, onSuccess }: Props) {
           </div>
         </div>
 
-        <DrawerFooter className="border-t border-border bg-card">
+        <DrawerFooter className="border-border bg-card border-t">
           <Button
+            variant="contained"
+            color="primary"
+            size="large"
             onClick={handleSave}
             disabled={saving}
-            className="w-full py-4 text-body font-bold"
+            className="w-full"
           >
             {saving ? '저장 중...' : '저장하기'}
           </Button>

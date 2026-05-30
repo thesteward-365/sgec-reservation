@@ -168,10 +168,20 @@ export function FilterSheet({ open, onClose, current, onApply }: Props) {
 
         <DrawerFooter>
           <div className="flex gap-2">
-            <Button variant="secondary" className="flex-1" onClick={reset}>
+            <Button
+              variant="outlined"
+              color="secondary"
+              className="flex-1"
+              onClick={reset}
+            >
               초기화
             </Button>
-            <Button variant="default" className="flex-1" onClick={apply}>
+            <Button
+              variant="contained"
+              color="primary"
+              className="flex-1"
+              onClick={apply}
+            >
               적용
             </Button>
           </div>

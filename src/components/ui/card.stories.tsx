@@ -41,10 +41,10 @@ export const Reservation: Story = {
         </div>
       </CardContent>
       <CardFooter>
-        <Button size="sm" variant="secondary">
+        <Button size="small" variant="outlined" color="secondary">
           수정
         </Button>
-        <Button size="sm" variant="ghost">
+        <Button size="small" variant="text" color="primary">
           취소
         </Button>
       </CardFooter>

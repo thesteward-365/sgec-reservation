@@ -172,7 +172,7 @@ export default function SetupAccountPage() {
         </Button>
       </form>
       <form action="/api/auth/logout" method="POST" className="mt-4 w-full">
-        <Button type="submit" variant="link" className="w-full">
+        <Button type="submit" variant="text" color="primary" className="w-full">
           로그아웃
         </Button>
       </form>

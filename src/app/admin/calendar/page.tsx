@@ -302,7 +302,11 @@ function CalendarPageContent() {
                   </p>
                 </div>
                 <a href="/api/auth/google" className="w-full">
-                  <Button className="bg-foreground text-background hover:bg-foreground/90 w-full font-bold">
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    className="w-full"
+                  >
                     Google로 연동하기
                   </Button>
                 </a>
@@ -359,9 +363,9 @@ function CalendarPageContent() {
                       </div>
                     </div>
                     <Button
-                      variant="secondary"
-                      size="sm"
-                      className="text-foreground h-8 border-none bg-neutral-200 px-3 text-[13px] font-bold hover:bg-neutral-300"
+                      variant="outlined"
+                      color="secondary"
+                      size="small"
                       onClick={handleDisconnect}
                     >
                       해제
@@ -432,7 +436,10 @@ function CalendarPageContent() {
                       !selectedEventCalendar ||
                       !calendarChanged
                     }
-                    className="rounded-pill bg-foreground text-background hover:bg-foreground/90 w-full font-bold disabled:opacity-50"
+                    variant="contained"
+                    color="secondary"
+                    size="large"
+                    className="w-full"
                   >
                     {isSaving ? '저장 중...' : '저장'}
                   </Button>
@@ -529,8 +536,9 @@ function CalendarPageContent() {
                       <Button
                         onClick={handleSync}
                         disabled={isSyncing}
-                        size="sm"
-                        className="rounded-pill bg-foreground text-background hover:bg-foreground/90 font-bold"
+                        variant="contained"
+                        color="secondary"
+                        size="small"
                       >
                         <ArrowPathIcon
                           className={`mr-1 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`}
