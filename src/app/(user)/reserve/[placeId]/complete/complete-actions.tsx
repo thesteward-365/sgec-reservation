@@ -28,11 +28,16 @@ export function CompleteActions({
       style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
     >
       <div className="flex items-center gap-2">
-        <Button variant="default" className="w-full" onClick={handleShare}>
+        <Button
+          variant="contained"
+          color="primary"
+          className="w-full"
+          onClick={handleShare}
+        >
           <ShareIcon className="size-4" />
           공유하기
         </Button>
-        <Button variant="secondary" className="w-full" asChild>
+        <Button variant="outlined" color="primary" className="w-full" asChild>
           <Link href={backUrl}>동일 장소 예약하기</Link>
         </Button>
       </div>

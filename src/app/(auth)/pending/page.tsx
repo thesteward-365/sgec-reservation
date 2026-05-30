@@ -72,7 +72,12 @@ export default async function PendingPage() {
         method="POST"
         className="mt-10 w-full max-w-xs"
       >
-        <Button type="submit" variant="default" className="w-full">
+        <Button
+          type="submit"
+          variant="contained"
+          color="primary"
+          className="w-full"
+        >
           로그아웃
         </Button>
       </form>

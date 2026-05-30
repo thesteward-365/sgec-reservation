@@ -15,34 +15,55 @@ type Props = {
 };
 
 export function SortablePlaceItem({ place, isPinned, onTogglePin }: Props) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: place.id });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: place.id });
 
   return (
     <div
       ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+      }}
       className="flex items-center gap-3 px-5 py-4"
     >
       <Button
-        variant="ghost"
-        size="icon"
-        className="shrink-0 cursor-grab touch-none text-neutral-600 active:cursor-grabbing"
+        variant="text"
+        color="secondary"
+        size="medium"
+        className="min-w-0 shrink-0 cursor-grab touch-none px-2 active:cursor-grabbing"
         aria-label="드래그 핸들"
         {...attributes}
         {...listeners}
       >
         <Bars3Icon className="size-5" />
       </Button>
-      <p className="flex-1 text-[15px] font-bold text-foreground">{place.name}</p>
+      <p className="text-foreground flex-1 text-[15px] font-bold">
+        {place.name}
+      </p>
       <Button
-        variant="ghost"
-        size="icon"
+        variant="text"
+        color="secondary"
+        size="medium"
         onClick={() => onTogglePin(place.id)}
-        className={cn('shrink-0', isPinned ? 'text-foreground' : 'text-neutral-400')}
+        className={cn(
+          'min-w-0 shrink-0 px-2',
+          isPinned ? 'text-foreground' : 'text-neutral-400'
+        )}
         aria-label={isPinned ? '고정 해제' : '고정'}
       >
-        {isPinned ? <BookmarkSolidIcon className="size-5" /> : <BookmarkIcon className="size-5" />}
+        {isPinned ? (
+          <BookmarkSolidIcon className="size-5" />
+        ) : (
+          <BookmarkIcon className="size-5" />
+        )}
       </Button>
     </div>
   );
