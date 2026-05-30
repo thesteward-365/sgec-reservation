@@ -342,6 +342,16 @@ export function PlaceDetailView({
     });
   }
 
+  const handleBack = () => {
+    if (backUrl) {
+      router.push(backUrl);
+    } else if (isEditMode) {
+      router.push('/my-reservations');
+    } else {
+      router.push(`/reserve?date=${selectedDate}`);
+    }
+  };
+
   const filteredPickerPlaces = pickerPlaces.filter((p) => {
     if (pickerFloorId !== null && p.floorId !== pickerFloorId) return false;
     if (pickerTagId !== null && !p.tags.some((t) => t.id === pickerTagId)) {
@@ -354,17 +364,12 @@ export function PlaceDetailView({
     <>
       <div className="fixed inset-x-0 top-0 z-30 bg-(--color-neutral-150)">
         <div className="mx-auto flex h-14 max-w-107.5 items-center px-4">
-          <Link
-            href={
-              backUrl ??
-              (isEditMode
-                ? '/my-reservations'
-                : `/reserve?date=${selectedDate}`)
-            }
+          <button
+            onClick={handleBack}
             className="text-foreground flex size-10 items-center justify-center rounded-xl transition-colors duration-120 ease-(--ease-standard) hover:bg-neutral-200"
           >
             <ChevronLeftIcon className="size-5" />
-          </Link>
+          </button>
           <p className="text-body text-foreground flex-1 text-center font-bold">
             {isEditMode ? '예약 수정' : '예약하기'}
           </p>

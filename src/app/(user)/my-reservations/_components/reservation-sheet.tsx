@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { ReservationDetailsCard } from '@/components/reservations/reservation-details-card';
 import { shareReservation } from '@/lib/share-utils';
 import { formatKoreanDate, formatTime, toYMD } from '@/lib/date-utils';
+import { isModifiable } from '@/lib/validations/reservation';
 import type { MyReservation } from './reservation-item';
 import { SessionData } from '@/lib/session';
 
@@ -49,7 +50,10 @@ export function ReservationSheet({
 
   const canManage = useMemo(() => {
     if (!reservation || !user) return false;
-    return user.role === 'admin' || user.id === reservation.userId;
+    console.log(user.id, reservation);
+    return (
+      user.role === 'admin' || Number(user.id) === Number(reservation.userId)
+    );
   }, [reservation, user]);
 
   async function handleConfirmCancel() {
@@ -92,10 +96,7 @@ export function ReservationSheet({
     });
   };
 
-  const isPast = reservation
-    ? new Date(reservation.endTime) < new Date()
-    : false;
-
+  const isPast = reservation ? !isModifiable(reservation.endTime) : false;
   const rows = reservation
     ? [
         {
@@ -144,16 +145,22 @@ export function ReservationSheet({
                   variant="secondary"
                   className="h-12 flex-1 rounded-2xl"
                   onClick={handleEdit}
-                  disabled={isPast}
+                  disabled={isPast && user?.role !== 'admin'}
                   title={
-                    isPast ? '이미 지난 예약은 수정할 수 없습니다.' : undefined
+                    isPast && user?.role !== 'admin'
+                      ? '이미 지난 예약은 수정할 수 없습니다.'
+                      : undefined
                   }
                 >
                   예약 수정
                 </Button>
                 <Button
                   variant="destructive"
-                  disabled={isPast || cancelling || isCancelled}
+                  disabled={
+                    (isPast && user?.role !== 'admin') ||
+                    cancelling ||
+                    isCancelled
+                  }
                   className="h-12 flex-1 rounded-2xl"
                   onClick={() => setConfirmOpen(true)}
                 >
