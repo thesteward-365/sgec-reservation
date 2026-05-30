@@ -56,10 +56,10 @@ export default function AdminMePage() {
           {loading ? (
             <ListSkeleton
               count={1}
-              className="rounded-xl shadow-(--shadow-1)"
+              className="rounded-lg shadow-(--shadow-1)"
             />
           ) : me ? (
-            <List className="rounded-xl shadow-(--shadow-1)">
+            <List className="rounded-lg shadow-(--shadow-1)">
               <ListItem className="p-0">
                 <button
                   onClick={() => router.push('/settings/profile')}
@@ -96,8 +96,8 @@ export default function AdminMePage() {
           ) : null}
 
           {/* 메뉴 섹션 */}
-          <List className="rounded-xl shadow-(--shadow-1)">
-            <ListItem className="p-0 border-b border-border-subtle/50">
+          <List className="rounded-lg shadow-(--shadow-1)">
+            <ListItem className="border-border-subtle/50 border-b p-0">
               <Link
                 href="/reserve"
                 className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-neutral-50"
@@ -124,11 +124,11 @@ export default function AdminMePage() {
           </List>
 
           {/* 로그아웃 */}
-          <List className="rounded-xl shadow-(--shadow-1)">
+          <List className="rounded-lg shadow-(--shadow-1)">
             <ListItem className="p-0">
               <button
                 onClick={handleLogout}
-                className="flex w-full items-center gap-3 rounded-xl px-5 py-4 transition-colors hover:bg-neutral-50"
+                className="flex w-full items-center gap-3 rounded-lg px-5 py-4 transition-colors hover:bg-neutral-50"
               >
                 <ArrowRightStartOnRectangleIcon className="text-destructive size-5" />
                 <span className="text-destructive flex-1 text-left text-[15px] font-semibold">
