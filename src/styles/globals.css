@@ -53,7 +53,19 @@
 
   /* Wanted Specific Tokens — reference token.css values via intermediate vars */
   --color-accent-hover: var(--tw-accent-hover);
+  --color-accent-subtle: var(--color-accent-subtle);
+  --color-accent-subtle-hover: var(--color-accent-subtle-hover);
   --color-border-subtle: var(--tw-border-subtle);
+
+  /* Status Colors Registration */
+  --color-success: var(--color-success);
+  --color-success-subtle: var(--color-success-subtle);
+  --color-warning: var(--color-warning);
+  --color-warning-subtle: var(--color-warning-subtle);
+  --color-danger: var(--color-danger);
+  --color-danger-subtle: var(--color-danger-subtle);
+  --color-info: var(--color-info);
+  --color-info-subtle: var(--color-info-subtle);
 
   /* Typography Scale */
   --text-display-md: var(--fs-display-md);

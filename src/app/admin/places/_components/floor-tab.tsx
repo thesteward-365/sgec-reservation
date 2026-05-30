@@ -43,10 +43,11 @@ export function FloorTab({
                 </p>
               </button>
               <Button
-                variant="ghost"
-                size="icon"
+                variant="text"
+                color="secondary"
+                size="medium"
                 onClick={() => onToggleExpand(floor.id)}
-                className="mr-1 shrink-0"
+                className="mr-1 min-w-0 shrink-0 px-2"
                 aria-label={isExpanded ? '접기' : '펼치기'}
               >
                 <ChevronDownIcon

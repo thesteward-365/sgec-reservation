@@ -256,8 +256,8 @@ export default function ReservationDetailPage({
                           ? `${reservation.googleSync.label} · ${formatKoreanDate(reservation.googleSync.lastAttemptedAt)} ${formatTime(reservation.googleSync.lastAttemptedAt)} 시도`
                           : reservation.googleSync.label
                         : reservation.googleSync.lastSyncedAt
-                        ? `${reservation.googleSync.label} · ${formatKoreanDate(reservation.googleSync.lastSyncedAt)} ${formatTime(reservation.googleSync.lastSyncedAt)} 반영`
-                        : reservation.googleSync.label}
+                          ? `${reservation.googleSync.label} · ${formatKoreanDate(reservation.googleSync.lastSyncedAt)} ${formatTime(reservation.googleSync.lastSyncedAt)} 반영`
+                          : reservation.googleSync.label}
                     </p>
                     {reservation.googleSync.errorMessage ? (
                       <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">
@@ -302,7 +302,10 @@ export default function ReservationDetailPage({
             !reservation.isCancelled && (
               <div className="mt-4 flex w-full flex-col gap-3">
                 <Button
-                  className="h-14 w-full bg-(--color-fg-strong) text-white shadow-(--shadow-1)"
+                  variant="contained"
+                  color="secondary"
+                  size="large"
+                  className="w-full"
                   onClick={handleReReserve}
                 >
                   <ArrowPathIcon className="h-5 w-5" />
@@ -311,16 +314,20 @@ export default function ReservationDetailPage({
 
                 <div className="flex gap-2">
                   <Button
-                    variant="secondary"
-                    className="h-12 flex-1"
+                    variant="outlined"
+                    color="secondary"
+                    size="large"
+                    className="flex-1"
                     onClick={handleEdit}
                   >
                     <PencilIcon className="h-4 w-4" />
                     예약 수정
                   </Button>
                   <Button
-                    variant="secondary"
-                    className="h-12 flex-1 text-red-500"
+                    variant="outlined"
+                    color="error"
+                    size="large"
+                    className="flex-1"
                     onClick={() => setConfirmOpen(true)}
                   >
                     <TrashIcon className="h-4 w-4" />
@@ -349,11 +356,16 @@ export default function ReservationDetailPage({
             취소된 예약은 복구할 수 없습니다.
           </span>
           <DialogFooter>
-            <Button variant="secondary" onClick={() => setConfirmOpen(false)}>
+            <Button
+              variant="text"
+              color="primary"
+              onClick={() => setConfirmOpen(false)}
+            >
               아니요
             </Button>
             <Button
-              variant="destructive"
+              variant="contained"
+              color="error"
               disabled={cancelling}
               onClick={handleConfirmCancel}
             >

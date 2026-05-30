@@ -142,8 +142,10 @@ export function ReservationSheet({
             {canManage && (
               <div className="flex gap-2 pt-1">
                 <Button
-                  variant="secondary"
-                  className="h-12 flex-1 rounded-lg"
+                  variant="subtle"
+                  color="primary"
+                  size="large"
+                  className="flex-1"
                   onClick={handleEdit}
                   disabled={isPast && user?.role !== 'admin'}
                   title={
@@ -155,13 +157,15 @@ export function ReservationSheet({
                   예약 수정
                 </Button>
                 <Button
-                  variant="destructive"
+                  variant="contained"
+                  color="error"
+                  size="large"
                   disabled={
                     (isPast && user?.role !== 'admin') ||
                     cancelling ||
                     isCancelled
                   }
-                  className="h-12 flex-1 rounded-lg"
+                  className="flex-1"
                   onClick={() => setConfirmOpen(true)}
                 >
                   예약 취소
@@ -192,11 +196,16 @@ export function ReservationSheet({
             취소된 예약은 복구할 수 없습니다.
           </span>
           <DialogFooter>
-            <Button variant="secondary" onClick={() => setConfirmOpen(false)}>
+            <Button
+              variant="text"
+              color="primary"
+              onClick={() => setConfirmOpen(false)}
+            >
               아니요
             </Button>
             <Button
-              variant="destructive"
+              variant="contained"
+              color="error"
               disabled={cancelling}
               onClick={handleConfirmCancel}
             >

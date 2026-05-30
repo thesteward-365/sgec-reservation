@@ -6,7 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Chip } from '@/components/ui/chip';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter } from '@/components/ui/drawer';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerFooter,
+} from '@/components/ui/drawer';
 import type { FloorRow, SheetConfig, TagRow } from '../types';
 
 type Props = {
@@ -18,7 +24,14 @@ type Props = {
   onFloorDeleteRequest?: (floorId: number) => void;
 };
 
-export function PlaceSheet({ open, onOpenChange, config, data, onSuccess, onFloorDeleteRequest }: Props) {
+export function PlaceSheet({
+  open,
+  onOpenChange,
+  config,
+  data,
+  onSuccess,
+  onFloorDeleteRequest,
+}: Props) {
   const [name, setName] = useState('');
   const [desc, setDesc] = useState('');
   const [floorId, setFloorId] = useState<number | null>(null);
@@ -39,22 +52,38 @@ export function PlaceSheet({ open, onOpenChange, config, data, onSuccess, onFloo
   }, [open, config.editingId, config.mode]);
 
   const handleSave = async () => {
-    if (!name.trim()) { toast.error('이름을 입력해주세요.'); return; }
+    if (!name.trim()) {
+      toast.error('이름을 입력해주세요.');
+      return;
+    }
     setSaving(true);
     try {
       const method = config.editingId ? 'PATCH' : 'POST';
       const isPlace = config.mode === '장소';
       const endpoint = isPlace
-        ? config.editingId ? `/api/places/${config.editingId}` : '/api/places'
-        : config.editingId ? `/api/floors/${config.editingId}` : '/api/floors';
+        ? config.editingId
+          ? `/api/places/${config.editingId}`
+          : '/api/places'
+        : config.editingId
+          ? `/api/floors/${config.editingId}`
+          : '/api/floors';
       const body = isPlace
         ? { name: name.trim(), description: desc.trim(), floorId, tagIds }
         : { name: name.trim() };
 
-      const res = await fetch(endpoint, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      if (!res.ok) { const err = await res.json(); throw new Error(err.error || '저장에 실패했습니다.'); }
+      const res = await fetch(endpoint, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || '저장에 실패했습니다.');
+      }
 
-      toast.success(`${config.mode}가 ${config.editingId ? '수정' : '추가'}되었습니다.`);
+      toast.success(
+        `${config.mode}가 ${config.editingId ? '수정' : '추가'}되었습니다.`
+      );
       onOpenChange(false);
       onSuccess();
     } catch (e: unknown) {
@@ -75,9 +104,15 @@ export function PlaceSheet({ open, onOpenChange, config, data, onSuccess, onFloo
 
     setSaving(true);
     try {
-      const endpoint = config.mode === '장소' ? `/api/places/${config.editingId}` : `/api/floors/${config.editingId}`;
+      const endpoint =
+        config.mode === '장소'
+          ? `/api/places/${config.editingId}`
+          : `/api/floors/${config.editingId}`;
       const res = await fetch(endpoint, { method: 'DELETE' });
-      if (!res.ok) { const err = await res.json(); throw new Error(err.error || '삭제에 실패했습니다.'); }
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || '삭제에 실패했습니다.');
+      }
       toast.success('삭제되었습니다.');
       onOpenChange(false);
       onSuccess();
@@ -92,7 +127,9 @@ export function PlaceSheet({ open, onOpenChange, config, data, onSuccess, onFloo
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="max-h-[92dvh]">
         <DrawerHeader>
-          <DrawerTitle>{config.editingId ? `${config.mode} 수정` : `${config.mode} 추가`}</DrawerTitle>
+          <DrawerTitle>
+            {config.editingId ? `${config.mode} 수정` : `${config.mode} 추가`}
+          </DrawerTitle>
         </DrawerHeader>
 
         <div
@@ -129,7 +166,9 @@ export function PlaceSheet({ open, onOpenChange, config, data, onSuccess, onFloo
                       <Chip
                         key={f.id}
                         variant={floorId === f.id ? 'active' : 'inactive'}
-                        onClick={() => setFloorId(floorId === f.id ? null : f.id)}
+                        onClick={() =>
+                          setFloorId(floorId === f.id ? null : f.id)
+                        }
                       >
                         {f.name}
                       </Chip>
@@ -162,13 +201,27 @@ export function PlaceSheet({ open, onOpenChange, config, data, onSuccess, onFloo
           </div>
         </div>
 
-        <DrawerFooter className="border-t border-border bg-card">
+        <DrawerFooter className="border-border bg-card border-t">
           <div className="space-y-2">
-            <Button onClick={handleSave} disabled={saving} className="w-full py-4 text-body font-bold">
+            <Button
+              variant="contained"
+              color="primary"
+              size="large"
+              onClick={handleSave}
+              disabled={saving}
+              className="w-full"
+            >
               {saving ? '저장 중...' : '저장하기'}
             </Button>
             {config.editingId && (
-              <Button variant="ghost" onClick={handleDelete} disabled={saving} className="w-full text-destructive">
+              <Button
+                variant="text"
+                color="error"
+                size="medium"
+                onClick={handleDelete}
+                disabled={saving}
+                className="w-full"
+              >
                 {config.mode} 삭제하기
               </Button>
             )}

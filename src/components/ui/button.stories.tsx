@@ -8,11 +8,15 @@ const meta: Meta<typeof Button> = {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['default', 'secondary', 'ghost', 'destructive', 'link'],
+      options: ['contained', 'outlined', 'text', 'subtle'],
+    },
+    color: {
+      control: 'select',
+      options: ['primary', 'secondary', 'success', 'error', 'warning', 'info'],
     },
     size: {
       control: 'select',
-      options: ['default', 'md', 'sm', 'icon'],
+      options: ['small', 'medium', 'large'],
     },
   },
 };
@@ -20,50 +24,175 @@ const meta: Meta<typeof Button> = {
 export default meta;
 type Story = StoryObj<typeof Button>;
 
-export const Primary: Story = {
+export const Contained: Story = {
   args: {
-    children: 'Primary Button',
-    variant: 'default',
-    size: 'default',
+    children: 'Contained Button',
+    variant: 'contained',
+    color: 'primary',
   },
 };
 
-export const Secondary: Story = {
+export const Outlined: Story = {
   args: {
-    children: 'Secondary Button',
-    variant: 'secondary',
-    size: 'default',
+    children: 'Outlined Button',
+    variant: 'outlined',
+    color: 'primary',
   },
 };
 
-export const Ghost: Story = {
+export const Text: Story = {
   args: {
-    children: 'Ghost Button',
-    variant: 'ghost',
-    size: 'default',
+    children: 'Text Button',
+    variant: 'text',
+    color: 'primary',
   },
 };
 
-export const Destructive: Story = {
+export const Subtle: Story = {
   args: {
-    children: 'Destructive Button',
-    variant: 'destructive',
-    size: 'default',
+    children: 'Subtle Button',
+    variant: 'subtle',
+    color: 'primary',
   },
 };
 
-export const Small: Story = {
-  args: {
-    children: 'Small Button',
-    variant: 'default',
-    size: 'sm',
-  },
+export const AllColors: Story = {
+  render: () => (
+    <div className="flex flex-col gap-8">
+      <div className="space-y-4">
+        <h3 className="text-h4 font-bold">Contained</h3>
+        <p className="text-caption text-muted-foreground mb-2">
+          Secondary is now Black like the original Button.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button color="primary">Primary</Button>
+          <Button color="secondary">Secondary (Black)</Button>
+          <Button color="success">Success</Button>
+          <Button color="error">Error</Button>
+          <Button color="warning">Warning</Button>
+          <Button color="info">Info</Button>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <h3 className="text-h4 font-bold">Subtle</h3>
+        <p className="text-caption text-muted-foreground mb-2">
+          Subtle variant now has distinct background colors for all states.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="subtle" color="primary">
+            Primary
+          </Button>
+          <Button variant="subtle" color="secondary">
+            Secondary
+          </Button>
+          <Button variant="subtle" color="success">
+            Success
+          </Button>
+          <Button variant="subtle" color="error">
+            Error
+          </Button>
+          <Button variant="subtle" color="warning">
+            Warning
+          </Button>
+          <Button variant="subtle" color="info">
+            Info
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <h3 className="text-h4 font-bold">Outlined</h3>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outlined" color="primary">
+            Primary
+          </Button>
+          <Button variant="outlined" color="secondary">
+            Secondary
+          </Button>
+          <Button variant="outlined" color="success">
+            Success
+          </Button>
+          <Button variant="outlined" color="error">
+            Error
+          </Button>
+          <Button variant="outlined" color="warning">
+            Warning
+          </Button>
+          <Button variant="outlined" color="info">
+            Info
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <h3 className="text-h4 font-bold">Text</h3>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="text" color="primary">
+            Primary
+          </Button>
+          <Button variant="text" color="secondary">
+            Secondary
+          </Button>
+          <Button variant="text" color="success">
+            Success
+          </Button>
+          <Button variant="text" color="error">
+            Error
+          </Button>
+          <Button variant="text" color="warning">
+            Warning
+          </Button>
+          <Button variant="text" color="info">
+            Info
+          </Button>
+        </div>
+      </div>
+    </div>
+  ),
 };
 
-export const Medium: Story = {
-  args: {
-    children: 'Medium Button',
-    variant: 'default',
-    size: 'md',
-  },
+export const Sizes: Story = {
+  render: () => (
+    <div className="flex items-end gap-2">
+      <Button size="small">Small</Button>
+      <Button size="medium">Medium</Button>
+      <Button size="large">Large</Button>
+    </div>
+  ),
+};
+
+export const Disabled: Story = {
+  render: () => (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap gap-2">
+        <Button disabled color="primary">
+          Contained
+        </Button>
+        <Button disabled variant="outlined" color="primary">
+          Outlined
+        </Button>
+        <Button disabled variant="subtle" color="primary">
+          Subtle
+        </Button>
+        <Button disabled variant="text" color="primary">
+          Text
+        </Button>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Button disabled color="secondary">
+          Contained
+        </Button>
+        <Button disabled variant="outlined" color="secondary">
+          Outlined
+        </Button>
+        <Button disabled variant="subtle" color="secondary">
+          Subtle
+        </Button>
+        <Button disabled variant="text" color="secondary">
+          Text
+        </Button>
+      </div>
+    </div>
+  ),
 };

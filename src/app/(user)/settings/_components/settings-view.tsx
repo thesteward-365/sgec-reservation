@@ -32,12 +32,7 @@ type Props = {
 
 const MAX_PURPOSE_COUNT = 3;
 
-export function SettingsView({
-  name,
-  username,
-  role,
-  version,
-}: Props) {
+export function SettingsView({ name, username, role, version }: Props) {
   const router = useRouter();
   const [purposes, setPurposes] = useState<string[]>([]);
   const [isLoadingPurposes, setIsLoadingPurposes] = useState(true);
@@ -252,9 +247,10 @@ export function SettingsView({
             )}
 
             <Button
-              variant="secondary"
-              size="md"
-              className="mt-4 h-11 w-full rounded-lg"
+              variant="subtle"
+              color="primary"
+              size="medium"
+              className="mt-4 w-full"
               onClick={() => setShowPurposeDialog(true)}
               disabled={purposes.length >= MAX_PURPOSE_COUNT}
             >
@@ -296,7 +292,7 @@ export function SettingsView({
             </button>
           </ListItem>
 
-          <ListItem className="px-0 py-0 border-b-0">
+          <ListItem className="border-b-0 px-0 py-0">
             <button
               onClick={() => router.push('/privacy')}
               className="flex w-full items-center gap-3 px-5 py-4 transition-colors hover:bg-neutral-50"
@@ -323,7 +319,7 @@ export function SettingsView({
               </span>
             </button>
           </ListItem>
-          <ListItem className="px-0 py-0 border-b-0">
+          <ListItem className="border-b-0 px-0 py-0">
             <button
               onClick={() => setShowWithdrawDialog(true)}
               className="flex w-full items-center gap-3 px-5 py-4 transition-colors hover:bg-neutral-50"

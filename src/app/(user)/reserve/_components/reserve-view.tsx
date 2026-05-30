@@ -496,13 +496,19 @@ export function ReserveView({ userName }: ReserveViewProps) {
 
           <DrawerFooter className="flex-row gap-3">
             <Button
-              variant="secondary"
+              variant="outlined"
+              color="secondary"
               className="flex-1"
               onClick={handleResetFilter}
             >
               초기화
             </Button>
-            <Button className="flex-2" onClick={handleApplyFilter}>
+            <Button
+              variant="contained"
+              color="primary"
+              className="flex-2"
+              onClick={handleApplyFilter}
+            >
               적용하기
             </Button>
           </DrawerFooter>
