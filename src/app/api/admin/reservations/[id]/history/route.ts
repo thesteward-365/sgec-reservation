@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 import { db } from '@/lib/db';
 import {
   reservationHistories,
+  reservations,
   places,
 } from '@/lib/db';
 import { eq, desc } from 'drizzle-orm';
@@ -25,8 +26,19 @@ export async function GET(_request: NextRequest, { params }: Params) {
     const reservationId = parseInt(id);
 
     const history = await db
-      .select()
+      .select({
+        id: reservationHistories.id,
+        reservationId: reservationHistories.reservationId,
+        actionType: reservationHistories.actionType,
+        actorUserId: reservationHistories.actorUserId,
+        actorUserName: reservationHistories.actorUserName,
+        changes: reservationHistories.changes,
+        createdAt: reservationHistories.createdAt,
+        placeName: places.name,
+      })
       .from(reservationHistories)
+      .leftJoin(reservations, eq(reservationHistories.reservationId, reservations.id))
+      .leftJoin(places, eq(reservations.placeId, places.id))
       .where(eq(reservationHistories.reservationId, reservationId))
       .orderBy(desc(reservationHistories.createdAt));
 
