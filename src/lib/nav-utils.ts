@@ -15,6 +15,7 @@ const ADMIN_HIDE_NAV_PATHS = [
 ];
 
 const ADMIN_RESERVATION_DETAIL_RE = /^\/admin\/reservations\/\d+$/;
+const ADMIN_CALENDAR_HISTORY_DETAIL_RE = /^\/admin\/calendar\/history\/.+$/;
 
 /**
  * 주어진 경로에서 내비게이션 바를 숨겨야 하는지 확인합니다.
@@ -26,7 +27,8 @@ export function shouldHideBottomNav(pathname: string | null): boolean {
   if (pathname.startsWith('/admin')) {
     return (
       ADMIN_HIDE_NAV_PATHS.includes(pathname) ||
-      ADMIN_RESERVATION_DETAIL_RE.test(pathname)
+      ADMIN_RESERVATION_DETAIL_RE.test(pathname) ||
+      ADMIN_CALENDAR_HISTORY_DETAIL_RE.test(pathname)
     );
   }
 
