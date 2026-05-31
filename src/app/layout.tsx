@@ -7,12 +7,14 @@ export const metadata: Metadata = {
   title: '샘깊은교회 장소 예약',
   description: '샘깊은교회 장소 예약 서비스',
   manifest: '/manifest.json',
+  colorScheme: 'light',
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
+  themeColor: '#ffffff',
 };
 
 export default function RootLayout({

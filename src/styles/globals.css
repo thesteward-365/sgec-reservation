@@ -3,8 +3,6 @@
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 
-@custom-variant dark (&:is(.dark *));
-
 @theme inline {
   --font-heading: var(--font-sans);
   --font-sans: var(--font-sans);
@@ -112,28 +110,6 @@
   --chart-4: var(--color-green-600);
   --chart-5: var(--color-red-600);
   --radius: var(--radius-md);
-}
-
-.dark {
-  --background: var(--color-bg);
-  --foreground: var(--color-fg);
-  --card: var(--color-bg-elevated);
-  --card-foreground: var(--color-fg);
-  --popover: var(--color-bg-elevated);
-  --popover-foreground: var(--color-fg);
-  --primary: var(--color-accent);
-  --primary-foreground: var(--color-fg-on-accent);
-  --secondary: var(--color-bg-subtle);
-  --secondary-foreground: var(--color-fg);
-  --muted: var(--color-bg-muted);
-  --muted-foreground: var(--color-fg-tertiary);
-  --accent: var(--color-accent-subtle);
-  --accent-foreground: var(--color-accent);
-  --destructive: var(--color-danger);
-  --destructive-foreground: var(--color-fg-on-accent);
-  --border: var(--color-border-subtle);
-  --input: var(--color-border-default);
-  --ring: var(--color-border-focus);
 }
 
 @layer base {
