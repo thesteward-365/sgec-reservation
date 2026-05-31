@@ -1,6 +1,6 @@
 {
-  "name": "샘깊은교회 장소 예약",
-  "short_name": "SGEC 예약",
+  "name": "문사방",
+  "short_name": "문사방",
   "description": "샘깊은교회 장소 예약 서비스",
   "start_url": "/",
   "display": "standalone",
@@ -8,7 +8,7 @@
   "theme_color": "#0066FF",
   "icons": [
     {
-      "src": "/logos/logo-192.png",
+      "src": "/logos/logo-192-white.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
