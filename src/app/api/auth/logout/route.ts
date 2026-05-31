@@ -16,3 +16,12 @@ export async function POST(request: NextRequest) {
     },
   });
 }
+
+export async function GET(request: NextRequest) {
+  const session = await getIronSession<SessionData>(
+    await cookies(),
+    sessionOptions
+  );
+  session.destroy();
+  return NextResponse.redirect(new URL('/login', request.url));
+}

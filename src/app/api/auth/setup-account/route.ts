@@ -15,6 +15,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 });
     }
 
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, session.user.id),
+    });
+
+    if (!user || user.status === 'rejected' || user.status === 'withdrawn') {
+      return NextResponse.json({ error: '유효하지 않은 계정입니다.' }, { status: 403 });
+    }
+
     const body = await request.json();
     const { username, password } = body;
 
