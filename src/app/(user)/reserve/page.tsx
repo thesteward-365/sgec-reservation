@@ -1,7 +1,9 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { getIronSession } from 'iron-session';
+import { eq } from 'drizzle-orm';
 import { sessionOptions, SessionData } from '@/lib/session';
+import { db, users } from '@/lib/db';
 import { ReserveView } from './_components/reserve-view';
 import { BrandHeader } from '@/components/layout/brand-header';
 
@@ -29,8 +31,16 @@ async function ReservePageInner() {
     await cookies(),
     sessionOptions
   );
-  const userName = session.user?.name;
-  return <ReserveView userName={userName} />;
+
+  if (!session.user) return null;
+
+  // DB에서 최신 정보를 가져와 이름을 표시합니다.
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, session.user.id),
+    columns: { name: true },
+  });
+
+  return <ReserveView userName={user?.name || session.user.name} />;
 }
 
 export default function ReservePage() {
