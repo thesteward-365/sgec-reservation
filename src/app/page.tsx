@@ -13,16 +13,20 @@ export default async function RootPage() {
     redirect('/login');
   }
 
-  // DB에서 최신 정보를 가져와 마이그레이션 여부 확인
+  // DB에서 최신 정보를 가져와 상태 확인
   const user = await db.query.users.findFirst({
     where: eq(users.id, session.user.id),
   });
+
+  if (!user || user.status === 'rejected' || user.status === 'withdrawn') {
+    redirect('/api/auth/logout');
+  }
 
   if (user && !user.username) {
     redirect('/setup-account');
   }
 
-  if (user?.status === 'approved') {
+  if (user.status === 'approved') {
     redirect('/reserve');
   }
 
