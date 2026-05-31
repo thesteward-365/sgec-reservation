@@ -19,7 +19,7 @@ export function CompleteActions({
   returnUrl,
 }: Props) {
   async function handleShare() {
-    await shareText(text, '예약 완료');
+    await shareText(text);
   }
 
   return (
