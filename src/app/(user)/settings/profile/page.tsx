@@ -159,7 +159,7 @@ export default function ProfilePage() {
               <button
                 onClick={() => setActiveTab('info')}
                 className={cn(
-                  'flex-1 rounded-xl py-2.5 text-sm font-bold transition-all duration-200',
+                  'flex-1 rounded-md py-2.5 text-sm font-bold transition-all duration-200',
                   activeTab === 'info'
                     ? 'text-foreground bg-white shadow-sm'
                     : 'text-muted-foreground hover:text-foreground'
@@ -170,7 +170,7 @@ export default function ProfilePage() {
               <button
                 onClick={() => setActiveTab('password')}
                 className={cn(
-                  'flex-1 rounded-xl py-2.5 text-sm font-bold transition-all duration-200',
+                  'flex-1 rounded-md py-2.5 text-sm font-bold transition-all duration-200',
                   activeTab === 'password'
                     ? 'text-foreground bg-white shadow-sm'
                     : 'text-muted-foreground hover:text-foreground'
@@ -282,7 +282,7 @@ export default function ProfilePage() {
                       !newPassword ||
                       !confirmPassword
                     }
-                    variant="outlined"
+                    variant="contained"
                     color="primary"
                     className="mt-2 w-full"
                   >
