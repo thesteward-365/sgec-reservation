@@ -342,17 +342,21 @@ export function PlaceDetailView({
         mode: isEditMode ? 'edit' : 'create',
       });
       if (backUrl) params.set('backUrl', backUrl);
-      router.push(`/reserve/${place.id}/complete?${params}`);
+      router.replace(`/reserve/${place.id}/complete?${params}`);
     });
   }
 
   const handleBack = () => {
-    if (backUrl) {
-      router.push(backUrl);
-    } else if (isEditMode) {
-      router.push('/my-reservations');
+    if (isEditMode) {
+      if (backUrl?.includes('/admin/reservations')) {
+        router.replace('/admin/reservations');
+      } else {
+        router.replace('/my-reservations');
+      }
+    } else if (backUrl) {
+      router.replace(backUrl);
     } else {
-      router.push(`/reserve?date=${selectedDate}`);
+      router.replace(`/reserve?date=${selectedDate}`);
     }
   };
 
@@ -650,6 +654,7 @@ export function PlaceDetailView({
                             String(editReservationId)
                           );
                         }
+                        if (backUrl) nextParams.set('backUrl', backUrl);
                         router.replace(`/reserve/${p.id}?${nextParams}`);
                       }}
                       className={cn(
