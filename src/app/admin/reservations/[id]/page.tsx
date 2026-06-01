@@ -300,7 +300,7 @@ export default function ReservationDetailPage({
           }
           actions={
             !reservation.isCancelled && (
-              <div className="mt-4 flex w-full flex-col gap-3">
+              <div className="flex w-full flex-col gap-3">
                 <Button
                   variant="contained"
                   color="secondary"
