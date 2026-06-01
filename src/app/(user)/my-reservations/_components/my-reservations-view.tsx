@@ -16,6 +16,7 @@ import {
   type CalendarEvent,
 } from '@/components/calendar/monthly-calendar';
 import { ReservationItem, type MyReservation } from './reservation-item';
+import { ReservationListView } from './reservation-list-view';
 import { ReservationSheet } from './reservation-sheet';
 import {
   FilterSheet,
@@ -380,67 +381,14 @@ export function MyReservationsView({ user }: Props) {
               )}
             </div>
           </>
-        ) : /* 전체 목록 뷰 */ grouped.length === 0 ? (
-          <List emptyMessage="예약 내역이 없어요" />
         ) : (
-          <div className="flex flex-col gap-5">
-            {grouped.map(([ymd, items]) => {
-              const events = getExternalEventsForDate(ymd);
-
-              return (
-                <div key={ymd} className="space-y-3">
-                  <div className="flex items-center justify-between gap-2 px-5">
-                    <div className="flex min-w-0 flex-1 items-center gap-2">
-                      <h3 className="text-foreground shrink-0 text-[15px]! font-bold">
-                        {formatGroupHeader(ymd)}
-                      </h3>
-
-                      {events.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setActiveExternalEvents({
-                              dateLabel: formatGroupHeader(ymd),
-                              events: events,
-                            })
-                          }
-                          className="min-w-0 rounded-full transition-opacity hover:opacity-80"
-                        >
-                          <Badge
-                            color="violet"
-                            className="flex max-w-full items-center gap-1 border-none px-2 py-0.5 text-[12px]! font-bold"
-                          >
-                            <span className="truncate">{events[0].title}</span>
-                            {events.length > 1 && (
-                              <span className="shrink-0">
-                                외 {events.length - 1}건
-                              </span>
-                            )}
-                          </Badge>
-                        </button>
-                      )}
-                    </div>
-                    <span className="text-muted-foreground shrink-0 text-[13px]">
-                      {items.length}건
-                    </span>
-                  </div>
-                  <List>
-                    {items.map((r) => (
-                      <ListItem key={r.id} className="px-0 py-0">
-                        <ReservationItem
-                          reservation={r}
-                          isPast={new Date(r.endTime) < now}
-                          isMine={r.userId === user?.id}
-                          onTap={() => setActiveRes(r)}
-                          flat
-                        />
-                      </ListItem>
-                    ))}
-                  </List>
-                </div>
-              );
-            })}
-          </div>
+          <ReservationListView
+            user={user}
+            filter={filter}
+            placeTagMap={placeTagMap}
+            onSelectReservation={(r) => setActiveRes(r)}
+            now={now}
+          />
         )}
       </div>
 
