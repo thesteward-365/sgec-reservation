@@ -46,7 +46,7 @@ function DrawerContent({
         className={cn(
           'fixed inset-x-0 bottom-0 z-50',
           'flex flex-col',
-          'bg-card rounded-t-3xl shadow-(--shadow-5)',
+          'bg-card rounded-t-lg shadow-(--shadow-5)',
           'outline-none',
           'max-h-[96dvh]',
           className
@@ -68,7 +68,7 @@ function DrawerHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="drawer-header"
-      className={cn('flex flex-col gap-1.5 px-6 pb-2 pt-4 shrink-0', className)}
+      className={cn('flex shrink-0 flex-col gap-1.5 px-6 pt-4 pb-2', className)}
       {...props}
     />
   );
@@ -79,7 +79,7 @@ function DrawerFooter({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="drawer-footer"
       className={cn(
-        'mt-auto flex flex-col gap-2 px-5 pt-3 pb-8 shrink-0',
+        'mt-auto flex shrink-0 flex-col gap-2 px-5 pt-3 pb-8',
         className
       )}
       style={{

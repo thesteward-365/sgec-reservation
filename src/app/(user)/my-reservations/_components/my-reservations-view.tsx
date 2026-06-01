@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import {
   AdjustmentsHorizontalIcon,
   PlusIcon,
@@ -73,8 +74,19 @@ type Props = {
   user: SessionData['user'];
 };
 
-export function MyReservationsView({ user }: Props) {
-  const [tab, setTab] = useState<'calendar' | 'list'>('calendar');
+function MyReservationsContent({ user }: Props) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const tab = (searchParams.get('tab') as 'calendar' | 'list') || 'calendar';
+
+  function setTab(newTab: 'calendar' | 'list') {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', newTab);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }
+
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [viewMonth, setViewMonth] = useState(() => {
     const d = new Date();
@@ -426,5 +438,13 @@ export function MyReservationsView({ user }: Props) {
         events={activeExternalEvents?.events ?? []}
       />
     </>
+  );
+}
+
+export function MyReservationsView(props: Props) {
+  return (
+    <Suspense fallback={<ListSkeleton count={3} className="p-5" />}>
+      <MyReservationsContent {...props} />
+    </Suspense>
   );
 }

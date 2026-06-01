@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db, reservations, places, floors, users, fromDbDate } from '@/lib/db';
-import { eq, desc, and, lt, gt } from 'drizzle-orm';
+import { eq, desc, and, lt, gt, sql } from 'drizzle-orm';
 import { getIronSession } from 'iron-session';
 import { sessionOptions, SessionData } from '@/lib/session';
 import { cookies } from 'next/headers';
@@ -12,20 +12,16 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const cursor = searchParams.get('cursor'); // startTime (ISO string or unix seconds)
+  const page = parseInt(searchParams.get('page') || '1', 10);
   const limit = parseInt(searchParams.get('limit') || '40', 10);
+  const offset = (page - 1) * limit;
   const order = (searchParams.get('order') || 'desc') as 'asc' | 'desc';
   
   // Filter params (optional, to match existing frontend filters if needed)
   const floorId = searchParams.get('floorId');
-  const tagId = searchParams.get('tagId'); // tag filtering is more complex in DB, often handled in memory or with joins
   const includeCancelled = searchParams.get('includeCancelled') === 'true';
 
-  let queryCondition = and(
-    // Optional: filter by user if needed, but current API shows all? 
-    // The current /api/my-reservations seems to show ALL reservations, not just "mine".
-    // Let's stay consistent with current behavior.
-  );
+  let queryCondition = and();
 
   if (!includeCancelled) {
     queryCondition = and(queryCondition, eq(reservations.status, 'active'));
@@ -33,15 +29,6 @@ export async function GET(request: Request) {
 
   if (floorId) {
     queryCondition = and(queryCondition, eq(places.floorId, parseInt(floorId, 10)));
-  }
-
-  if (cursor) {
-    const cursorDate = new Date(cursor);
-    if (order === 'desc') {
-      queryCondition = and(queryCondition, lt(reservations.startTime, cursorDate));
-    } else {
-      queryCondition = and(queryCondition, gt(reservations.startTime, cursorDate));
-    }
   }
 
   const rows = await db
@@ -63,8 +50,20 @@ export async function GET(request: Request) {
     .leftJoin(floors, eq(places.floorId, floors.id))
     .leftJoin(users, eq(reservations.userId, users.id))
     .where(queryCondition)
-    .orderBy(order === 'desc' ? desc(reservations.startTime) : reservations.startTime)
-    .limit(limit);
+    .orderBy(
+      // 1. Date (KST timezone fixed to avoid 8AM shifting to yesterday)
+      order === 'desc' 
+        ? desc(sql`DATE(${reservations.startTime} AT TIME ZONE 'Asia/Seoul')`) 
+        : sql`DATE(${reservations.startTime} AT TIME ZONE 'Asia/Seoul')`,
+      // 2. Time (Always ASC within the same day as requested)
+      sql`(${reservations.startTime} AT TIME ZONE 'Asia/Seoul')::time ASC`,
+      // 3. End Time (ASC for same start time)
+      sql`(${reservations.endTime} AT TIME ZONE 'Asia/Seoul')::time ASC`,
+      // 4. ID for deterministic sorting
+      reservations.id
+    )
+    .limit(limit)
+    .offset(offset);
 
   const formattedRows = rows.map((r) => ({
     ...r,
@@ -72,12 +71,10 @@ export async function GET(request: Request) {
     endTime: fromDbDate(r.endTime).toISOString(),
   }));
 
-  const nextCursor = formattedRows.length === limit 
-    ? formattedRows[formattedRows.length - 1].startTime 
-    : null;
+  const hasMore = formattedRows.length === limit;
 
   return NextResponse.json({
     data: formattedRows,
-    nextCursor,
+    nextPage: hasMore ? page + 1 : null,
   });
 }
