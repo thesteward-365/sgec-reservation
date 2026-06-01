@@ -117,7 +117,7 @@ export default function ReservationDetailPage({
       reservationId: String(reservation.id),
       backUrl: `/admin/reservations/${reservation.id}`,
     });
-    router.push(`/reserve/${reservation.placeId}?${paramsUrl}`);
+    router.replace(`/reserve/${reservation.placeId}?${paramsUrl}`);
   };
 
   const handleConfirmCancel = async () => {

@@ -78,7 +78,7 @@ export function ReservationSheet({
   function handleEdit() {
     if (!reservation) return;
     const date = toYMD(reservation.startTime);
-    router.push(
+    router.replace(
       `/reserve/${reservation.placeId}?date=${date}&reservationId=${reservation.id}`
     );
   }
