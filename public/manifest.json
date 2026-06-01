@@ -1,7 +1,7 @@
 {
   "name": "문사방",
   "short_name": "문사방",
-  "description": "샘깊은교회 장소 예약 서비스",
+  "description": "문사방",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
