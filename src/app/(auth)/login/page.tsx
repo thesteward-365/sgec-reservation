@@ -74,21 +74,20 @@ function LoginContent() {
   return (
     <div className="flex flex-1 flex-col px-6 pt-14 pb-10">
       {/* 로고 헤더 — 가로 한 줄, 페이지 최상단 */}
-      <div className="mb-12 flex items-center gap-2.5">
+      <div className="flex items-center gap-2.5">
         <Image
-          src="/logos/logo-default.svg"
+          src="/logos/logo-with-text.png"
           alt="샘깊은교회 로고"
-          width={28}
-          height={40}
+          width={625}
+          height={200}
+          className="h-12 w-auto shrink-0"
           priority
+          loading="eager"
         />
-        <span className="text-body-sm text-foreground font-bold tracking-tight">
-          샘깊은교회 문화사역
-        </span>
       </div>
 
       {/* 인사말 */}
-      <div className="mb-8">
+      <div className="mt-12 mb-8">
         <h1 className="text-title-1 text-foreground font-bold">반가워요!</h1>
         <p className="text-body text-muted-foreground mt-2">
           기쁨과 감사함으로 섬깁시다.
