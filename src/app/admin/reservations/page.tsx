@@ -29,6 +29,7 @@ import {
 import {
   getExternalEventDateRange,
 } from '@/lib/external-event-dates';
+import { AdminReservationListView } from './_components/admin-reservation-list-view';
 
 type ReservationStatus = 'active' | 'cancelled';
 type AdminReservation = {
@@ -522,139 +523,14 @@ export default function ReservationsPage() {
                 ))}
               </div>
 
-              {loading ? (
-                <ListSkeleton count={3} />
-              ) : groupedListView.length === 0 ? (
-                <div className="bg-card rounded-xl px-4 py-10 text-center shadow-(--shadow-1)">
-                  <p className="text-foreground text-[15px] font-semibold">
-                    예약 내역이 없습니다
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-5 px-1">
-                  {groupedListView.map(([dateKey, items]) => {
-                    const events = getExternalEventsForDate(dateKey);
-
-                    return (
-                      <div key={dateKey} className="mb-8 space-y-3">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex min-w-0 flex-1 items-center gap-2">
-                            <h3 className="text-foreground shrink-0 text-body! font-bold">
-                              {items[0].startTime
-                                ? formatDateHeader(items[0].startTime)
-                                : dateKey}
-                            </h3>
-
-                            {dateKey === toYMD(now) && (
-                              <Badge
-                                variant="subtle"
-                                className="shrink-0 bg-transparent px-2 py-0.5 text-[14px]! font-bold"
-                              >
-                                오늘
-                              </Badge>
-                            )}
-
-                            {/* 리스트 뷰 날짜 헤더 옆 행사 배지 */}
-                            {events.length > 0 && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setActiveExternalEvents({
-                                    dateLabel: items[0].startTime
-                                      ? formatDateHeader(items[0].startTime)
-                                      : dateKey,
-                                    events: events,
-                                  })
-                                }
-                                className="min-w-0 rounded-full transition-opacity hover:opacity-80"
-                              >
-                                <Badge
-                                  color="violet"
-                                  className="flex max-w-full items-center gap-1 border-none px-2 py-0.5 text-[12px]! font-bold"
-                                >
-                                  <span className="truncate">
-                                    {events[0].title}
-                                  </span>
-                                  {events.length > 1 && (
-                                    <span className="shrink-0">
-                                      외 {events.length - 1}건
-                                    </span>
-                                  )}
-                                </Badge>
-                              </button>
-                            )}
-                          </div>
-                          <div className="flex shrink-0 items-center gap-2">
-                            <span className="text-muted-foreground text-[13px]">
-                              {items.length}건
-                            </span>
-                          </div>
-                        </div>
-                        <List>
-                          {items.map((reservation) => (
-                            <ListItem
-                              key={reservation.id}
-                              className="px-0 py-0"
-                            >
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  router.push(
-                                    `/admin/reservations/${reservation.id}`
-                                  )
-                                }
-                                className="w-full rounded-none px-4 py-4 text-left transition hover:bg-neutral-50 active:bg-neutral-100"
-                              >
-                                <div className="flex items-center gap-3">
-                                  <div className="flex min-w-18 flex-col items-center justify-center rounded-lg bg-neutral-50 px-3 py-2 text-center">
-                                    <span className="text-foreground font-bold tabular-nums">
-                                      {formatTime(reservation.startTime!)}
-                                    </span>
-                                    <span className="text-muted-foreground mt-1 text-[14px] tabular-nums">
-                                      {formatTime(reservation.endTime!)}
-                                    </span>
-                                  </div>
-                                  <div className="min-w-0 flex-1">
-                                    <div className="flex items-start gap-3">
-                                      <p className="text-foreground truncate text-[16px]! font-bold">
-                                        {reservation.placeName
-                                          ? `${reservation.floorName} ${reservation.placeName}`
-                                          : '장소 없음'}
-                                      </p>
-                                      {reservation.status === 'cancelled' && (
-                                        <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-medium text-red-600">
-                                          취소됨
-                                        </span>
-                                      )}
-                                    </div>
-                                    <p className="text-muted-foreground mt-2 text-[14px]! leading-snug">
-                                      {reservation.userName ? (
-                                        <span
-                                          className={cn(
-                                            currentUser?.id ===
-                                              reservation.userId &&
-                                              'font-bold text-blue-600'
-                                          )}
-                                        >
-                                          {reservation.userName}
-                                        </span>
-                                      ) : (
-                                        ''
-                                      )}
-                                      {reservation.userName ? ' · ' : ''}
-                                      {reservation.purpose}
-                                    </p>
-                                  </div>
-                                </div>
-                              </button>
-                            </ListItem>
-                          ))}
-                        </List>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              <AdminReservationListView
+                filter={filter}
+                listTab={listTab}
+                now={now}
+                currentUser={currentUser}
+                externalEvents={externalEvents}
+                setActiveExternalEvents={setActiveExternalEvents}
+              />
             </div>
           )}
         </div>
