@@ -90,7 +90,7 @@ export const metadata: Metadata = {
     ],
   },
   other: {
-    'apple-touch-icon': '/pwa/apple-icon-180.png',
+    'apple-touch-icon': '/icons/icon-192.png',
   },
 };
 
