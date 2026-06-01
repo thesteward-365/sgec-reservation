@@ -299,7 +299,7 @@ export function MyReservationsView({ user }: Props) {
         ) : tab === 'calendar' ? (
           <>
             {/* 월 달력 카드 */}
-            <div className="bg-card rounded-lg px-4 py-4 shadow-(--shadow-1)">
+            <div className="bg-card rounded-xl p-5 shadow-(--shadow-1)">
               <MonthlyCalendar
                 selectedDate={selectedDate}
                 viewMonth={viewMonth}

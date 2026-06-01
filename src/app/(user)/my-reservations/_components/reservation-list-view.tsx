@@ -21,7 +21,7 @@ const queryClient = new QueryClient({
 });
 
 type ReservationListViewProps = {
-  user: { id: number; name: string } | null;
+  user: { id: number; name: string } | null | undefined;
   filter: FilterState;
   placeTagMap: Record<number, number[]>;
   onSelectReservation: (res: MyReservation) => void;
