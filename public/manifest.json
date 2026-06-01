@@ -14,8 +14,8 @@
       "purpose": "any"
     },
     {
-      "src": "/pwa/manifest-icon-192.maskable.png",
-      "sizes": "192x192",
+      "src": "/pwa/manifest-icon-512.maskable.png",
+      "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     },
@@ -24,12 +24,6 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
-    },
-    {
-      "src": "/pwa/manifest-icon-512.maskable.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
     }
   ]
 }
