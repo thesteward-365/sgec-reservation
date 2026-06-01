@@ -1,8 +1,9 @@
 'use client';
 
-import { useMemo, useEffect, useRef } from 'react';
+import { useMemo, useEffect, useRef, useState } from 'react';
 import {
   useInfiniteQuery,
+  useQueries,
   QueryClient,
   QueryClientProvider,
 } from '@tanstack/react-query';
@@ -12,8 +13,11 @@ import { ListSkeleton } from '@/components/ui/list-skeleton';
 import { FilterState } from '@/components/reservations/filter-sheet';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { ExternalEventSheetItem } from '@/components/reservations/external-events-sheet';
-import { CalendarEvent } from '@/components/calendar/monthly-calendar';
+import {
+  ExternalEventsSheet,
+  type ExternalEventSheetItem,
+} from '@/components/reservations/external-events-sheet';
+import { getExternalEventDateRange } from '@/lib/external-event-dates';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,8 +49,6 @@ type AdminReservationListViewProps = {
   listTab: ListTab;
   now: Date;
   currentUser: { id: number; name: string } | null;
-  externalEvents: (CalendarEvent & { raw: any })[];
-  setActiveExternalEvents: (data: { dateLabel: string; events: ExternalEventSheetItem[] } | null) => void;
 };
 
 function toYMD(dt: Date | string): string {
@@ -75,11 +77,13 @@ function AdminReservationListInner({
   listTab,
   now,
   currentUser,
-  externalEvents,
-  setActiveExternalEvents,
 }: AdminReservationListViewProps) {
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const [activeExternalEvents, setActiveExternalEvents] = useState<{
+    dateLabel: string;
+    events: ExternalEventSheetItem[];
+  } | null>(null);
 
   const {
     data,
@@ -140,18 +144,53 @@ function AdminReservationListInner({
     return Array.from(map.entries());
   }, [allItems]);
 
-  function getExternalEventsForDate(ymd: string): ExternalEventSheetItem[] {
-    return externalEvents
-      .filter((event) => ymd >= event.startDate && ymd <= event.endDate)
-      .map((event) => ({
-        id: event.id as number,
-        title: event.title,
-        startTime: event.raw.startTime,
-        endTime: event.raw.endTime,
-        description: event.raw.description,
-        isAllDay: event.raw.isAllDay,
+  // Dynamic external events fetching
+  const uniqueMonths = useMemo(() => {
+    const months = new Set<string>();
+    for (const r of allItems) {
+      const d = new Date(r.startTime);
+      months.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    }
+    return Array.from(months);
+  }, [allItems]);
+
+  const externalEventsQueries = useQueries({
+    queries: uniqueMonths.map((month) => ({
+      queryKey: ['external-events', month],
+      queryFn: async () => {
+        const res = await fetch(`/api/external-events?month=${month}`);
+        if (!res.ok) throw new Error('Failed to fetch external events');
+        return res.json();
+      },
+      staleTime: 1000 * 60 * 5, // 5 minutes
+    })),
+  });
+
+  const allExternalEvents = useMemo(() => {
+    const events: any[] = [];
+    externalEventsQueries.forEach((q) => {
+      if (q.data) {
+        (q.data as any[]).forEach((ev) => {
+          const { startDate, endDate } = getExternalEventDateRange(ev);
+          events.push({ ...ev, startDate, endDate });
+        });
+      }
+    });
+    return events;
+  }, [externalEventsQueries]);
+
+  const getExternalEventsForDate = (ymd: string): ExternalEventSheetItem[] => {
+    return allExternalEvents
+      .filter((ev) => ymd >= ev.startDate && ymd <= ev.endDate)
+      .map((ev) => ({
+        id: ev.id,
+        title: ev.title,
+        startTime: ev.startTime,
+        endTime: ev.endTime,
+        description: ev.description,
+        isAllDay: ev.isAllDay,
       }));
-  }
+  };
 
   if (isLoading) return <ListSkeleton count={5} />;
   if (status === 'error') return <p className="py-10 text-center text-red-500">데이터를 불러오지 못했습니다.</p>;
@@ -277,6 +316,15 @@ function AdminReservationListInner({
           <div className="h-4 w-full" />
         ) : null}
       </div>
+
+      <ExternalEventsSheet
+        open={!!activeExternalEvents}
+        onOpenChange={(open) => {
+          if (!open) setActiveExternalEvents(null);
+        }}
+        dateLabel={activeExternalEvents?.dateLabel ?? ''}
+        events={activeExternalEvents?.events ?? []}
+      />
     </div>
   );
 }

@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import {
   AdjustmentsHorizontalIcon,
   PlusIcon,
@@ -118,10 +118,26 @@ const CHIP_BASE =
 const CHIP_ACTIVE = 'bg-(--color-fg-strong) text-white';
 const CHIP_INACTIVE = 'bg-(--color-neutral-300) text-foreground';
 
-export default function ReservationsPage() {
+function ReservationsContent() {
   const router = useRouter();
-  const [view, setView] = useState<MainView>('calendar');
-  const [listTab, setListTab] = useState<ListTab>('예정');
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
+  const view = (searchParams.get('view') as MainView) || 'calendar';
+  const listTab = (searchParams.get('listTab') as ListTab) || '예정';
+
+  function setView(newView: MainView) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('view', newView);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }
+
+  function setListTab(newTab: ListTab) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('listTab', newTab);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }
+
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [viewMonth, setViewMonth] = useState(() => {
     const now = new Date();
@@ -530,8 +546,6 @@ export default function ReservationsPage() {
                 listTab={listTab}
                 now={now}
                 currentUser={currentUser}
-                externalEvents={externalEvents}
-                setActiveExternalEvents={setActiveExternalEvents}
               />
             </div>
           )}
@@ -562,5 +576,13 @@ export default function ReservationsPage() {
         events={activeExternalEvents?.events ?? []}
       />
     </>
+  );
+}
+
+export default function ReservationsPage() {
+  return (
+    <Suspense fallback={<ListSkeleton count={3} className="p-5" />}>
+      <ReservationsContent />
+    </Suspense>
   );
 }
