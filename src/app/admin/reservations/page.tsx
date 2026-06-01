@@ -355,25 +355,27 @@ export default function ReservationsPage() {
 
           {view === 'calendar' ? (
             <div className="space-y-5">
-              <MonthlyCalendar
-                selectedDate={selectedDate}
-                viewMonth={viewMonth}
-                onSelectDate={(date) => {
-                  setSelectedDate(date);
-                  const nextMonth = new Date(
-                    date.getFullYear(),
-                    date.getMonth(),
-                    1
-                  );
-                  if (nextMonth.getTime() !== viewMonth.getTime()) {
-                    setViewMonth(nextMonth);
-                  }
-                }}
-                onChangeMonth={setViewMonth}
-                indicators={indicatorDates}
-                events={externalEvents}
-                showEvents={false}
-              />
+              <div className="bg-card rounded-xl p-5 shadow-(--shadow-1)">
+                <MonthlyCalendar
+                  selectedDate={selectedDate}
+                  viewMonth={viewMonth}
+                  onSelectDate={(date) => {
+                    setSelectedDate(date);
+                    const nextMonth = new Date(
+                      date.getFullYear(),
+                      date.getMonth(),
+                      1
+                    );
+                    if (nextMonth.getTime() !== viewMonth.getTime()) {
+                      setViewMonth(nextMonth);
+                    }
+                  }}
+                  onChangeMonth={setViewMonth}
+                  indicators={indicatorDates}
+                  events={externalEvents}
+                  showEvents={false}
+                />
+              </div>
 
               {loading ? (
                 <ListSkeleton count={2} className="px-1" />
