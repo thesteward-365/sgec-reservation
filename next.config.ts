@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
     'http://0.0.0.0:3000',
     'http://localhost:3000',
     '192.168.0.100',
-    '*.ngrok-free.app',
+    'uphill-snooze-impurity.ngrok-free.dev',
   ],
   async headers() {
     return [
