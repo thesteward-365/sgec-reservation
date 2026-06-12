@@ -15,7 +15,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer';
-import { cn } from '@/lib/utils';
+import { cn, getKSTToday } from '@/lib/utils';
 import {
   type ReservationSchedule,
   formatLocalDate,
@@ -70,8 +70,7 @@ function formatDuration(min: number): string {
 }
 
 function getInitialDate(value?: string): string {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = getKSTToday();
   return formatLocalDate(parseLocalDate(value) ?? today);
 }
 
@@ -708,7 +707,7 @@ export function PlaceDetailView({
           <div className="bg-card mx-5 mb-4 rounded-lg px-4 py-3 shadow-(--shadow-1)">
             <WeeklyCalendar
               key={selectedDate}
-              defaultDate={parseLocalDate(selectedDate) ?? new Date()}
+              defaultDate={parseLocalDate(selectedDate) ?? getKSTToday()}
               selectedDate={parseLocalDate(selectedDate) ?? undefined}
               onDateSelect={(date) => {
                 setLoading(true);

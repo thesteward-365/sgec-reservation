@@ -21,7 +21,7 @@ import { Chip } from '@/components/ui/chip';
 import { List, ListItem } from '@/components/ui/list';
 import { ListSkeleton } from '@/components/ui/list-skeleton';
 import { BrandHeader } from '@/components/layout/brand-header';
-import { cn } from '@/lib/utils';
+import { cn, getKSTToday } from '@/lib/utils';
 import type { CalendarEvent } from '@/components/calendar/monthly-calendar';
 import {
   formatExternalEventDateRangeLabel,
@@ -111,8 +111,7 @@ type ReserveViewProps = {
 export function ReserveView({ userName }: ReserveViewProps) {
   const searchParams = useSearchParams();
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = getKSTToday();
 
   const [selectedDate, setSelectedDate] = useState<Date>(
     () => parseDateParam(searchParams.get('date')) ?? today
