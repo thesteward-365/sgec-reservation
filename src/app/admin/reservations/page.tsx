@@ -7,7 +7,7 @@ import {
   AdjustmentsHorizontalIcon,
   PlusIcon,
 } from '@heroicons/react/24/outline';
-import { cn } from '@/lib/utils';
+import { cn, getKSTToday } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { BrandHeader } from '@/components/layout/brand-header';
 import { List, ListItem } from '@/components/ui/list';
@@ -101,8 +101,7 @@ function formatTime(isoString: string): string {
 
 function isPast(isoString: string): boolean {
   const d = new Date(isoString);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = getKSTToday();
   return d < today;
 }
 
@@ -138,9 +137,9 @@ function ReservationsContent() {
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
-  const [selectedDate, setSelectedDate] = useState(() => new Date());
+  const [selectedDate, setSelectedDate] = useState(() => getKSTToday());
   const [viewMonth, setViewMonth] = useState(() => {
-    const now = new Date();
+    const now = getKSTToday();
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
   const [reservations, setReservations] = useState<AdminReservation[]>([]);
@@ -165,7 +164,7 @@ function ReservationsContent() {
     dateLabel: string;
     events: ExternalEventSheetItem[];
   } | null>(null);
-  const [now] = useState(() => new Date());
+  const [now] = useState(() => getKSTToday());
 
   // 데이터 로딩: 예약, 장소, 계정
   useEffect(() => {

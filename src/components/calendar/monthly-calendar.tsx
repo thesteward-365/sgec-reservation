@@ -6,7 +6,7 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
 } from '@heroicons/react/24/outline';
-import { cn } from '@/lib/utils';
+import { cn, getKSTToday } from '@/lib/utils';
 import { useState, useMemo } from 'react';
 
 export type CalendarEvent = {
@@ -58,7 +58,7 @@ export function MonthlyCalendar({
   indicators,
   events = [],
   showEvents = true,
-  today = new Date(),
+  today = getKSTToday(),
   defaultExpanded = false,
 }: Props) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);

@@ -30,6 +30,7 @@ import {
 import { SessionData } from '@/lib/session';
 import { compareReservationByDayAndTime } from '@/lib/services/reservation-sorting';
 import { getExternalEventDateRange } from '@/lib/external-event-dates';
+import { getKSTToday } from '@/lib/utils';
 
 type PlaceTagMap = Record<number, number[]>; // placeId -> tagId[]
 
@@ -87,9 +88,9 @@ function MyReservationsContent({ user }: Props) {
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
-  const [selectedDate, setSelectedDate] = useState(() => new Date());
+  const [selectedDate, setSelectedDate] = useState(() => getKSTToday());
   const [viewMonth, setViewMonth] = useState(() => {
-    const d = new Date();
+    const d = getKSTToday();
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
   const [allReservations, setAllReservations] = useState<MyReservation[]>([]);
@@ -111,7 +112,7 @@ function MyReservationsContent({ user }: Props) {
     dateLabel: string;
     events: ExternalEventSheetItem[];
   } | null>(null);
-  const [now] = useState(() => new Date());
+  const [now] = useState(() => getKSTToday());
 
   // 마운트 시 전체 예약 + 장소 태그 맵 로드
   useEffect(() => {
