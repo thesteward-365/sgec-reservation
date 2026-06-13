@@ -1,0 +1,1 @@
+ALTER TABLE "reservations" ADD COLUMN "google_event_url" text;
