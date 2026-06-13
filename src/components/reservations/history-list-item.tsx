@@ -11,6 +11,7 @@ export interface HistoryItem {
   changes: string | any;
   createdAt: number | Date;
   placeName?: string | null;
+  reservationPurpose?: string | null;
 }
 
 interface Props {
@@ -137,6 +138,15 @@ export function HistoryListItem({ item, onClick, showPlaceName }: Props) {
     changes?.endTime &&
     formatTime(changes.endTime.from) !== formatTime(changes.endTime.to);
 
+  const displayPurpose = (() => {
+    if (snapshot?.purpose) return snapshot.purpose;
+    if (changes?.snapshot?.purpose) return changes.snapshot.purpose;
+    if (changes?.purpose?.to) return changes.purpose.to;
+    if (item.reservationPurpose) return item.reservationPurpose;
+    if (changes?.created?.to?.purpose) return changes.created.to.purpose;
+    return '-';
+  })();
+
   return (
     <div
       onClick={onClick}
@@ -145,7 +155,7 @@ export function HistoryListItem({ item, onClick, showPlaceName }: Props) {
         onClick && 'cursor-pointer active:bg-neutral-50'
       )}
     >
-      {/* Header: [Type] [Actor]-[Place] [Time] */}
+      {/* Header: [Type] [Purpose] [Time] */}
       <div className="mb-3 flex items-center justify-between">
         <div className="text-body flex items-center gap-2 overflow-hidden">
           <span
@@ -157,8 +167,7 @@ export function HistoryListItem({ item, onClick, showPlaceName }: Props) {
             {getActionLabel(item.actionType)}
           </span>
           <span className="truncate font-bold">
-            {item.actorUserName}
-            {showPlaceName && `-${displayPlaceName}`}
+            {displayPurpose}
           </span>
         </div>
         <span className="text-caption text-muted-foreground ml-2 shrink-0">

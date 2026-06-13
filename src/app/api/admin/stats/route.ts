@@ -70,6 +70,7 @@ export async function GET(_request: NextRequest) {
         changes: reservationHistories.changes,
         createdAt: reservationHistories.createdAt,
         placeName: places.name,
+        reservationPurpose: reservations.purpose,
       })
       .from(reservationHistories)
       .leftJoin(reservations, eq(reservationHistories.reservationId, reservations.id))
@@ -109,6 +110,7 @@ export async function GET(_request: NextRequest) {
         place: item.placeName,
         changes: changes,
         timestamp: fromDbDate(item.createdAt).toISOString(),
+        reservationPurpose: item.reservationPurpose,
       };
     });
 

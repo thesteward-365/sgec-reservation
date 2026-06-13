@@ -13,6 +13,7 @@ export interface Activity {
   place?: string | null;
   timestamp: string;
   changes?: any;
+  reservationPurpose?: string | null;
 }
 
 interface ActivityListProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -36,7 +37,8 @@ const ActivityList = React.forwardRef<HTMLDivElement, ActivityListProps>(
                 actorUserName: activity.actor,
                 changes: activity.changes || {},
                 createdAt: new Date(activity.timestamp),
-                placeName: activity.place
+                placeName: activity.place,
+                reservationPurpose: activity.reservationPurpose,
               }}
               showPlaceName
               onClick={() => router.push(`/admin/reservations/${activity.reservationId}`)}

@@ -35,6 +35,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
         changes: reservationHistories.changes,
         createdAt: reservationHistories.createdAt,
         placeName: places.name,
+        reservationPurpose: reservations.purpose,
       })
       .from(reservationHistories)
       .leftJoin(reservations, eq(reservationHistories.reservationId, reservations.id))
