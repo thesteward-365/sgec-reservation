@@ -55,6 +55,7 @@ const history: HistoryItem[] = [
       },
     }),
     placeName: failedReservation.placeName,
+    reservationPurpose: failedReservation.purpose,
   },
 ];
 

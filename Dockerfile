@@ -17,6 +17,7 @@ COPY . .
 # 빌드 시 메모리 부족 방지를 위해 힙 사이즈 확장 및 텔레메트리 비활성화
 ENV NEXT_TELEMETRY_DISABLED 1
 ENV NODE_OPTIONS="--max-old-space-size=4096"
+ENV SESSION_PASSWORD="temporary_placeholder_password_at_least_32_chars_long"
 
 RUN npm run build
 

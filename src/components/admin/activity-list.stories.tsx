@@ -32,6 +32,17 @@ const mockActivities: Activity[] = [
     actor: '이순신',
     place: '강당',
     timestamp: new Date(Date.now() - 5 * 60000).toISOString(),
+    reservationPurpose: '금요 기도 모임',
+    changes: {
+      snapshot: {
+        placeId: 1,
+        placeName: '강당',
+        userName: '이순신',
+        startTime: new Date(Date.now() - 5 * 60000).toISOString(),
+        endTime: new Date(Date.now() + 55 * 60000).toISOString(),
+        purpose: '금요 기도 모임',
+      }
+    }
   },
   {
     id: 2,
@@ -41,6 +52,21 @@ const mockActivities: Activity[] = [
     actor: '강감찬',
     place: '회의실 A',
     timestamp: new Date(Date.now() - 30 * 60000).toISOString(),
+    reservationPurpose: '정기 부서 회의',
+    changes: {
+      purpose: {
+        from: '임시 부서 회의',
+        to: '정기 부서 회의',
+      },
+      startTime: {
+        from: new Date(Date.now() - 30 * 60000).toISOString(),
+        to: new Date(Date.now() - 30 * 60000).toISOString(),
+      },
+      endTime: {
+        from: new Date(Date.now() + 30 * 60000).toISOString(),
+        to: new Date(Date.now() + 30 * 60000).toISOString(),
+      }
+    }
   },
   {
     id: 3,
@@ -50,6 +76,17 @@ const mockActivities: Activity[] = [
     actor: '을지문덕',
     place: '카페',
     timestamp: new Date(Date.now() - 2 * 3600000).toISOString(),
+    reservationPurpose: '청년부 친목 모임',
+    changes: {
+      snapshot: {
+        placeId: 3,
+        placeName: '카페',
+        userName: '을지문덕',
+        startTime: new Date(Date.now() - 2 * 3600000).toISOString(),
+        endTime: new Date(Date.now() - 1 * 3600000).toISOString(),
+        purpose: '청년부 친목 모임',
+      }
+    }
   },
   {
     id: 4,
@@ -59,6 +96,17 @@ const mockActivities: Activity[] = [
     actor: '홍길동',
     place: '시스템',
     timestamp: new Date(Date.now() - 1 * 86400000).toISOString(),
+    reservationPurpose: '성경 공부 모임',
+    changes: {
+      snapshot: {
+        placeId: 4,
+        placeName: '시스템',
+        userName: '홍길동',
+        startTime: new Date(Date.now() - 1 * 86400000).toISOString(),
+        endTime: new Date(Date.now() - 23 * 3600000).toISOString(),
+        purpose: '성경 공부 모임',
+      }
+    }
   },
 ];
 
