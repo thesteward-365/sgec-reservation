@@ -2,6 +2,8 @@ export interface ChangelogItem {
   title: string;
   type?: 'feature' | 'improvement' | 'fix';
   details?: string[];
+  beforeImage?: string;
+  afterImage?: string;
 }
 
 export interface ChangelogEntry {
@@ -18,6 +20,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       {
         title: '시간대 관련 버그 수정',
         type: 'fix',
+        beforeImage: '/images/changelog/v26.06.13-timezone.png',
         details: [
           '사용자 기기나 서버의 시간대 설정에 따라 오늘 날짜가 캘린더에서 잘못 표시되거나 오늘 날짜 선택 및 과거 일정 구분이 비정상적으로 동작하던 오류를 해결했습니다.',
           '서버와 기기의 설정에 관계없이 항상 대한민국 표준시(KST)를 기준으로 날짜를 계산하도록 통일하여, 어떤 환경에서도 오늘 날짜와 과거 일정이 정확하게 표시됩니다.',
@@ -26,6 +29,8 @@ export const CHANGELOG: ChangelogEntry[] = [
       {
         title: '월간 캘린더 접기/펼치기 기능 추가',
         type: 'improvement',
+        beforeImage: '/images/changelog/v26.06.13-calendar_before.png',
+        afterImage: '/images/changelog/v26.06.13-calendar_after.png',
         details: [
           '기존 예약 관리 화면에서 월간 캘린더가 화면을 많이 차지하여 하단의 예약 목록이 가려지던 불편함을 개선했습니다.',
           '첫 진입 시에는 한 줄짜리 주간 달력 형태로 노출되어 목록 가독성을 높였으며, 필요할 때 연월 제목 옆의 버튼을 눌러 월간 달력으로 펼쳐서 볼 수 있습니다.',
