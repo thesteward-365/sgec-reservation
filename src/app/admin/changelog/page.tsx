@@ -58,12 +58,17 @@ export default function AdminChangelogPage() {
 
               <List className="overflow-hidden rounded-lg border-none bg-white shadow-sm">
                 {entry.items.map((item, index) => {
-                  const isObject = typeof item !== 'string';
-                  const title = isObject ? (item as ChangelogItem).title : item;
-                  const details = isObject
-                    ? (item as ChangelogItem).details
-                    : null;
+                  const title = item.title;
+                  const details = item.details;
+                  const type = item.type;
                   const expanded = isExpanded(entry.version, index);
+
+                  let dotColor = 'bg-primary';
+                  if (type === 'fix') {
+                    dotColor = 'bg-red-500';
+                  } else if (type === 'improvement') {
+                    dotColor = 'bg-green-500';
+                  }
 
                   return (
                     <div
@@ -79,7 +84,7 @@ export default function AdminChangelogPage() {
                           details && toggleItem(entry.version, index)
                         }
                       >
-                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-neutral-300" />
+                        <span className={cn('mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full', dotColor)} />
                         <span className="flex-1">{title}</span>
                         {details && (
                           <ChevronDownIcon

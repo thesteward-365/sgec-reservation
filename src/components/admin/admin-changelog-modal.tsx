@@ -12,10 +12,23 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { CHANGELOG, ChangelogItem } from '@/lib/changelog';
+import { cn } from '@/lib/utils';
+import { ChevronDownIcon } from '@heroicons/react/24/outline';
 
 export function AdminChangelogModal() {
   const router = useRouter();
   const [isOpen, setIsOpen] = React.useState(false);
+  const [expandedItems, setExpandedItems] = React.useState<Record<number, boolean>>({
+    0: true, // Default expand the first item (bug fix)
+  });
+
+  const toggleItem = (index: number) => {
+    setExpandedItems((prev) => ({
+      ...prev,
+      [index]: !prev[index],
+    }));
+  };
+
   const latestEntry = CHANGELOG[0];
 
   React.useEffect(() => {
@@ -67,18 +80,42 @@ export function AdminChangelogModal() {
         {/* Changelog Content */}
         <div className="max-h-[300px] overflow-y-auto px-1 py-1 space-y-5 border-t border-b border-neutral-100 my-4 text-left">
           {latestEntry.items.map((item, index) => {
-            const isObject = typeof item !== 'string';
-            const title = isObject ? (item as ChangelogItem).title : item;
-            const details = isObject ? (item as ChangelogItem).details : null;
+            const title = item.title;
+            const details = item.details;
+            const type = item.type;
+            const isExpanded = !!expandedItems[index];
+
+            let dotColor = 'bg-primary';
+            if (type === 'fix') {
+              dotColor = 'bg-red-500';
+            } else if (type === 'improvement') {
+              dotColor = 'bg-green-500';
+            }
 
             return (
               <div key={index} className="space-y-1.5">
-                <h4 className="text-foreground text-[14.5px] font-bold flex items-start gap-2 leading-relaxed">
-                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                  <span className="flex-1 break-keep">{title}</span>
-                </h4>
+                <div
+                  className={cn(
+                    "flex items-start gap-2 leading-relaxed select-none",
+                    details && "cursor-pointer hover:opacity-80"
+                  )}
+                  onClick={() => details && toggleItem(index)}
+                >
+                  <span className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${dotColor}`} />
+                  <h4 className="text-foreground text-[14.5px] font-bold flex-1 break-keep">
+                    {title}
+                  </h4>
+                  {details && (
+                    <ChevronDownIcon
+                      className={cn(
+                        "mt-1 size-4 shrink-0 text-neutral-400 transition-transform duration-200",
+                        isExpanded && "rotate-180"
+                      )}
+                    />
+                  )}
+                </div>
 
-                {details && (
+                {details && isExpanded && (
                   <ul className="pl-6 space-y-1.5">
                     {details.map((detail, dIndex) => (
                       <li
