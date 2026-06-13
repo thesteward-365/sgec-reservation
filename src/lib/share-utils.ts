@@ -9,11 +9,11 @@ export interface ShareReservationData {
   purpose: string;
 }
 
-export async function shareText(text: string, title?: string) {
+export async function shareText(text: string) {
   try {
     if (typeof navigator !== 'undefined' && navigator.share) {
       await navigator.share({
-        title,
+        title: '',
         text,
       });
     } else {
@@ -34,15 +34,13 @@ export async function shareText(text: string, title?: string) {
 
 export function formatReservationText(data: ShareReservationData) {
   const { placeName, startTime, endTime, userName, purpose } = data;
-  return `[예약 정보]
-장소: ${placeName}
+  return `장소: ${placeName}
 날짜: ${formatKoreanDate(startTime)}
 시간: ${formatTime(startTime)} – ${formatTime(endTime)}
-예약자: ${userName}
 목적: ${purpose}`;
 }
 
 export async function shareReservation(data: ShareReservationData) {
   const text = formatReservationText(data);
-  await shareText(text, '예약 정보 공유');
+  await shareText(text);
 }

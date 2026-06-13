@@ -4,12 +4,12 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   allowedDevOrigins: [
     'http://192.168.0.105:3000',
-    '192.168.0.107',
+    '192.168.0.101',
 
     'http://0.0.0.0:3000',
     'http://localhost:3000',
     '192.168.0.100',
-    '*.ngrok-free.app',
+    'uphill-snooze-impurity.ngrok-free.dev',
   ],
   async headers() {
     return [

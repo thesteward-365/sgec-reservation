@@ -86,3 +86,15 @@ export function formatTimeAgo(date: Date): string {
 
   return `${Math.floor(diffInMinutes / 1440)}일 전`;
 }
+
+/**
+ * 서버/클라이언트 타임존에 영향받지 않고 항상 KST(한국 표준시, UTC+9) 기준의 오늘 날짜(00:00:00)를 반환합니다.
+ */
+export function getKSTToday(): Date {
+  const now = new Date();
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const kst = new Date(utc + (3600000 * 9));
+  kst.setHours(0, 0, 0, 0);
+  return kst;
+}
+

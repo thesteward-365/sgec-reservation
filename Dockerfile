@@ -36,6 +36,10 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# 마이그레이션 파일 및 스크립트 복사
+COPY --from=builder --chown=nextjs:nodejs /app/drizzle-pg ./drizzle-pg
+COPY --from=builder --chown=nextjs:nodejs /app/src/lib/db/migrate.js ./migrate.js
+
 USER nextjs
 
 EXPOSE 3000
@@ -43,4 +47,5 @@ EXPOSE 3000
 ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 
-CMD ["node", "server.js"]
+# 마이그레이션 실행 후 서버 시작
+CMD ["sh", "-c", "node migrate.js && node server.js"]

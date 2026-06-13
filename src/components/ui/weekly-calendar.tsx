@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, getKSTToday } from '@/lib/utils';
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'] as const;
 
@@ -46,9 +46,7 @@ function WeeklyCalendar({
   className,
 }: WeeklyCalendarProps) {
   const today = React.useMemo(() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
+    return getKSTToday();
   }, []);
 
   const [weekStart, setWeekStart] = React.useState(() =>

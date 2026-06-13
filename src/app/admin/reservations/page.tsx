@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import {
   AdjustmentsHorizontalIcon,
   PlusIcon,
 } from '@heroicons/react/24/outline';
-import { cn } from '@/lib/utils';
+import { cn, getKSTToday } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { BrandHeader } from '@/components/layout/brand-header';
 import { List, ListItem } from '@/components/ui/list';
@@ -29,6 +29,7 @@ import {
 import {
   getExternalEventDateRange,
 } from '@/lib/external-event-dates';
+import { AdminReservationListView } from './_components/admin-reservation-list-view';
 
 type ReservationStatus = 'active' | 'cancelled';
 type AdminReservation = {
@@ -100,8 +101,7 @@ function formatTime(isoString: string): string {
 
 function isPast(isoString: string): boolean {
   const d = new Date(isoString);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = getKSTToday();
   return d < today;
 }
 
@@ -117,13 +117,29 @@ const CHIP_BASE =
 const CHIP_ACTIVE = 'bg-(--color-fg-strong) text-white';
 const CHIP_INACTIVE = 'bg-(--color-neutral-300) text-foreground';
 
-export default function ReservationsPage() {
+function ReservationsContent() {
   const router = useRouter();
-  const [view, setView] = useState<MainView>('calendar');
-  const [listTab, setListTab] = useState<ListTab>('예정');
-  const [selectedDate, setSelectedDate] = useState(() => new Date());
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
+  const view = (searchParams.get('view') as MainView) || 'calendar';
+  const listTab = (searchParams.get('listTab') as ListTab) || '예정';
+
+  function setView(newView: MainView) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('view', newView);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }
+
+  function setListTab(newTab: ListTab) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('listTab', newTab);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }
+
+  const [selectedDate, setSelectedDate] = useState(() => getKSTToday());
   const [viewMonth, setViewMonth] = useState(() => {
-    const now = new Date();
+    const now = getKSTToday();
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
   const [reservations, setReservations] = useState<AdminReservation[]>([]);
@@ -148,7 +164,7 @@ export default function ReservationsPage() {
     dateLabel: string;
     events: ExternalEventSheetItem[];
   } | null>(null);
-  const [now] = useState(() => new Date());
+  const [now] = useState(() => getKSTToday());
 
   // 데이터 로딩: 예약, 장소, 계정
   useEffect(() => {
@@ -354,25 +370,27 @@ export default function ReservationsPage() {
 
           {view === 'calendar' ? (
             <div className="space-y-5">
-              <MonthlyCalendar
-                selectedDate={selectedDate}
-                viewMonth={viewMonth}
-                onSelectDate={(date) => {
-                  setSelectedDate(date);
-                  const nextMonth = new Date(
-                    date.getFullYear(),
-                    date.getMonth(),
-                    1
-                  );
-                  if (nextMonth.getTime() !== viewMonth.getTime()) {
-                    setViewMonth(nextMonth);
-                  }
-                }}
-                onChangeMonth={setViewMonth}
-                indicators={indicatorDates}
-                events={externalEvents}
-                showEvents={false}
-              />
+              <div className="bg-card rounded-xl p-5 shadow-(--shadow-1)">
+                <MonthlyCalendar
+                  selectedDate={selectedDate}
+                  viewMonth={viewMonth}
+                  onSelectDate={(date) => {
+                    setSelectedDate(date);
+                    const nextMonth = new Date(
+                      date.getFullYear(),
+                      date.getMonth(),
+                      1
+                    );
+                    if (nextMonth.getTime() !== viewMonth.getTime()) {
+                      setViewMonth(nextMonth);
+                    }
+                  }}
+                  onChangeMonth={setViewMonth}
+                  indicators={indicatorDates}
+                  events={externalEvents}
+                  showEvents={false}
+                />
+              </div>
 
               {loading ? (
                 <ListSkeleton count={2} className="px-1" />
@@ -522,139 +540,12 @@ export default function ReservationsPage() {
                 ))}
               </div>
 
-              {loading ? (
-                <ListSkeleton count={3} />
-              ) : groupedListView.length === 0 ? (
-                <div className="bg-card rounded-xl px-4 py-10 text-center shadow-(--shadow-1)">
-                  <p className="text-foreground text-[15px] font-semibold">
-                    예약 내역이 없습니다
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-5 px-1">
-                  {groupedListView.map(([dateKey, items]) => {
-                    const events = getExternalEventsForDate(dateKey);
-
-                    return (
-                      <div key={dateKey} className="mb-8 space-y-3">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex min-w-0 flex-1 items-center gap-2">
-                            <h3 className="text-foreground shrink-0 text-body! font-bold">
-                              {items[0].startTime
-                                ? formatDateHeader(items[0].startTime)
-                                : dateKey}
-                            </h3>
-
-                            {dateKey === toYMD(now) && (
-                              <Badge
-                                variant="subtle"
-                                className="shrink-0 bg-transparent px-2 py-0.5 text-[14px]! font-bold"
-                              >
-                                오늘
-                              </Badge>
-                            )}
-
-                            {/* 리스트 뷰 날짜 헤더 옆 행사 배지 */}
-                            {events.length > 0 && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setActiveExternalEvents({
-                                    dateLabel: items[0].startTime
-                                      ? formatDateHeader(items[0].startTime)
-                                      : dateKey,
-                                    events: events,
-                                  })
-                                }
-                                className="min-w-0 rounded-full transition-opacity hover:opacity-80"
-                              >
-                                <Badge
-                                  color="violet"
-                                  className="flex max-w-full items-center gap-1 border-none px-2 py-0.5 text-[12px]! font-bold"
-                                >
-                                  <span className="truncate">
-                                    {events[0].title}
-                                  </span>
-                                  {events.length > 1 && (
-                                    <span className="shrink-0">
-                                      외 {events.length - 1}건
-                                    </span>
-                                  )}
-                                </Badge>
-                              </button>
-                            )}
-                          </div>
-                          <div className="flex shrink-0 items-center gap-2">
-                            <span className="text-muted-foreground text-[13px]">
-                              {items.length}건
-                            </span>
-                          </div>
-                        </div>
-                        <List>
-                          {items.map((reservation) => (
-                            <ListItem
-                              key={reservation.id}
-                              className="px-0 py-0"
-                            >
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  router.push(
-                                    `/admin/reservations/${reservation.id}`
-                                  )
-                                }
-                                className="w-full rounded-none px-4 py-4 text-left transition hover:bg-neutral-50 active:bg-neutral-100"
-                              >
-                                <div className="flex items-center gap-3">
-                                  <div className="flex min-w-18 flex-col items-center justify-center rounded-lg bg-neutral-50 px-3 py-2 text-center">
-                                    <span className="text-foreground font-bold tabular-nums">
-                                      {formatTime(reservation.startTime!)}
-                                    </span>
-                                    <span className="text-muted-foreground mt-1 text-[14px] tabular-nums">
-                                      {formatTime(reservation.endTime!)}
-                                    </span>
-                                  </div>
-                                  <div className="min-w-0 flex-1">
-                                    <div className="flex items-start gap-3">
-                                      <p className="text-foreground truncate text-[16px]! font-bold">
-                                        {reservation.placeName
-                                          ? `${reservation.floorName} ${reservation.placeName}`
-                                          : '장소 없음'}
-                                      </p>
-                                      {reservation.status === 'cancelled' && (
-                                        <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-medium text-red-600">
-                                          취소됨
-                                        </span>
-                                      )}
-                                    </div>
-                                    <p className="text-muted-foreground mt-2 text-[14px]! leading-snug">
-                                      {reservation.userName ? (
-                                        <span
-                                          className={cn(
-                                            currentUser?.id ===
-                                              reservation.userId &&
-                                              'font-bold text-blue-600'
-                                          )}
-                                        >
-                                          {reservation.userName}
-                                        </span>
-                                      ) : (
-                                        ''
-                                      )}
-                                      {reservation.userName ? ' · ' : ''}
-                                      {reservation.purpose}
-                                    </p>
-                                  </div>
-                                </div>
-                              </button>
-                            </ListItem>
-                          ))}
-                        </List>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              <AdminReservationListView
+                filter={filter}
+                listTab={listTab}
+                now={now}
+                currentUser={currentUser}
+              />
             </div>
           )}
         </div>
@@ -684,5 +575,13 @@ export default function ReservationsPage() {
         events={activeExternalEvents?.events ?? []}
       />
     </>
+  );
+}
+
+export default function ReservationsPage() {
+  return (
+    <Suspense fallback={<ListSkeleton count={3} className="p-5" />}>
+      <ReservationsContent />
+    </Suspense>
   );
 }

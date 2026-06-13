@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ShareIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/button';
 import { shareText } from '@/lib/share-utils';
@@ -18,8 +19,10 @@ export function CompleteActions({
   backUrl,
   returnUrl,
 }: Props) {
+  const router = useRouter();
+
   async function handleShare() {
-    await shareText(text, '예약 완료');
+    await shareText(text);
   }
 
   return (
@@ -41,12 +44,15 @@ export function CompleteActions({
           <Link href={backUrl}>동일 장소 예약하기</Link>
         </Button>
       </div>
-      <Link
-        href={returnUrl}
+      <button
+        onClick={() => {
+          router.refresh();
+          router.replace(returnUrl);
+        }}
         className="text-body-sm text-muted-foreground flex justify-center py-2 font-semibold"
       >
         돌아가기
-      </Link>
+      </button>
     </div>
   );
 }

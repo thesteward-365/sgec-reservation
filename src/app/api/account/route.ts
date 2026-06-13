@@ -7,25 +7,51 @@ import { users } from '@/lib/db';
 import { sessionOptions, type SessionData } from '@/lib/session';
 
 export async function GET() {
-  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  const session = await getIronSession<SessionData>(
+    await cookies(),
+    sessionOptions
+  );
   if (!session.user) {
-    return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 });
+    return NextResponse.json(
+      { error: '로그인이 필요합니다.' },
+      { status: 401 }
+    );
   }
 
-  // Fetch latest to get username if it's missing in session
+  // DB에서 최신 정보를 가져옵니다.
   const user = await db.query.users.findFirst({
     where: eq(users.id, session.user.id),
   });
 
   if (!user) {
-    return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 404 });
+    return NextResponse.json(
+      { error: '사용자를 찾을 수 없습니다.' },
+      { status: 404 }
+    );
   }
 
-  return NextResponse.json({ 
-    user: {
+  // 세션 정보가 최신인지 확인하고, 다르면 업데이트합니다.
+  const isStale =
+    session.user.name !== user.name ||
+    session.user.phoneNumber !== user.phoneNumber ||
+    session.user.role !== user.role ||
+    session.user.status !== user.status ||
+    session.user.username !== user.username;
+
+  if (isStale) {
+    session.user = {
       ...session.user,
-      username: user.username,
-    } 
+      name: user.name,
+      phoneNumber: user.phoneNumber,
+      role: user.role,
+      status: user.status,
+      username: user.username || '',
+    };
+    await session.save();
+  }
+
+  return NextResponse.json({
+    user: session.user,
   });
 }
 

@@ -3,6 +3,8 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { sessionOptions, SessionData } from '@/lib/session';
 import { Button } from '@/components/ui/button';
+import { db, users } from '@/lib/db';
+import { eq } from 'drizzle-orm';
 import Link from 'next/link';
 
 export default async function PendingPage() {
@@ -15,7 +17,16 @@ export default async function PendingPage() {
     redirect('/login');
   }
 
-  if (session.user.status === 'approved') {
+  // DB에서 최신 정보를 가져와 상태 확인
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, session.user.id),
+  });
+
+  if (!user || user.status === 'rejected' || user.status === 'withdrawn') {
+    redirect('/api/auth/logout');
+  }
+
+  if (user.status === 'approved') {
     redirect('/reserve');
   }
 
