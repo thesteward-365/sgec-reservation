@@ -118,6 +118,31 @@ export default function AdminChangelogPage() {
                                   </li>
                                 ))}
                               </ul>
+
+                              {(item.beforeImage || item.afterImage) && (
+                                <div className="mt-4 space-y-4 pt-3 border-t border-neutral-200/50">
+                                  {item.beforeImage && (
+                                    <div className="space-y-1 text-left">
+                                      <span className="text-[12px] font-bold text-muted-foreground block pl-0.5">변경 전</span>
+                                      <img
+                                        src={item.beforeImage}
+                                        alt="변경 전"
+                                        className="w-full rounded-lg border border-neutral-200/60 shadow-sm"
+                                      />
+                                    </div>
+                                  )}
+                                  {item.afterImage && (
+                                    <div className="space-y-1 text-left">
+                                      <span className="text-[12px] font-bold text-primary block pl-0.5">변경 후</span>
+                                      <img
+                                        src={item.afterImage}
+                                        alt="변경 후"
+                                        className="w-full rounded-lg border border-neutral-200/60 shadow-sm"
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>

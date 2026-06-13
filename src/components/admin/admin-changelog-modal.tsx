@@ -18,9 +18,7 @@ import { ChevronDownIcon } from '@heroicons/react/24/outline';
 export function AdminChangelogModal() {
   const router = useRouter();
   const [isOpen, setIsOpen] = React.useState(false);
-  const [expandedItems, setExpandedItems] = React.useState<Record<number, boolean>>({
-    0: true, // Default expand the first item (bug fix)
-  });
+  const [expandedItems, setExpandedItems] = React.useState<Record<number, boolean>>({});
 
   const toggleItem = (index: number) => {
     setExpandedItems((prev) => ({
@@ -115,17 +113,28 @@ export function AdminChangelogModal() {
                   )}
                 </div>
 
-                {details && isExpanded && (
-                  <ul className="pl-6 space-y-1.5">
-                    {details.map((detail, dIndex) => (
-                      <li
-                        key={dIndex}
-                        className="text-muted-foreground relative text-[13px] leading-relaxed break-keep list-disc list-outside marker:text-neutral-300"
-                      >
-                        {detail}
-                      </li>
-                    ))}
-                  </ul>
+                {details && (
+                  <div
+                    className={cn(
+                      'grid transition-all duration-200 ease-in-out',
+                      isExpanded
+                        ? 'grid-rows-[1fr] opacity-100'
+                        : 'grid-rows-[0fr] opacity-0'
+                    )}
+                  >
+                    <div className="overflow-hidden">
+                      <ul className="pl-6 pt-1 pb-1 space-y-1.5">
+                        {details.map((detail, dIndex) => (
+                          <li
+                            key={dIndex}
+                            className="text-muted-foreground relative text-[13px] leading-relaxed break-keep list-disc list-outside marker:text-neutral-300"
+                          >
+                            {detail}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
                 )}
               </div>
             );
