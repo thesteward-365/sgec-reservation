@@ -63,13 +63,16 @@ export function MonthlyCalendar({
 }: Props) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
-  // 42일 그리드 생성
+  // 그리드 생성 (각 주가 적어도 하루의 해당 월 날짜를 포함하도록 동적 크기 계산)
   const days = useMemo(() => {
     const firstOfMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), 1);
     const startOfGrid = new Date(firstOfMonth);
     startOfGrid.setDate(firstOfMonth.getDate() - firstOfMonth.getDay());
 
-    return Array.from({ length: 42 }, (_, i) => {
+    const daysInMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0).getDate();
+    const gridLength = Math.ceil((firstOfMonth.getDay() + daysInMonth) / 7) * 7;
+
+    return Array.from({ length: gridLength }, (_, i) => {
       const d = new Date(startOfGrid);
       d.setDate(startOfGrid.getDate() + i);
       return d;
@@ -217,8 +220,7 @@ export function MonthlyCalendar({
               onClick={() => onSelectDate(day)}
               className={cn(
                 'group relative flex aspect-square flex-col items-center justify-center rounded-lg transition-colors',
-                !inMonth && isExpanded && 'opacity-30',
-                !isSel && 'hover:bg-neutral-100'
+                !inMonth && isExpanded && 'opacity-30'
               )}
             >
               {/* 이벤트 배경 */}
@@ -254,6 +256,7 @@ export function MonthlyCalendar({
                   isSel
                     ? 'bg-(--color-fg-strong) font-bold text-white shadow-sm'
                     : [
+                        'group-hover:bg-neutral-100 group-focus:bg-neutral-100',
                         inMonth && dow === 0 && 'text-destructive',
                         inMonth && dow === 6 && 'text-primary',
                         !inMonth && isExpanded && 'text-muted-foreground',

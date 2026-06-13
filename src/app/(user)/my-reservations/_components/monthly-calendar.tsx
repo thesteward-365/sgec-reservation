@@ -43,7 +43,10 @@ export function MonthlyCalendar({
   const startOfGrid = new Date(firstOfMonth);
   startOfGrid.setDate(firstOfMonth.getDate() - firstOfMonth.getDay());
 
-  const days: Date[] = Array.from({ length: 42 }, (_, i) => {
+  const daysInMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0).getDate();
+  const gridLength = Math.ceil((firstOfMonth.getDay() + daysInMonth) / 7) * 7;
+
+  const days: Date[] = Array.from({ length: gridLength }, (_, i) => {
     const d = new Date(startOfGrid);
     d.setDate(startOfGrid.getDate() + i);
     return d;
@@ -120,16 +123,16 @@ export function MonthlyCalendar({
               onClick={() => onSelectDate(day)}
               className={cn(
                 'group relative flex aspect-square items-center justify-center rounded-lg transition-colors',
-                !inMonth && 'opacity-30',
-                !isSel && 'hover:bg-neutral-100'
+                !inMonth && 'opacity-30'
               )}
             >
               <span
                 className={cn(
-                  'relative flex size-9 items-center justify-center rounded-xl text-[14px] font-medium transition-colors',
+                  'relative flex size-8 items-center justify-center rounded-full text-[14px] font-medium transition-colors',
                   isSel
                     ? 'bg-(--color-fg-strong) font-bold text-white'
                     : [
+                        'group-hover:bg-neutral-100 group-focus:bg-neutral-100',
                         inMonth && dow === 0 && 'text-destructive',
                         inMonth && dow === 6 && 'text-primary',
                         !inMonth && 'text-muted-foreground',
