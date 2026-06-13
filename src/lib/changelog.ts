@@ -1,21 +1,45 @@
 export interface ChangelogItem {
   title: string;
+  type?: 'feature' | 'improvement' | 'fix';
   details?: string[];
+  beforeImage?: string;
+  afterImage?: string;
 }
 
 export interface ChangelogEntry {
   version: string;
   date: string;
-  items: (string | ChangelogItem)[];
+  items: ChangelogItem[];
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
-    version: '26.06.01',
-    date: '2026-06-01',
+    version: '26.06.13',
+    date: '2026-06-13',
     items: [
       {
+        title: '시간대 관련 버그 수정',
+        type: 'fix',
+        beforeImage: '/images/changelog/v26.06.13-timezone.png',
+        details: [
+          '사용자 기기나 서버의 시간대 설정에 따라 오늘 날짜가 캘린더에서 잘못 표시되거나 오늘 날짜 선택 및 과거 일정 구분이 비정상적으로 동작하던 오류를 해결했습니다.',
+          '서버와 기기의 설정에 관계없이 항상 대한민국 표준시(KST)를 기준으로 날짜를 계산하도록 통일하여, 어떤 환경에서도 오늘 날짜와 과거 일정이 정확하게 표시됩니다.',
+        ],
+      },
+      {
+        title: '월간 캘린더 접기/펼치기 기능 추가',
+        type: 'improvement',
+        beforeImage: '/images/changelog/v26.06.13-calendar_before.png',
+        afterImage: '/images/changelog/v26.06.13-calendar_after.png',
+        details: [
+          '기존 예약 관리 화면에서 월간 캘린더가 화면을 많이 차지하여 하단의 예약 목록이 가려지던 불편함을 개선했습니다.',
+          '첫 진입 시에는 한 줄짜리 주간 달력 형태로 노출되어 목록 가독성을 높였으며, 필요할 때 연월 제목 옆의 버튼을 눌러 월간 달력으로 펼쳐서 볼 수 있습니다.',
+          '캘린더 확장 상태에 맞게 이전/다음 버튼 동작이 주 단위 혹은 월 단위로 유연하게 연동되도록 보완했습니다.',
+        ],
+      },
+      {
         title: '디자인 개선',
+        type: 'improvement',
         details: [
           '앱 아이콘 및 서비스 이름 업데이트: 서비스의 정체성을 더 명확히 나타내도록 아이콘과 이름(문사방)을 새롭게 단장했습니다.',
           '스플래시 화면 도입: 앱 실행 시 서비스 로고가 표시되는 스플래시 화면을 추가하여 첫인상을 개선했습니다.',
@@ -24,15 +48,17 @@ export const CHANGELOG: ChangelogEntry[] = [
       },
       {
         title: '사용자 환경(UI/UX) 전면 개선',
+        type: 'improvement',
         details: [
           '월간 캘린더 사용성 향상: 캘린더의 시각적 요소를 정돈하고 날짜 선택 및 보기 경험을 개선했습니다.',
-          '디자인 시스템 표준화: 버튼 스타일과 UI 요소의 둥근 모서리(border-radius) 등을 통일하여 시각적 안정감을 높였습니다.',
+          '디자인 시스템 표준화: 버튼 스타일과 UI 요소의 둥근 모서리 등을 통일하여 시각적 안정감을 높였습니다.',
           '예약 프로세스 최적화: 예약 완료 후 목록으로의 이동 등 주요 화면 간의 전환을 더 자연스럽게 조정했습니다.',
           '목록 조회 성능 개선: 예약 목록을 더 빠르고 안정적으로 불러올 수 있도록 내부 구조를 최적화했습니다.',
         ],
       },
       {
         title: '기능 세부 개선 및 안정화',
+        type: 'improvement',
         details: [
           '예약 공유 메시지 통일: 예약 정보를 다른 사람에게 공유할 때 표시되는 메시지 형식을 일관되게 개선했습니다.',
           '변경 이력 정보 강화: 예약 수정 내역에서 어떤 장소가 변경되었는지 한눈에 확인할 수 있도록 정보를 추가했습니다.',
@@ -48,6 +74,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     items: [
       {
         title: '캘린더 연동 및 동기화 기능 강화',
+        type: 'feature',
         details: [
           '동기화 안정성 확보: 캘린더 일정 동기화가 더 정확하고 안정적으로 작동하도록 개선했습니다.',
           '관리자 동기화 현황판 추가: 관리자 페이지에서 캘린더 동기화 상태를 한눈에 확인할 수 있는 요약 정보를 추가했습니다.',
@@ -57,6 +84,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       },
       {
         title: '예약 리스트 및 캘린더 사용성 개선',
+        type: 'improvement',
         details: [
           '예약 목록 가독성 향상: 목록 정렬 방식을 최적화하고 필터 사용을 더 편리하게 개선했습니다.',
           '행사 일정 요약 기능: 예약 목록에서 여러 건의 행사를 한눈에 보기 쉽게 요약하여 표시하고, 클릭 시 상세 내용을 확인할 수 있도록 개선했습니다.',
@@ -66,6 +94,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       },
       {
         title: '계정 및 개인 설정 기능 추가',
+        type: 'feature',
         details: [
           "설정 정보 동기화: '자주 사용하는 목적' 등 개인 설정 정보가 기기에 상관없이 어디서든 유지되도록 개선했습니다.",
           '내 계정 관리 기능: 비밀번호 변경, 회원 탈퇴 기능을 추가하고 관련 페이지를 더 직관적으로 개편했습니다.',
@@ -79,14 +108,28 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: '26.05.14',
     date: '2026-05-14',
     items: [
-      '예약의 상세 변경 이력 조회 페이지 추가',
-      '장소 목록 고정 및 순서 편집 기능 추가',
-      '구글 캘린더 동기화 안정성 강화',
+      {
+        title: '예약의 상세 변경 이력 조회 페이지 추가',
+        type: 'feature',
+      },
+      {
+        title: '장소 목록 고정 및 순서 편집 기능 추가',
+        type: 'feature',
+      },
+      {
+        title: '구글 캘린더 동기화 안정성 강화',
+        type: 'improvement',
+      },
     ],
   },
   {
     version: '26.05.09',
     date: '2026-05-09',
-    items: ['샘깊은교회 장소 예약 서비스 공식 배포'],
+    items: [
+      {
+        title: '샘깊은교회 장소 예약 서비스 공식 배포',
+        type: 'feature',
+      },
+    ],
   },
 ];
