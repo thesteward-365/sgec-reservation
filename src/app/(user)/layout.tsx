@@ -14,10 +14,14 @@ export default async function UserLayout({ children }: { children: React.ReactNo
     redirect('/login');
   }
 
-  // DB에서 최신 정보를 가져와 마이그레이션 여부 확인
+  // DB에서 최신 정보를 가져와 상태 확인
   const user = await db.query.users.findFirst({
     where: eq(users.id, session.user.id),
   });
+
+  if (!user || user.status !== 'approved') {
+    redirect('/api/auth/logout');
+  }
 
   if (user && (!user.username || user.username === user.name)) {
     redirect('/setup-account');

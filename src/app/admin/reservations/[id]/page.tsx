@@ -117,7 +117,7 @@ export default function ReservationDetailPage({
       reservationId: String(reservation.id),
       backUrl: `/admin/reservations/${reservation.id}`,
     });
-    router.push(`/reserve/${reservation.placeId}?${paramsUrl}`);
+    router.replace(`/reserve/${reservation.placeId}?${paramsUrl}`);
   };
 
   const handleConfirmCancel = async () => {
@@ -300,7 +300,7 @@ export default function ReservationDetailPage({
           }
           actions={
             !reservation.isCancelled && (
-              <div className="mt-4 flex w-full flex-col gap-3">
+              <div className="flex w-full flex-col gap-3">
                 <Button
                   variant="contained"
                   color="secondary"

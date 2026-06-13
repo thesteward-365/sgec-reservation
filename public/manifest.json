@@ -1,17 +1,29 @@
 {
-  "name": "샘깊은교회 장소 예약",
-  "short_name": "SGEC 예약",
-  "description": "샘깊은교회 장소 예약 서비스",
+  "name": "문사방",
+  "short_name": "문사방",
+  "description": "문사방",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#0066FF",
+  "theme_color": "#ffffff",
   "icons": [
     {
-      "src": "/logos/logo-192.png",
-      "sizes": "192x192",
+      "src": "/logos/icon-512.png?v=5",
+      "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "/logos/icon-512-maskable.png?v=5",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/logos/icon-192-maskable.png?v=5",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

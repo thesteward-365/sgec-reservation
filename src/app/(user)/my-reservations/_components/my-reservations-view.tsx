@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import {
   AdjustmentsHorizontalIcon,
   PlusIcon,
@@ -16,6 +17,7 @@ import {
   type CalendarEvent,
 } from '@/components/calendar/monthly-calendar';
 import { ReservationItem, type MyReservation } from './reservation-item';
+import { ReservationListView } from './reservation-list-view';
 import { ReservationSheet } from './reservation-sheet';
 import {
   FilterSheet,
@@ -28,6 +30,7 @@ import {
 import { SessionData } from '@/lib/session';
 import { compareReservationByDayAndTime } from '@/lib/services/reservation-sorting';
 import { getExternalEventDateRange } from '@/lib/external-event-dates';
+import { getKSTToday } from '@/lib/utils';
 
 type PlaceTagMap = Record<number, number[]>; // placeId -> tagId[]
 
@@ -72,11 +75,22 @@ type Props = {
   user: SessionData['user'];
 };
 
-export function MyReservationsView({ user }: Props) {
-  const [tab, setTab] = useState<'calendar' | 'list'>('calendar');
-  const [selectedDate, setSelectedDate] = useState(() => new Date());
+function MyReservationsContent({ user }: Props) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const tab = (searchParams.get('tab') as 'calendar' | 'list') || 'calendar';
+
+  function setTab(newTab: 'calendar' | 'list') {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', newTab);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }
+
+  const [selectedDate, setSelectedDate] = useState(() => getKSTToday());
   const [viewMonth, setViewMonth] = useState(() => {
-    const d = new Date();
+    const d = getKSTToday();
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
   const [allReservations, setAllReservations] = useState<MyReservation[]>([]);
@@ -98,7 +112,7 @@ export function MyReservationsView({ user }: Props) {
     dateLabel: string;
     events: ExternalEventSheetItem[];
   } | null>(null);
-  const [now] = useState(() => new Date());
+  const [now] = useState(() => getKSTToday());
 
   // 마운트 시 전체 예약 + 장소 태그 맵 로드
   useEffect(() => {
@@ -298,7 +312,7 @@ export function MyReservationsView({ user }: Props) {
         ) : tab === 'calendar' ? (
           <>
             {/* 월 달력 카드 */}
-            <div className="bg-card rounded-lg px-4 py-4 shadow-(--shadow-1)">
+            <div className="bg-card rounded-xl p-5 shadow-(--shadow-1)">
               <MonthlyCalendar
                 selectedDate={selectedDate}
                 viewMonth={viewMonth}
@@ -380,67 +394,14 @@ export function MyReservationsView({ user }: Props) {
               )}
             </div>
           </>
-        ) : /* 전체 목록 뷰 */ grouped.length === 0 ? (
-          <List emptyMessage="예약 내역이 없어요" />
         ) : (
-          <div className="flex flex-col gap-5">
-            {grouped.map(([ymd, items]) => {
-              const events = getExternalEventsForDate(ymd);
-
-              return (
-                <div key={ymd} className="space-y-3">
-                  <div className="flex items-center justify-between gap-2 px-5">
-                    <div className="flex min-w-0 flex-1 items-center gap-2">
-                      <h3 className="text-foreground shrink-0 text-[15px]! font-bold">
-                        {formatGroupHeader(ymd)}
-                      </h3>
-
-                      {events.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setActiveExternalEvents({
-                              dateLabel: formatGroupHeader(ymd),
-                              events: events,
-                            })
-                          }
-                          className="min-w-0 rounded-full transition-opacity hover:opacity-80"
-                        >
-                          <Badge
-                            color="violet"
-                            className="flex max-w-full items-center gap-1 border-none px-2 py-0.5 text-[12px]! font-bold"
-                          >
-                            <span className="truncate">{events[0].title}</span>
-                            {events.length > 1 && (
-                              <span className="shrink-0">
-                                외 {events.length - 1}건
-                              </span>
-                            )}
-                          </Badge>
-                        </button>
-                      )}
-                    </div>
-                    <span className="text-muted-foreground shrink-0 text-[13px]">
-                      {items.length}건
-                    </span>
-                  </div>
-                  <List>
-                    {items.map((r) => (
-                      <ListItem key={r.id} className="px-0 py-0">
-                        <ReservationItem
-                          reservation={r}
-                          isPast={new Date(r.endTime) < now}
-                          isMine={r.userId === user?.id}
-                          onTap={() => setActiveRes(r)}
-                          flat
-                        />
-                      </ListItem>
-                    ))}
-                  </List>
-                </div>
-              );
-            })}
-          </div>
+          <ReservationListView
+            user={user}
+            filter={filter}
+            placeTagMap={placeTagMap}
+            onSelectReservation={(r) => setActiveRes(r)}
+            now={now}
+          />
         )}
       </div>
 
@@ -478,5 +439,13 @@ export function MyReservationsView({ user }: Props) {
         events={activeExternalEvents?.events ?? []}
       />
     </>
+  );
+}
+
+export function MyReservationsView(props: Props) {
+  return (
+    <Suspense fallback={<ListSkeleton count={3} className="p-5" />}>
+      <MyReservationsContent {...props} />
+    </Suspense>
   );
 }

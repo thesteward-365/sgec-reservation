@@ -15,7 +15,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer';
-import { cn } from '@/lib/utils';
+import { cn, getKSTToday } from '@/lib/utils';
 import {
   type ReservationSchedule,
   formatLocalDate,
@@ -70,8 +70,7 @@ function formatDuration(min: number): string {
 }
 
 function getInitialDate(value?: string): string {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = getKSTToday();
   return formatLocalDate(parseLocalDate(value) ?? today);
 }
 
@@ -342,17 +341,21 @@ export function PlaceDetailView({
         mode: isEditMode ? 'edit' : 'create',
       });
       if (backUrl) params.set('backUrl', backUrl);
-      router.push(`/reserve/${place.id}/complete?${params}`);
+      router.replace(`/reserve/${place.id}/complete?${params}`);
     });
   }
 
   const handleBack = () => {
-    if (backUrl) {
-      router.push(backUrl);
-    } else if (isEditMode) {
-      router.push('/my-reservations');
+    if (isEditMode) {
+      if (backUrl?.includes('/admin/reservations')) {
+        router.replace('/admin/reservations');
+      } else {
+        router.replace('/my-reservations');
+      }
+    } else if (backUrl) {
+      router.replace(backUrl);
     } else {
-      router.push(`/reserve?date=${selectedDate}`);
+      router.replace(`/reserve?date=${selectedDate}`);
     }
   };
 
@@ -650,6 +653,7 @@ export function PlaceDetailView({
                             String(editReservationId)
                           );
                         }
+                        if (backUrl) nextParams.set('backUrl', backUrl);
                         router.replace(`/reserve/${p.id}?${nextParams}`);
                       }}
                       className={cn(
@@ -703,7 +707,7 @@ export function PlaceDetailView({
           <div className="bg-card mx-5 mb-4 rounded-lg px-4 py-3 shadow-(--shadow-1)">
             <WeeklyCalendar
               key={selectedDate}
-              defaultDate={parseLocalDate(selectedDate) ?? new Date()}
+              defaultDate={parseLocalDate(selectedDate) ?? getKSTToday()}
               selectedDate={parseLocalDate(selectedDate) ?? undefined}
               onDateSelect={(date) => {
                 setLoading(true);

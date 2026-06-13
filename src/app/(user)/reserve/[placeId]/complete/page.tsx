@@ -78,9 +78,17 @@ export default async function ReservationCompletePage({
       : '–';
   const dateLabel = date ? formatKoreanDate(date) : '–';
 
-  // backUrl이 있으면 그것을 우선 사용, 없으면 기본적으로 나의 예약 목록으로 이동
-  const returnUrl = sp.backUrl ?? '/my-reservations';
-
+  // 관리자가 상세 페이지에서 수정한 경우(/admin/reservations/숫자 등) 무조건 관리 목록으로 이동
+  const isFromAdmin = sp.backUrl?.includes('/admin/reservations');
+  const returnUrl = isFromAdmin ? '/admin/reservations' : '/my-reservations';
+  console.log(
+    'backUrl:',
+    sp.backUrl,
+    'isFromAdmin:',
+    isFromAdmin,
+    'returnUrl:',
+    returnUrl
+  );
   const rows = [
     { label: '장소', value: placeLabel },
     { label: '날짜', value: dateLabel },
