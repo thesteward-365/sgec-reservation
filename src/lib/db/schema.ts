@@ -113,6 +113,7 @@ export const reservations = pgTable('reservations', {
   purpose: text('purpose').notNull(),
   status: reservationStatusEnum('status').notNull().default('active'),
   googleEventId: text('google_event_id'),
+  googleEventUrl: text('google_event_url'),
   createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
     .defaultNow(),

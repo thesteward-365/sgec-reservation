@@ -256,7 +256,7 @@ describe('calendar-service new sync logic', () => {
 
     expect(state.calendarClient.events.insert).toHaveBeenCalled();
     expect(result.counts.reservationCreated).toBe(1);
-    expect(state.reservationUpdates).toContainEqual({ googleEventId: 'new-google-id' });
+    expect(state.reservationUpdates).toContainEqual(expect.objectContaining({ googleEventId: 'new-google-id' }));
     expect(state.insertedItems.find(i => i.reservationId === 1)?.status).toBe('success');
   });
 
@@ -375,7 +375,7 @@ describe('calendar-service new sync logic', () => {
     const result = await syncAll('manual');
 
     expect(result.counts.reservationCreated).toBe(1);
-    expect(state.reservationUpdates).toContainEqual({ googleEventId: 'recreated-id' });
+    expect(state.reservationUpdates).toContainEqual(expect.objectContaining({ googleEventId: 'recreated-id' }));
   });
 
   it('SyncAll: handles Cancelled with Google ID (Delete)', async () => {
@@ -396,7 +396,7 @@ describe('calendar-service new sync logic', () => {
       expect.objectContaining({ eventId: 'id-to-delete' })
     );
     expect(result.counts.reservationDeleted).toBe(1);
-    expect(state.reservationUpdates).toContainEqual({ googleEventId: null });
+    expect(state.reservationUpdates).toContainEqual(expect.objectContaining({ googleEventId: null }));
   });
 
   it('SyncAll: cleans up local ID when Cancelled is already missing in Google', async () => {
@@ -414,7 +414,7 @@ describe('calendar-service new sync logic', () => {
     const result = await syncAll('manual');
 
     expect(result.counts.reservationDeleted).toBe(1);
-    expect(state.reservationUpdates).toContainEqual({ googleEventId: null });
+    expect(state.reservationUpdates).toContainEqual(expect.objectContaining({ googleEventId: null }));
     expect(state.insertedItems.find(i => i.reservationId === 6)?.status).toBe('success');
   });
 
@@ -434,7 +434,7 @@ describe('calendar-service new sync logic', () => {
 
     expect(result.status).toBe('success');
     expect(result.externalEventId).toBe('indiv-id');
-    expect(state.reservationUpdates).toContainEqual({ googleEventId: 'indiv-id' });
+    expect(state.reservationUpdates).toContainEqual(expect.objectContaining({ googleEventId: 'indiv-id' }));
   });
 
   it('SyncReservationWithRun: records failure when Google connection is missing', async () => {

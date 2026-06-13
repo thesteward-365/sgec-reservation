@@ -633,7 +633,7 @@ export async function syncReservation(
         }
         await db
           .update(reservations)
-          .set({ googleEventId: null })
+          .set({ googleEventId: null, googleEventUrl: null })
           .where(eq(reservations.id, row.id));
       }
       return {
@@ -649,11 +649,15 @@ export async function syncReservation(
     // Active reservation
     if (row.googleEventId) {
       try {
-        await calendar.events.update({
+        const event = await calendar.events.update({
           calendarId: settings.calendarId,
           eventId: row.googleEventId,
           requestBody: buildEventBody(row as ReservationRow),
         });
+        await db
+          .update(reservations)
+          .set({ googleEventUrl: event.data.htmlLink ?? null })
+          .where(eq(reservations.id, row.id));
       } catch (error) {
         const status = getErrorStatus(error);
         if (status === 404 || status === 410) {
@@ -665,7 +669,10 @@ export async function syncReservation(
           finalAction = 'created';
           await db
             .update(reservations)
-            .set({ googleEventId: eventId })
+            .set({ 
+              googleEventId: eventId,
+              googleEventUrl: recreated.data.htmlLink ?? null,
+            })
             .where(eq(reservations.id, row.id));
         } else {
           throw error;
@@ -680,7 +687,10 @@ export async function syncReservation(
       finalAction = 'created';
       await db
         .update(reservations)
-        .set({ googleEventId: eventId })
+        .set({ 
+          googleEventId: eventId,
+          googleEventUrl: event.data.htmlLink ?? null,
+        })
         .where(eq(reservations.id, row.id));
     }
 

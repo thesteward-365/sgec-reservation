@@ -194,6 +194,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
         endTime: reservations.endTime,
         status: reservations.status,
         googleEventId: reservations.googleEventId,
+        googleEventUrl: reservations.googleEventUrl,
         updatedAt: reservations.updatedAt,
       })
       .from(reservations)
@@ -213,10 +214,6 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
       return NextResponse.json({
         ...reservation,
-        googleEventUrl:
-          reservation.status === 'cancelled'
-            ? null
-            : await getGoogleEventUrl('reservation', reservation.googleEventId),
         googleSync,
         isCancelled: reservation.status === 'cancelled',
       });
