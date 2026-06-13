@@ -11,8 +11,8 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
-    version: '26.06.01',
-    date: '2026-06-01',
+    version: '26.06.13',
+    date: '2026-06-13',
     items: [
       {
         title: '디자인 개선',
@@ -26,7 +26,7 @@ export const CHANGELOG: ChangelogEntry[] = [
         title: '사용자 환경(UI/UX) 전면 개선',
         details: [
           '월간 캘린더 사용성 향상: 캘린더의 시각적 요소를 정돈하고 날짜 선택 및 보기 경험을 개선했습니다.',
-          '디자인 시스템 표준화: 버튼 스타일과 UI 요소의 둥근 모서리(border-radius) 등을 통일하여 시각적 안정감을 높였습니다.',
+          '디자인 시스템 표준화: 버튼 스타일과 UI 요소의 둥근 모서리 등을 통일하여 시각적 안정감을 높였습니다.',
           '예약 프로세스 최적화: 예약 완료 후 목록으로의 이동 등 주요 화면 간의 전환을 더 자연스럽게 조정했습니다.',
           '목록 조회 성능 개선: 예약 목록을 더 빠르고 안정적으로 불러올 수 있도록 내부 구조를 최적화했습니다.',
         ],
