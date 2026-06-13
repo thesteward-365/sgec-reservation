@@ -60,7 +60,10 @@ export function AdminChangelogModal() {
       }
       setIsOpen(open);
     }}>
-      <DialogContent className="max-w-lg w-[calc(100%-48px)] p-6 rounded-lg bg-card shadow-(--shadow-4)">
+      <DialogContent
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        className="max-w-lg w-[calc(100%-48px)] p-6 rounded-lg bg-card shadow-(--shadow-4)"
+      >
         <DialogHeader className="mb-4">
           <div className="flex items-center gap-2 mb-1">
             <span className="inline-flex items-center rounded-full bg-accent-subtle px-2.5 py-0.5 text-xs font-semibold text-primary">
