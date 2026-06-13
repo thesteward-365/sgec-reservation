@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { AdminBottomNav } from './admin-bottom-nav';
 import { cn } from '@/lib/utils';
 import { shouldHideBottomNav } from '@/lib/nav-utils';
+import { AdminChangelogModal } from '@/components/admin/admin-changelog-modal';
 
 interface AdminShellProps {
   children: React.ReactNode;
@@ -32,6 +33,7 @@ function AdminShell({
       >
         {children}
         {!shouldHideNav && <AdminBottomNav />}
+        <AdminChangelogModal />
       </div>
     </div>
   );
