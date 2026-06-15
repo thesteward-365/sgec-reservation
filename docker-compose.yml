@@ -24,33 +24,39 @@ services:
       DOCKER_API_VERSION: '1.43'
       WATCHTOWER_NOTIFICATION_URL: ${WATCHTOWER_TELEGRAM_URL}
       WATCHTOWER_NOTIFICATIONS_LEVEL: info
+      WATCHTOWER_NOTIFICATION_REPORT: 'true'
       REPO_USER: ${GHCR_USER}
       REPO_PASS: ${GHCR_TOKEN}
       WATCHTOWER_NOTIFICATION_TEMPLATE: |
-        {{- if .Report.Updated}}
-        ✅ *새 버전 배포 완료*
-        {{range .Report.Updated}}  • {{.Name}}
-        {{end}}
-        {{- end}}
-        {{- if .Report.Failed}}
-        ❌ *배포 실패*
-        {{range .Report.Failed}}  • {{.Name}}
-        {{end}}
-        {{- end}}
-        {{- if not .Report.Updated}}{{- if not .Report.Failed}}
-        ☑️ yeyak 최신 상태 유지 중
-        {{- end}}{{- end}}
+        {{- if .Report -}}
+          {{- with .Report -}}
+            {{- if .Updated -}}
+            ✅ *새 버전 배포 완료*
+            {{- range .Updated}}
+              • {{.Name}}
+            {{- end}}
+            {{- end}}
+            {{- if .Failed -}}
+            ❌ *배포 실패*
+            {{- range .Failed}}
+              • {{.Name}}
+            {{- end}}
+            {{- end}}
+          {{- end -}}
+        {{- else -}}
+          {{range .Entries -}}{{.Message}}{{"\n"}}{{- end -}}
+        {{- end -}}
     restart: always
 
-  # 3. Uptime Kuma: 서비스 상태 모니터링
-  uptime-kuma:
-    image: louislam/uptime-kuma:1
-    container_name: yeyak-uptime-kuma
-    volumes:
-      - ./uptime-kuma-data:/app/data
-    ports:
-      - '3001:3001'
-    restart: always
+  # # 3. Uptime Kuma: 서비스 상태 모니터링
+  # uptime-kuma:
+  #   image: louislam/uptime-kuma:1
+  #   container_name: yeyak-uptime-kuma
+  #   volumes:
+  #     - ./uptime-kuma-data:/app/data
+  #   ports:
+  #     - '3001:3001'
+  #   restart: always
 
   # 4. PostgreSQL DB
   db:
