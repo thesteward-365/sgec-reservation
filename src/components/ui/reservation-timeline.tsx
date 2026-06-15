@@ -82,16 +82,36 @@ export function ReservationTimeline({
       // Subtract OFFSET_Y to get back to the logical coordinate system
       const logicalY = y - OFFSET_Y;
       const rawMin = (logicalY / SLOT_H) * SLOT_MIN + START_HOUR * 60;
-      const snapped = Math.round(rawMin / SLOT_MIN) * SLOT_MIN;
+
+      const isLabelArea = e.clientX < rect.left;
       const dur = selection.endMin - selection.startMin;
-      const newStart = Math.max(
-        START_HOUR * 60,
-        Math.min(END_HOUR * 60 - dur, snapped)
-      );
-      onSelectionChange({ startMin: newStart, endMin: newStart + dur });
+
+      if (isLabelArea) {
+        // 레이블 영역: 정각 라인 근처(±SLOT_H/2 px)에서만 반응
+        // 가장 가까운 정각 라인까지의 픽셀 거리를 계산
+        const nearestHour = Math.round(rawMin / 60) * 60;
+        const nearestHourY = minToY(nearestHour) - OFFSET_Y; // logicalY 기준
+        const distPx = Math.abs(logicalY - nearestHourY);
+        // 히트 범위: 슬롯 높이(SLOT_H)의 절반 = 14px
+        if (distPx > SLOT_H / 2) return;
+        const newStart = Math.max(
+          START_HOUR * 60,
+          Math.min(END_HOUR * 60 - dur, nearestHour)
+        );
+        onSelectionChange({ startMin: newStart, endMin: newStart + dur });
+      } else {
+        // 슬롯 영역: 해당 30분 슬롯의 시작(위쪽 라인)으로 스냅
+        const snapped = Math.floor(rawMin / SLOT_MIN) * SLOT_MIN;
+        const newStart = Math.max(
+          START_HOUR * 60,
+          Math.min(END_HOUR * 60 - dur, snapped)
+        );
+        onSelectionChange({ startMin: newStart, endMin: newStart + dur });
+      }
     },
     [selection, onSelectionChange]
   );
+
 
   const hourLabels = Array.from(
     { length: END_HOUR - START_HOUR + 1 },
