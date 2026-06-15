@@ -7,7 +7,11 @@ import { Card } from '@/components/ui/card';
 import { List, ListItem } from '@/components/ui/list';
 import { ListSkeleton } from '@/components/ui/list-skeleton';
 import { CheckIcon } from '@heroicons/react/24/solid';
-import { EllipsisHorizontalIcon } from '@heroicons/react/24/outline';
+import {
+  EllipsisHorizontalIcon,
+  EllipsisVerticalIcon,
+} from '@heroicons/react/24/outline';
+import { TrashIcon } from '@heroicons/react/24/outline';
 import {
   Drawer,
   DrawerContent,
@@ -59,6 +63,7 @@ export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [menuUser, setMenuUser] = useState<User | null>(null);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
   useEffect(() => {
     fetch('/api/admin/users')
@@ -88,6 +93,24 @@ export default function UsersPage() {
     setMenuUser((prev) =>
       prev?.id === updated.id ? { ...prev, ...updated } : prev
     );
+  }
+
+  async function callDelete(userId: number, userName: string) {
+    const confirmed = window.confirm(
+      `'${userName}' 계정을 완전히 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다. 해당 사용자의 예약 내역은 삭제되지 않고 보존됩니다.`
+    );
+    if (!confirmed) return;
+
+    const res = await fetch(`/api/admin/users/${userId}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error || '삭제 중 오류가 발생했습니다.');
+      return;
+    }
+    setUsers((prev) => prev.filter((u) => u.id !== userId));
+    setMenuUser(null);
   }
 
   // ── 승인 대기 렌더 ─────────────────────────────────
@@ -267,7 +290,12 @@ export default function UsersPage() {
       {/* 사용자 액션 드로어 */}
       <Drawer
         open={!!menuUser}
-        onOpenChange={(open) => !open && setMenuUser(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setMenuUser(null);
+            setMoreMenuOpen(false);
+          }
+        }}
       >
         <DrawerContent>
           {menuUser && (
@@ -278,32 +306,68 @@ export default function UsersPage() {
               </DrawerTitle>
 
               {/* 프로필 정보 — 배경으로 섹션 구분 */}
-              <div className="bg-muted/50 mx-4 mt-2 mb-4 rounded-lg px-4 py-4">
-                <div className="space-y-2.5">
-                  {(
-                    [
-                      { label: '이름', value: menuUser.name },
-                      { label: '아이디', value: menuUser.username || '-' },
-                      { label: '전화번호', value: menuUser.phoneNumber },
-                      {
-                        label: '가입일',
-                        value:
-                          formatJoinDate(menuUser.createdAt)?.replace(
-                            '가입 ',
-                            ''
-                          ) ?? '-',
-                      },
-                    ] as { label: string; value: string }[]
-                  ).map(({ label, value }) => (
-                    <div key={label} className="flex items-center gap-4">
-                      <span className="text-caption text-muted-foreground w-14 shrink-0">
-                        {label}
-                      </span>
-                      <span className="text-body-sm text-foreground font-medium">
-                        {value}
-                      </span>
-                    </div>
-                  ))}
+              <div className="relative mx-4 mt-2 mb-4">
+                <div className="bg-muted/50 rounded-lg px-4 py-4">
+                  <div className="space-y-2.5">
+                    {(
+                      [
+                        { label: '이름', value: menuUser.name },
+                        { label: '아이디', value: menuUser.username || '-' },
+                        { label: '전화번호', value: menuUser.phoneNumber },
+                        {
+                          label: '가입일',
+                          value:
+                            formatJoinDate(menuUser.createdAt)?.replace(
+                              '가입 ',
+                              ''
+                            ) ?? '-',
+                        },
+                      ] as { label: string; value: string }[]
+                    ).map(({ label, value }) => (
+                      <div key={label} className="flex items-center gap-4">
+                        <span className="text-caption text-muted-foreground w-14 shrink-0">
+                          {label}
+                        </span>
+                        <span className="text-body-sm text-foreground font-medium">
+                          {value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 우측 상단 더보기 메뉴 */}
+                <div className="absolute top-2 right-2">
+                  <button
+                    className="text-muted-foreground hover:text-foreground flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-neutral-200 active:bg-neutral-300"
+                    onClick={() => setMoreMenuOpen((v) => !v)}
+                    aria-label="더보기"
+                  >
+                    <EllipsisVerticalIcon className="h-4 w-4" />
+                  </button>
+
+                  {/* 드롭다운 패널 */}
+                  {moreMenuOpen && (
+                    <>
+                      {/* 외부 클릭 닫기 오버레이 */}
+                      <div
+                        className="fixed inset-0 z-10"
+                        onClick={() => setMoreMenuOpen(false)}
+                      />
+                      <div className="bg-card border-border/40 absolute top-9 right-0 z-20 min-w-[160px] overflow-hidden rounded-md border shadow-lg">
+                        <button
+                          className="text-danger hover:bg-danger-subtle flex w-full items-center gap-2.5 px-4 py-3 text-[14px] font-medium transition-colors"
+                          onClick={() => {
+                            setMoreMenuOpen(false);
+                            callDelete(menuUser.id, menuUser.name);
+                          }}
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                          계정 삭제
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -381,8 +445,8 @@ export default function UsersPage() {
                     정보 수정
                   </Button>
                   <Button
-                    variant="outlined"
-                    color="error"
+                    variant="subtle"
+                    color="secondary"
                     size="large"
                     className="w-full"
                     onClick={() => {

@@ -133,4 +133,27 @@ export class UserService {
       status: 'withdrawn', // 탈퇴 상태로 변경
     });
   }
+
+  /**
+   * 유저를 완전히 삭제합니다 (hard delete).
+   * - 관리자만 실행 가능
+   * - 자기 자신은 삭제 불가
+   * - 예약 데이터는 userId=null로 보존됨 (SET NULL 외래키 전략)
+   */
+  static async deleteUser(userId: number, actor: UserActor) {
+    if (actor.role !== 'admin') {
+      throw new Error('Unauthorized');
+    }
+
+    if (userId === actor.id) {
+      throw new Error('자기 자신은 삭제할 수 없습니다.');
+    }
+
+    const user = await UserRepository.findById(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    await UserRepository.deleteById(userId);
+  }
 }
