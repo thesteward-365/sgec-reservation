@@ -52,5 +52,6 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# 마이그레이션 실행 후 서버 시작
-CMD ["sh", "-c", "node migrate.js && node server.js"]
+# 마이그레이션 실행 후 서버 시작 (수동 실행 시: docker exec yeyak node migrate.js)
+# CMD ["sh", "-c", "node migrate.js && node server.js"]
+CMD ["node", "server.js"]

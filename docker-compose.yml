@@ -21,11 +21,25 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     command: --interval 60 --cleanup yeyak
     environment:
-      - DOCKER_API_VERSION=1.43
-      - WATCHTOWER_NOTIFICATION_URL=${WATCHTOWER_TELEGRAM_URL}
-      - WATCHTOWER_NOTIFICATIONS_LEVEL=info
-      - REPO_USER=${GHCR_USER}
-      - REPO_PASS=${GHCR_TOKEN}
+      DOCKER_API_VERSION: '1.43'
+      WATCHTOWER_NOTIFICATION_URL: ${WATCHTOWER_TELEGRAM_URL}
+      WATCHTOWER_NOTIFICATIONS_LEVEL: info
+      REPO_USER: ${GHCR_USER}
+      REPO_PASS: ${GHCR_TOKEN}
+      WATCHTOWER_NOTIFICATION_TEMPLATE: |
+        {{- if .Report.Updated}}
+        ✅ *새 버전 배포 완료*
+        {{range .Report.Updated}}  • {{.Name}}
+        {{end}}
+        {{- end}}
+        {{- if .Report.Failed}}
+        ❌ *배포 실패*
+        {{range .Report.Failed}}  • {{.Name}}
+        {{end}}
+        {{- end}}
+        {{- if not .Report.Updated}}{{- if not .Report.Failed}}
+        ☑️ yeyak 최신 상태 유지 중
+        {{- end}}{{- end}}
     restart: always
 
   # 3. Uptime Kuma: 서비스 상태 모니터링
