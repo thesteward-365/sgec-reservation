@@ -102,8 +102,7 @@ export const placeTags = pgTable(
 export const reservations = pgTable('reservations', {
   id: serial('id').primaryKey(),
   userId: integer('user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
+    .references(() => users.id, { onDelete: 'set null' }),
   placeId: integer('place_id')
     .notNull()
     .references(() => places.id, { onDelete: 'cascade' }),

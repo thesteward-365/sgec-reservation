@@ -68,3 +68,30 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: error.message }, { status });
   }
 }
+
+export async function DELETE(_request: NextRequest, { params }: Params) {
+  try {
+    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+    if (!session.user || session.user.role !== 'admin') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const userId = parseInt(id);
+    if (isNaN(userId)) {
+      return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
+    }
+
+    await UserService.deleteUser(userId, session.user);
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('DELETE /api/admin/users/[id] error:', error);
+    const status =
+      error.message === 'User not found'
+        ? 404
+        : error.message === '자기 자신은 삭제할 수 없습니다.'
+          ? 400
+          : 500;
+    return NextResponse.json({ error: error.message }, { status });
+  }
+}

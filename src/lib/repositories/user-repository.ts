@@ -18,4 +18,12 @@ export class UserRepository {
     const rows = await tx.update(users).set(data).where(eq(users.id, id)).returning();
     return rows[0];
   }
+
+  /**
+   * 유저를 완전히 삭제합니다.
+   * reservations.user_id는 SET NULL 전략으로 예약 데이터는 보존됩니다.
+   */
+  static async deleteById(id: number, tx: any = db): Promise<void> {
+    await tx.delete(users).where(eq(users.id, id));
+  }
 }
