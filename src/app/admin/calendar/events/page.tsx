@@ -211,7 +211,7 @@ export default function AdminCalendarEventsPage() {
                                   month: 'long',
                                   day: 'numeric',
                                   weekday: 'short',
-                                }).format(new Date(event.endTime))}
+                                }).format(new Date(`${endDate}T00:00:00`))}
                               </>
                             )}
                           </p>
