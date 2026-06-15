@@ -31,6 +31,7 @@ import { SessionData } from '@/lib/session';
 import { compareReservationByDayAndTime } from '@/lib/services/reservation-sorting';
 import { getExternalEventDateRange } from '@/lib/external-event-dates';
 import { getKSTToday } from '@/lib/utils';
+import { queryClient } from '@/lib/query-client';
 
 type PlaceTagMap = Record<number, number[]>; // placeId -> tagId[]
 
@@ -165,6 +166,10 @@ function MyReservationsContent({ user }: Props) {
 
   // 예약 취소 후 목록 새로고침
   function handleCancelled() {
+    // 전체 목록 탭(ReservationListView)의 캐시 무효화
+    queryClient.invalidateQueries({ queryKey: ['reservations'] });
+
+    // 캘린더 탭 state 업데이트
     fetch('/api/my-reservations')
       .then((r) => r.json())
       .then((reservations) => {

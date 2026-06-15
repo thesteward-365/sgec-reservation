@@ -27,6 +27,7 @@ import { toast } from 'sonner';
 import { shareReservation } from '@/lib/share-utils';
 import { formatKoreanDate, formatTime, toYMD } from '@/lib/date-utils';
 import { cn } from '@/lib/utils';
+import { queryClient } from '@/lib/query-client';
 
 interface Reservation extends BaseReservation {
   isCancelled?: boolean;
@@ -130,6 +131,7 @@ export default function ReservationDetailPage({
       if (!res.ok) throw new Error();
       setConfirmOpen(false);
       toast.success('예약을 취소했어요');
+      await queryClient.invalidateQueries({ queryKey: ['admin-reservations'] });
       router.push('/admin/reservations');
     } catch {
       toast.error('예약 취소에 실패했어요');

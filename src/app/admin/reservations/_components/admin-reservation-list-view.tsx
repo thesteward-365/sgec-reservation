@@ -4,7 +4,6 @@ import { useMemo, useEffect, useRef, useState } from 'react';
 import {
   useInfiniteQuery,
   useQueries,
-  QueryClient,
   QueryClientProvider,
 } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
@@ -18,15 +17,7 @@ import {
   type ExternalEventSheetItem,
 } from '@/components/reservations/external-events-sheet';
 import { getExternalEventDateRange } from '@/lib/external-event-dates';
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: true,
-      staleTime: 1000 * 60, // 1 minute
-    },
-  },
-});
+import { queryClient } from '@/lib/query-client';
 
 type AdminReservation = {
   id: number;
