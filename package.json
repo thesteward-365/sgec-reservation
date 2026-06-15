@@ -1,6 +1,6 @@
 {
   "name": "sgec-reservation",
-  "version": "26.06.13",
+  "version": "26.06.15",
   "private": true,
   "scripts": {
     "dev": "next dev",
