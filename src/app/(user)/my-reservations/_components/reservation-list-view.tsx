@@ -147,16 +147,19 @@ function ReservationListInner({
   });
 
   const allExternalEvents = useMemo(() => {
-    const events: any[] = [];
+    // 여러 달 조회 결과를 id 기준으로 중복 제거하며 합산
+    const eventsMap = new Map<number, any>();
     externalEventsQueries.forEach((q) => {
       if (q.data) {
         (q.data as any[]).forEach((ev) => {
-          const { startDate, endDate } = getExternalEventDateRange(ev);
-          events.push({ ...ev, startDate, endDate });
+          if (!eventsMap.has(ev.id)) {
+            const { startDate, endDate } = getExternalEventDateRange(ev);
+            eventsMap.set(ev.id, { ...ev, startDate, endDate });
+          }
         });
       }
     });
-    return events;
+    return Array.from(eventsMap.values());
   }, [externalEventsQueries]);
 
   const getExternalEventsForDate = (ymd: string): ExternalEventSheetItem[] => {
