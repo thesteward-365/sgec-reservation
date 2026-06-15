@@ -43,6 +43,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       {
         title: '여러 달에 걸친 행사가 중복 표시되던 문제 해결',
         type: 'fix',
+        beforeImage: '/images/changelog/v26.06.15-events.png',
         details: [
           '예약 목록에서 5월과 6월이 함께 보이는 경우, 두 달에 걸친 외부 행사(예: 5월 28일~6월 3일)가 중복되어 두 번 표시되던 오류를 수정했습니다.',
           '관리자 및 사용자 예약 목록 전체 목록 탭 모두 적용됩니다.',
