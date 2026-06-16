@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -15,13 +15,26 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { XMarkIcon } from '@heroicons/react/24/solid';
 import { Eye, EyeOff } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 type FormData = z.infer<typeof signupSchema>;
+
+interface Department {
+  id: number;
+  name: string;
+}
 
 export default function SignupPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [departments, setDepartments] = useState<Department[]>([]);
 
   const {
     register,
@@ -34,18 +47,38 @@ export default function SignupPage() {
     mode: 'onChange',
   });
 
+  useEffect(() => {
+    register('departmentId');
+  }, [register]);
+
+  useEffect(() => {
+    fetch('/api/departments')
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setDepartments(data);
+        }
+      })
+      .catch(console.error);
+  }, []);
+
   const username = watch('username');
   const password = watch('password');
   const name = watch('name');
   const phoneNumber = watch('phoneNumber');
+  const departmentId = watch('departmentId');
 
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);
     try {
+      const payload = {
+        ...data,
+        departmentId: data.departmentId ? Number(data.departmentId) : null,
+      };
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
 
       const result = await res.json();
@@ -188,6 +221,39 @@ export default function SignupPage() {
           </div>
           {errors.phoneNumber && (
             <p className="text-sm text-red-500">{errors.phoneNumber.message}</p>
+          )}
+        </div>
+
+        {/* 소속 */}
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="departmentId">
+            소속{' '}
+            <span className="text-muted-foreground text-body-xs font-normal">
+              (선택)
+            </span>
+          </Label>
+          <Select
+            value={departmentId || 'none'}
+            onValueChange={(val) => {
+              setValue('departmentId', val === 'none' ? null : val, { shouldValidate: true });
+            }}
+          >
+            <SelectTrigger id="departmentId" className="w-full">
+              <SelectValue placeholder="소속 선택 안 함" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">소속 선택 안 함</SelectItem>
+              {departments.map((dept) => (
+                <SelectItem key={dept.id} value={String(dept.id)}>
+                  {dept.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.departmentId && (
+            <p className="text-sm text-red-500">
+              {errors.departmentId.message}
+            </p>
           )}
         </div>
         <p className="text-body-xs text-muted-foreground mt-4 text-center">

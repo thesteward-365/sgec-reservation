@@ -1,43 +1,52 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { BrandHeader } from '@/components/layout/brand-header';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { List, ListItem } from '@/components/ui/list';
 import { ListSkeleton } from '@/components/ui/list-skeleton';
-import { CheckIcon } from '@heroicons/react/24/solid';
+import { CheckIcon, PlusIcon } from '@heroicons/react/24/solid';
 import {
   EllipsisHorizontalIcon,
   EllipsisVerticalIcon,
+  BuildingOfficeIcon,
+  PencilIcon,
+  TrashIcon,
+  Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
-import { TrashIcon } from '@heroicons/react/24/outline';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerTitle,
-  DrawerClose,
-} from '@/components/ui/drawer';
+import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer';
 import { Switch } from '@/components/ui/switch';
 import { Chip } from '@/components/ui/chip';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface User {
   id: number;
   name: string;
   username: string | null;
   phoneNumber: string;
+  departmentId: number | null;
+  department: string | null;
   role: 'user' | 'admin';
   status: 'pending' | 'approved' | 'rejected' | 'withdrawn';
   createdAt: string | null;
 }
 
-type TabType = '승인 대기' | '전체 사용자';
+interface Department {
+  id: number;
+  name: string;
+  order: number;
+}
 
-const CHIP_BASE =
-  'inline-flex items-center font-medium leading-none rounded-pill px-3 py-[6px] text-caption transition-colors duration-120 cursor-pointer select-none whitespace-nowrap';
-const CHIP_ACTIVE = 'bg-(--color-fg-strong) text-white';
-const CHIP_INACTIVE = 'bg-neutral-300 text-foreground';
+type TabType = '승인 대기' | '전체 사용자';
 
 function formatTimeAgo(isoString: string | null): string {
   if (!isoString) return '';
@@ -59,11 +68,16 @@ function formatJoinDate(isoString: string | null): string {
 }
 
 export default function UsersPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('승인 대기');
+  const [selectedDeptFilter, setSelectedDeptFilter] = useState<string>('all');
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [menuUser, setMenuUser] = useState<User | null>(null);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+
+  // 소속 데이터
+  const [departments, setDepartments] = useState<Department[]>([]);
 
   useEffect(() => {
     fetch('/api/admin/users')
@@ -71,9 +85,54 @@ export default function UsersPage() {
       .then((data: User[]) => setUsers(data))
       .catch(console.error)
       .finally(() => setLoading(false));
+
+    fetchDepartments();
   }, []);
 
+  // 소속 목록 불러오기
+  async function fetchDepartments() {
+    try {
+      const res = await fetch('/api/admin/departments');
+      const data: Department[] = await res.json();
+      setDepartments(data);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   const pendingUsers = users.filter((u) => u.status === 'pending');
+
+  const departmentGroups = useMemo(() => {
+    const groupMap = new Map<string, User[]>();
+    for (const u of users) {
+      const key = u.department?.trim() || '미지정';
+      if (!groupMap.has(key)) groupMap.set(key, []);
+      groupMap.get(key)!.push(u);
+    }
+    const sorted = Array.from(groupMap.entries()).sort(([a], [b]) => {
+      if (a === '미지정') return 1;
+      if (b === '미지정') return -1;
+      return a.localeCompare(b, 'ko');
+    });
+    return sorted;
+  }, [users]);
+
+  const departmentList = useMemo(
+    () => departmentGroups.map(([key]) => key),
+    [departmentGroups]
+  );
+
+  const currentUsers = useMemo(() => {
+    if (activeTab === '승인 대기') return pendingUsers;
+
+    if (selectedDeptFilter === 'all') {
+      return users;
+    }
+    if (selectedDeptFilter === 'unassigned') {
+      return users.filter((u) => !u.department);
+    }
+    return users.filter((u) => u.department === selectedDeptFilter);
+  }, [activeTab, pendingUsers, users, selectedDeptFilter]);
 
   async function callPatch(userId: number, body: object) {
     const res = await fetch(`/api/admin/users/${userId}`, {
@@ -86,6 +145,8 @@ export default function UsersPage() {
       id: number;
       role: User['role'];
       status: User['status'];
+      departmentId: number | null;
+      department: string | null;
     };
     setUsers((prev) =>
       prev.map((u) => (u.id === updated.id ? { ...u, ...updated } : u))
@@ -100,10 +161,7 @@ export default function UsersPage() {
       `'${userName}' 계정을 완전히 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다. 해당 사용자의 예약 내역은 삭제되지 않고 보존됩니다.`
     );
     if (!confirmed) return;
-
-    const res = await fetch(`/api/admin/users/${userId}`, {
-      method: 'DELETE',
-    });
+    const res = await fetch(`/api/admin/users/${userId}`, { method: 'DELETE' });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       alert(data.error || '삭제 중 오류가 발생했습니다.');
@@ -115,9 +173,7 @@ export default function UsersPage() {
 
   // ── 승인 대기 렌더 ─────────────────────────────────
   const renderPending = () => {
-    if (loading) {
-      return <ListSkeleton count={4} />;
-    }
+    if (loading) return <ListSkeleton count={4} />;
 
     if (pendingUsers.length === 0) {
       return (
@@ -134,7 +190,20 @@ export default function UsersPage() {
         {pendingUsers.map((user) => (
           <ListItem key={user.id} className="bg-card shadow-(--shadow-1)">
             <div className="space-y-1">
-              <p className="text-body text-foreground font-bold">{user.name}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-body text-foreground font-bold">
+                  {user.name}
+                </p>
+                {user.department && (
+                  <Badge
+                    variant="subtle"
+                    color="blue"
+                    className="text-[11px] font-bold"
+                  >
+                    {user.department}
+                  </Badge>
+                )}
+              </div>
               <p className="text-body-sm text-foreground font-medium">
                 {user.phoneNumber}
               </p>
@@ -169,8 +238,8 @@ export default function UsersPage() {
     );
   };
 
-  // ── 전체 사용자 렌더 ───────────────────────────────
-  const renderAll = () => {
+  // ── 전체/소속별 사용자 렌더 ────────────────────────
+  const renderUserList = (userList: User[]) => {
     if (loading) {
       return (
         <Card className="overflow-hidden p-0">
@@ -189,11 +258,13 @@ export default function UsersPage() {
       );
     }
 
-    if (users.length === 0) {
+    if (userList.length === 0) {
       return (
         <div className="bg-card rounded-lg p-10 text-center shadow-(--shadow-1)">
           <p className="text-body text-muted-foreground font-medium">
-            가입된 사용자가 없습니다
+            {activeTab === '전체 사용자'
+              ? '가입된 사용자가 없습니다'
+              : `'${activeTab}' 소속 사용자가 없습니다`}
           </p>
         </div>
       );
@@ -201,10 +272,9 @@ export default function UsersPage() {
 
     return (
       <List>
-        {users.map((user) => {
+        {userList.map((user) => {
           const isDisabled =
             user.status === 'rejected' || user.status === 'withdrawn';
-
           return (
             <ListItem
               key={user.id}
@@ -243,9 +313,17 @@ export default function UsersPage() {
                     </Badge>
                   )}
                 </div>
-                <span className="text-caption text-muted-foreground mt-1.5 block font-medium">
-                  {user.phoneNumber}
-                </span>
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                  <span className="text-caption text-muted-foreground block font-medium">
+                    {user.phoneNumber}
+                  </span>
+                  {user.department && (
+                    <span className="text-caption text-muted-foreground flex items-center gap-0.5 font-medium">
+                      <BuildingOfficeIcon className="h-3 w-3 shrink-0" />
+                      {user.department}
+                    </span>
+                  )}
+                </div>
               </div>
               <button
                 className="text-muted-foreground hover:text-foreground flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-neutral-100 active:bg-neutral-200"
@@ -265,29 +343,77 @@ export default function UsersPage() {
       <BrandHeader />
 
       <main className="flex-1 pb-10">
-        {/* 탭 */}
-        <div className="flex gap-1.5 px-5 py-4">
-          {(['승인 대기', '전체 사용자'] as TabType[]).map((tab) => (
-            <Chip
-              key={tab}
-              variant={activeTab === tab ? 'active' : 'inactive'}
-              onClick={() => setActiveTab(tab)}
-            >
-              {tab}
-              {tab === '승인 대기' && pendingUsers.length > 0 && (
-                <span className="ml-1 opacity-80">· {pendingUsers.length}</span>
-              )}
-            </Chip>
-          ))}
+        {/* 탭 + 소속 관리 버튼 */}
+        <div className="flex items-center gap-2 px-5 py-4">
+          <div className="scrollbar-hide flex flex-1 gap-1.5 overflow-x-auto">
+            {(['승인 대기', '전체 사용자'] as TabType[]).map((tab) => (
+              <Chip
+                key={tab}
+                variant={activeTab === tab ? 'active' : 'inactive'}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab}
+                {tab === '승인 대기' && pendingUsers.length > 0 && (
+                  <span className="ml-1 opacity-80">
+                    · {pendingUsers.length}
+                  </span>
+                )}
+              </Chip>
+            ))}
+          </div>
+
+          {/* 소속 관리 버튼 */}
+          <button
+            onClick={() => router.push('/admin/departments')}
+            className="text-muted-foreground hover:text-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-neutral-200 active:bg-neutral-300"
+            aria-label="소속 관리"
+            title="소속 관리"
+          >
+            <Cog6ToothIcon className="h-5 w-5" />
+          </button>
         </div>
 
         {/* 컨텐츠 */}
         <div className="space-y-2 px-5 pb-5">
-          {activeTab === '승인 대기' ? renderPending() : renderAll()}
+          {activeTab === '전체 사용자' && (
+            <div className="flex items-center justify-between pb-3">
+              <span className="text-body-sm text-muted-foreground font-medium">
+                소속 필터
+              </span>
+              <div className="relative min-w-[150px]">
+                <Select
+                  value={selectedDeptFilter}
+                  onValueChange={setSelectedDeptFilter}
+                  size="small"
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="전체 소속" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">전체 소속</SelectItem>
+                    <SelectItem value="unassigned">미지정</SelectItem>
+                    {departments.map((dept) => {
+                      const memberCount =
+                        departmentGroups.find(([k]) => k === dept.name)?.[1]
+                          .length ?? 0;
+                      return (
+                        <SelectItem key={dept.id} value={dept.name}>
+                          {dept.name} ({memberCount})
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          {activeTab === '승인 대기'
+            ? renderPending()
+            : renderUserList(currentUsers)}
         </div>
       </main>
 
-      {/* 사용자 액션 드로어 */}
+      {/* ── 사용자 액션 드로어 ─────────────────────── */}
       <Drawer
         open={!!menuUser}
         onOpenChange={(open) => {
@@ -300,12 +426,11 @@ export default function UsersPage() {
         <DrawerContent>
           {menuUser && (
             <>
-              {/* sr-only 접근성 타이틀 */}
               <DrawerTitle className="sr-only">
                 {menuUser.name} 설정
               </DrawerTitle>
 
-              {/* 프로필 정보 — 배경으로 섹션 구분 */}
+              {/* 프로필 정보 */}
               <div className="relative mx-4 mt-2 mb-4">
                 <div className="bg-muted/50 rounded-lg px-4 py-4">
                   <div className="space-y-2.5">
@@ -314,6 +439,7 @@ export default function UsersPage() {
                         { label: '이름', value: menuUser.name },
                         { label: '아이디', value: menuUser.username || '-' },
                         { label: '전화번호', value: menuUser.phoneNumber },
+                        { label: '소속', value: menuUser.department || '-' },
                         {
                           label: '가입일',
                           value:
@@ -336,7 +462,7 @@ export default function UsersPage() {
                   </div>
                 </div>
 
-                {/* 우측 상단 더보기 메뉴 */}
+                {/* 더보기 메뉴 */}
                 <div className="absolute top-2 right-2">
                   <button
                     className="text-muted-foreground hover:text-foreground flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-neutral-200 active:bg-neutral-300"
@@ -345,11 +471,8 @@ export default function UsersPage() {
                   >
                     <EllipsisVerticalIcon className="h-4 w-4" />
                   </button>
-
-                  {/* 드롭다운 패널 */}
                   {moreMenuOpen && (
                     <>
-                      {/* 외부 클릭 닫기 오버레이 */}
                       <div
                         className="fixed inset-0 z-10"
                         onClick={() => setMoreMenuOpen(false)}
@@ -374,7 +497,6 @@ export default function UsersPage() {
               {/* 토글 액션 */}
               <div className="px-5 pb-8">
                 <div className="border-border-subtle/50 mb-6 space-y-0">
-                  {/* 관리자 권한 */}
                   <div className="flex items-center justify-between gap-4 py-4">
                     <div>
                       <span className="text-foreground block text-[15px] font-semibold">
@@ -394,8 +516,6 @@ export default function UsersPage() {
                       }
                     />
                   </div>
-
-                  {/* 계정 활성화 */}
                   <div className="flex items-center justify-between gap-4 py-4">
                     <div>
                       <span className="text-foreground block text-[15px] font-semibold">
@@ -425,21 +545,7 @@ export default function UsersPage() {
                     size="large"
                     className="w-full"
                     onClick={() => {
-                      const newName = window.prompt(
-                        '새 이름을 입력하세요',
-                        menuUser.name
-                      );
-                      const newPhone = window.prompt(
-                        '새 전화번호를 입력하세요 (숫자만)',
-                        menuUser.phoneNumber
-                      );
-                      if (newName !== null || newPhone !== null) {
-                        callPatch(menuUser.id, {
-                          action: 'force-update',
-                          name: newName || undefined,
-                          phoneNumber: newPhone || undefined,
-                        });
-                      }
+                      router.push(`/admin/users/${menuUser.id}/edit`);
                     }}
                   >
                     정보 수정

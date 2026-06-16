@@ -12,6 +12,7 @@ export class UserRepository {
     username: string;
     password: string;
     phoneNumber: string;
+    departmentId: number | null;
     role: 'user' | 'admin';
     status: 'pending' | 'approved' | 'rejected' | 'withdrawn';
   }>, tx: any = db) {

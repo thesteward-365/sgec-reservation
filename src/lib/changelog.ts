@@ -4,6 +4,7 @@ export interface ChangelogItem {
   details?: string[];
   beforeImage?: string;
   afterImage?: string;
+  images?: string[];
 }
 
 export interface ChangelogEntry {
@@ -13,6 +14,43 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '26.06.16',
+    date: '2026-06-16',
+    items: [
+      {
+        title: '소속(부서) 관리 기능 추가',
+        type: 'feature',
+        images: [
+          '/images/changelog/v26.06.16-dept_page.png',
+          '/images/changelog/v26.06.16-dept_select.png',
+        ],
+        details: [
+          '회원 정보에 소속(부서) 필드를 추가하여, 회원이 속한 소속을 관리할 수 있는 기능을 도입했습니다.',
+          '관리자 화면에서 소속의 순서를 마우스 드래그로 손쉽게 정렬하고 배치할 수 있습니다.',
+          '회원 목록 상단의 소속 필터를 한눈에 보기 쉬운 드롭다운 선택 상자 형태로 개선했습니다.',
+        ],
+      },
+      {
+        title: '회원 정보 수정 화면 개선',
+        type: 'feature',
+        images: ['/images/changelog/v26.06.16-edit_page.png'],
+        details: [
+          '회원의 이름, 연락처, 소속 수정 및 비밀번호 재설정을 한 화면에서 처리할 수 있도록 수정하였습니다.',
+        ],
+      },
+      {
+        title: '계정 영구 삭제 기능 추가',
+        type: 'feature',
+        images: ['/images/changelog/v26.06.16-user_delete.png'],
+        details: [
+          '관리자가 탈퇴하거나 활동하지 않는 회원의 계정을 완전히 삭제할 수 있는 기능을 추가했습니다.',
+          '회원정보 우측 상단의 더보기 버튼을 통해 접근할 수 있습니다.',
+          '회원을 삭제하더라도 해당 회원이 이전에 등록해 둔 과거 예약 내역은 보존됩니다.',
+        ],
+      },
+    ],
+  },
   {
     version: '26.06.15',
     date: '2026-06-15',

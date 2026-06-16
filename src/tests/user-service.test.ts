@@ -38,4 +38,34 @@ describe('UserService', () => {
       expect(UserRepository.update).toHaveBeenCalledWith(10, { role: 'admin' });
     });
   });
+
+  describe('forceUpdateUserProfile', () => {
+    it('should update name, phone, and departmentId if actor is admin', async () => {
+      vi.mocked(UserRepository.findById).mockResolvedValue({ id: 10, name: 'Old Name' } as any);
+      vi.mocked(UserRepository.update).mockResolvedValue({ id: 10, name: 'New Name', departmentId: 5 } as any);
+
+      const result = await UserService.forceUpdateUserProfile(
+        10,
+        { name: 'New Name', phoneNumber: '01011112222', departmentId: 5 },
+        mockAdmin
+      );
+      expect(result.name).toBe('New Name');
+      expect(result.departmentId).toBe(5);
+      expect(UserRepository.update).toHaveBeenCalledWith(10, {
+        name: 'New Name',
+        phoneNumber: '01011112222',
+        departmentId: 5,
+      });
+    });
+
+    it('should throw error if actor is not admin', async () => {
+      await expect(
+        UserService.forceUpdateUserProfile(
+          10,
+          { name: 'New Name', departmentId: 5 },
+          mockUser
+        )
+      ).rejects.toThrow('Unauthorized');
+    });
+  });
 });

@@ -51,6 +51,9 @@ export const users = pgTable('users', {
   username: text('username').unique(),
   password: text('password'),
   phoneNumber: text('phone_number').notNull().unique(),
+  departmentId: integer('department_id').references(() => departments.id, {
+    onDelete: 'set null',
+  }), // 소속 FK, 삭제 시 null
   role: userRoleEnum('role').notNull().default('user'),
   status: userStatusEnum('status').notNull().default('pending'),
   // timestamp로 변경: 자동으로 Date 객체로 매핑됨
@@ -59,7 +62,17 @@ export const users = pgTable('users', {
     .defaultNow(),
 });
 
-// 2. 층 테이블
+// 2. 소속 테이블
+export const departments = pgTable('departments', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull().unique(),
+  order: integer('order').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// 3. 층 테이블
 export const floors = pgTable('floors', {
   id: serial('id').primaryKey(),
   name: text('name').notNull(),

@@ -11,13 +11,14 @@ import { signupSchema } from '@/lib/validations/auth';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { username, password, name, phoneNumber } = body;
+    const { username, password, name, phoneNumber, departmentId } = body;
 
     const validation = signupSchema.safeParse({
       username,
       password,
       name,
       phoneNumber,
+      departmentId,
     });
     if (!validation.success) {
       return NextResponse.json(
@@ -54,6 +55,7 @@ export async function POST(request: NextRequest) {
         password: hashedPassword,
         name,
         phoneNumber,
+        departmentId: departmentId || null,
         role: 'user',
         status: 'pending',
       })

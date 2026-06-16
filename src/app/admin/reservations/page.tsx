@@ -13,6 +13,13 @@ import { BrandHeader } from '@/components/layout/brand-header';
 import { List, ListItem } from '@/components/ui/list';
 import { ListSkeleton } from '@/components/ui/list-skeleton';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   MonthlyCalendar,
   type CalendarEvent,
 } from '@/components/calendar/monthly-calendar';
@@ -26,9 +33,7 @@ import {
   ExternalEventsSheet,
   type ExternalEventSheetItem,
 } from '@/components/reservations/external-events-sheet';
-import {
-  getExternalEventDateRange,
-} from '@/lib/external-event-dates';
+import { getExternalEventDateRange } from '@/lib/external-event-dates';
 import { AdminReservationListView } from './_components/admin-reservation-list-view';
 
 type ReservationStatus = 'active' | 'cancelled';
@@ -352,19 +357,24 @@ function ReservationsContent() {
             </div>
 
             {view === 'list' && (
-              <select
+              <Select
                 value={filter.sortOrder}
-                onChange={(e) =>
+                onValueChange={(val) =>
                   setFilter((f) => ({
                     ...f,
-                    sortOrder: e.target.value as 'asc' | 'desc',
+                    sortOrder: val as 'asc' | 'desc',
                   }))
                 }
-                className="text-foreground cursor-pointer bg-transparent text-[14px] font-medium outline-none"
+                size="small"
               >
-                <option value="desc">최신순</option>
-                <option value="asc">오래된순</option>
-              </select>
+                <SelectTrigger className="w-[85px] rounded-sm border-0 bg-transparent p-0 px-1.5 py-0.5 text-[14px] font-medium shadow-none hover:bg-neutral-100 focus:ring-0 focus:ring-offset-0">
+                  <SelectValue placeholder="정렬" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="desc">최신순</SelectItem>
+                  <SelectItem value="asc">오래된순</SelectItem>
+                </SelectContent>
+              </Select>
             )}
           </div>
 
