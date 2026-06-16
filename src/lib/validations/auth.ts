@@ -32,6 +32,7 @@ export const signupSchema = z.object({
   password: authSchema.password,
   name: authSchema.name,
   phoneNumber: authSchema.phoneNumber,
+  departmentId: z.string().optional().nullable(),
 });
 
 export const migrationSchema = z

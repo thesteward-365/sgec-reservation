@@ -52,7 +52,7 @@ export class UserService {
    */
   static async forceUpdateUserProfile(
     userId: number,
-    data: { name?: string; phoneNumber?: string },
+    data: { name?: string; phoneNumber?: string; departmentId?: number | null },
     actor: UserActor
   ) {
     if (actor.role !== 'admin') {

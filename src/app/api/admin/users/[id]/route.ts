@@ -3,6 +3,8 @@ import { getIronSession } from 'iron-session';
 import { sessionOptions, SessionData } from '@/lib/session';
 import { cookies } from 'next/headers';
 import { UserService } from '@/lib/services/user-service';
+import { db, users, departments } from '@/lib/db';
+import { eq } from 'drizzle-orm';
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -10,8 +12,53 @@ type PatchBody =
   | { action: 'approve' | 'reject' }
   | { action: 'set-role'; role: 'user' | 'admin' }
   | { action: 'set-status'; status: 'approved' | 'rejected' }
-  | { action: 'force-update'; name?: string; phoneNumber?: string }
+  | { action: 'force-update'; name?: string; phoneNumber?: string; departmentId?: number | null }
   | { action: 'reset-password'; newPassword: string };
+
+export async function GET(request: NextRequest, { params }: Params) {
+  try {
+    const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+    if (!session.user || session.user.role !== 'admin') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const userId = parseInt(id);
+    if (isNaN(userId)) {
+      return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
+    }
+
+    const userRow = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        username: users.username,
+        phoneNumber: users.phoneNumber,
+        departmentId: users.departmentId,
+        department: departments.name,
+        role: users.role,
+        status: users.status,
+        createdAt: users.createdAt,
+      })
+      .from(users)
+      .leftJoin(departments, eq(users.departmentId, departments.id))
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (userRow.length === 0) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const u = userRow[0];
+    return NextResponse.json({
+      ...u,
+      createdAt: u.createdAt instanceof Date ? u.createdAt.toISOString() : null,
+    });
+  } catch (error: any) {
+    console.error('GET /api/admin/users/[id] error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
 
 export async function PATCH(request: NextRequest, { params }: Params) {
   try {
@@ -49,7 +96,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         updated = await UserService.updateUserStatus(userId, body.status, session.user);
         break;
       case 'force-update':
-        updated = await UserService.forceUpdateUserProfile(userId, { name: body.name, phoneNumber: body.phoneNumber }, session.user);
+        updated = await UserService.forceUpdateUserProfile(userId, { name: body.name, phoneNumber: body.phoneNumber, departmentId: body.departmentId }, session.user);
         break;
       case 'reset-password':
         if (!body.newPassword || body.newPassword.length < 4) {
@@ -59,6 +106,33 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         break;
       default:
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+    }
+
+    if (updated) {
+      const userRow = await db
+        .select({
+          id: users.id,
+          name: users.name,
+          username: users.username,
+          phoneNumber: users.phoneNumber,
+          departmentId: users.departmentId,
+          department: departments.name,
+          role: users.role,
+          status: users.status,
+          createdAt: users.createdAt,
+        })
+        .from(users)
+        .leftJoin(departments, eq(users.departmentId, departments.id))
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      if (userRow.length > 0) {
+        const u = userRow[0];
+        updated = {
+          ...u,
+          createdAt: u.createdAt instanceof Date ? u.createdAt.toISOString() : null,
+        };
+      }
     }
 
     return NextResponse.json(updated);

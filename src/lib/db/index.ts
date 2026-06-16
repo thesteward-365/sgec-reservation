@@ -14,6 +14,7 @@ export const db = drizzle(client, {
 
 export const {
   users,
+  departments,
   floors,
   places,
   tags,
