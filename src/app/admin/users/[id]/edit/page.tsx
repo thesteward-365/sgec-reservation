@@ -284,9 +284,13 @@ export default function EditUserPage({ params }: EditPageProps) {
                 <div className="mt-2 flex gap-2">
                   <Input
                     value={phoneVal}
-                    onChange={(e) => setPhoneVal(e.target.value)}
+                    onChange={(e) => setPhoneVal(e.target.value.replace(/[^0-9]/g, ''))}
                     className="flex-1"
                     placeholder="전화번호 입력 (01012345678)"
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={11}
                   />
                   <Button
                     variant="contained"
