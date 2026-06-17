@@ -7,27 +7,6 @@ const AUTH_PATHS = ['/login', '/signup'];
 const PUBLIC_PATHS = [...AUTH_PATHS, '/privacy'];
 
 export async function proxy(request: NextRequest) {
-  // HTTP -> HTTPS 자동 리다이렉션 (External Proxy Reverse Proxy의 X-Forwarded-Proto 헤더 기준)
-  const isDev = process.env.NODE_ENV === 'development' && !process.env.VITEST;
-  const forwardedProto = request.headers.get('x-forwarded-proto');
-  const forwardedHost = request.headers.get('x-forwarded-host');
-  const host = request.headers.get('host') || '';
-
-  // 프록시 헤더가 전혀 없는 순수 로컬 개발 접속이면서 로컬 호스트/IP인 경우만 로컬로 인정합니다.
-  const isLocal =
-    !forwardedProto &&
-    !forwardedHost &&
-    (host.includes('localhost') ||
-      host.includes('127.0.0.1') ||
-      host.startsWith('192.168.'));
-
-  if (forwardedProto === 'http' && !isDev && !isLocal) {
-    const httpsUrl = new URL(request.url);
-    httpsUrl.protocol = 'https:';
-    httpsUrl.port = ''; // HTTPS 표준 포트(443)로 전환하기 위해 포트 제거
-    return NextResponse.redirect(httpsUrl);
-  }
-
   const { pathname } = request.nextUrl;
 
   // 정적 파일 및 API 경로는 무조건 통과 (HTTPS 리다이렉트나 세션 체크 등을 타지 않음)
@@ -130,4 +109,3 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };
-
