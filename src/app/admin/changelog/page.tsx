@@ -119,7 +119,7 @@ export default function AdminChangelogPage() {
                                 ))}
                               </ul>
 
-                              {(item.beforeImage || item.afterImage) && (
+                              {(item.beforeImage || item.afterImage || (item.images && item.images.length > 0)) && (
                                 <div className="mt-4 space-y-4 pt-3 border-t border-neutral-200/50">
                                   {item.beforeImage && (
                                     <div className="space-y-1 text-left">
@@ -139,6 +139,19 @@ export default function AdminChangelogPage() {
                                         alt="변경 후"
                                         className="w-full rounded-lg border border-neutral-200/60 shadow-sm"
                                       />
+                                    </div>
+                                  )}
+                                  {item.images && item.images.length > 0 && (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
+                                      {item.images.map((img, imgIdx) => (
+                                        <div key={imgIdx} className="space-y-1">
+                                          <img
+                                            src={img}
+                                            alt={`이미지 ${imgIdx + 1}`}
+                                            className="w-full rounded-lg border border-neutral-200/60 shadow-sm"
+                                          />
+                                        </div>
+                                      ))}
                                     </div>
                                   )}
                                 </div>

@@ -6,12 +6,21 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import {
   AdjustmentsHorizontalIcon,
   PlusIcon,
+  UserCircleIcon,
+  ChatBubbleOvalLeftEllipsisIcon,
 } from '@heroicons/react/24/outline';
 import { cn, getKSTToday } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { BrandHeader } from '@/components/layout/brand-header';
 import { List, ListItem } from '@/components/ui/list';
 import { ListSkeleton } from '@/components/ui/list-skeleton';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   MonthlyCalendar,
   type CalendarEvent,
@@ -26,9 +35,7 @@ import {
   ExternalEventsSheet,
   type ExternalEventSheetItem,
 } from '@/components/reservations/external-events-sheet';
-import {
-  getExternalEventDateRange,
-} from '@/lib/external-event-dates';
+import { getExternalEventDateRange } from '@/lib/external-event-dates';
 import { AdminReservationListView } from './_components/admin-reservation-list-view';
 
 type ReservationStatus = 'active' | 'cancelled';
@@ -352,19 +359,24 @@ function ReservationsContent() {
             </div>
 
             {view === 'list' && (
-              <select
+              <Select
                 value={filter.sortOrder}
-                onChange={(e) =>
+                onValueChange={(val) =>
                   setFilter((f) => ({
                     ...f,
-                    sortOrder: e.target.value as 'asc' | 'desc',
+                    sortOrder: val as 'asc' | 'desc',
                   }))
                 }
-                className="text-foreground cursor-pointer bg-transparent text-[14px] font-medium outline-none"
+                size="small"
               >
-                <option value="desc">최신순</option>
-                <option value="asc">오래된순</option>
-              </select>
+                <SelectTrigger className="w-[85px] rounded-sm border-0 bg-transparent p-0 px-1.5 py-0.5 text-[14px] font-medium shadow-none hover:bg-neutral-100 focus:ring-0 focus:ring-offset-0">
+                  <SelectValue placeholder="정렬" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="desc">최신순</SelectItem>
+                  <SelectItem value="asc">오래된순</SelectItem>
+                </SelectContent>
+              </Select>
             )}
           </div>
 
@@ -495,23 +507,29 @@ function ReservationsContent() {
                                     </span>
                                   )}
                                 </div>
-                                <p className="text-muted-foreground mt-2 text-[14px]! leading-snug">
-                                  {reservation.userName ? (
-                                    <span
+                                <div className="mt-2 flex flex-col gap-0.5 text-[14px]! leading-snug">
+                                  {reservation.purpose && (
+                                    <div className="flex items-center gap-1.5 text-neutral-900!">
+                                      <ChatBubbleOvalLeftEllipsisIcon className="h-4 w-4 shrink-0" />
+                                      <span className="truncate">
+                                        {reservation.purpose}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {reservation.userName && (
+                                    <div
                                       className={cn(
-                                        currentUser?.id ===
-                                          reservation.userId &&
-                                          'font-bold text-blue-600'
+                                        'flex items-center gap-1.5',
+                                        currentUser?.id === reservation.userId
+                                          ? 'font-bold! text-blue-600'
+                                          : 'text-neutral-900!'
                                       )}
                                     >
-                                      {reservation.userName}
-                                    </span>
-                                  ) : (
-                                    ''
+                                      <UserCircleIcon className="h-4 w-4 shrink-0" />
+                                      <span>{reservation.userName}</span>
+                                    </div>
                                   )}
-                                  {reservation.userName ? ' · ' : ''}
-                                  {reservation.purpose}
-                                </p>
+                                </div>
                               </div>
                             </div>
                           </button>

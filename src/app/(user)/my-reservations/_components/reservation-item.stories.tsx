@@ -7,7 +7,7 @@ const meta: Meta<typeof ReservationItem> = {
   tags: ['autodocs'],
   decorators: [
     (Story) => (
-      <div className="max-w-[430px] p-4 bg-neutral-100">
+      <div className="max-w-[430px] bg-neutral-100 p-4">
         <Story />
       </div>
     ),
@@ -24,10 +24,10 @@ const mockReservation = {
   placeName: '비전홀',
   floorId: 1,
   floorName: '1층',
-  userName: '홍길동',
+  userName: '문화사역관리자',
   startTime: '2026-05-10T10:00:00.000Z',
   endTime: '2026-05-10T12:00:00.000Z',
-  purpose: '청년부 연습',
+  purpose: '주일1부 전도지 암송훈련',
   status: 'active' as const,
 };
 

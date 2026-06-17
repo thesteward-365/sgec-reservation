@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { toast } from 'sonner';
@@ -12,21 +12,13 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { Eye, EyeOff } from 'lucide-react';
 
-function LoginContent() {
+export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (searchParams.get('message') === 'setup_complete') {
-      setMessage('계정 설정이 완료되었습니다. 새로운 정보로 로그인해주세요.');
-    }
-  }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -93,12 +85,6 @@ function LoginContent() {
           기쁨과 감사함으로 섬깁시다.
         </p>
       </div>
-
-      {message && (
-        <div className="mb-6 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-700">
-          {message}
-        </div>
-      )}
 
       {/* 폼 */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -185,13 +171,5 @@ function LoginContent() {
         </Link>
       </div>
     </div>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense>
-      <LoginContent />
-    </Suspense>
   );
 }

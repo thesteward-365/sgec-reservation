@@ -34,13 +34,5 @@ export const signupSchema = z.object({
   phoneNumber: authSchema.phoneNumber,
 });
 
-export const migrationSchema = z
-  .object({
-    username: authSchema.username,
-    password: authSchema.password,
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: '비밀번호가 일치하지 않습니다.',
-    path: ['confirmPassword'],
-  });
+
+

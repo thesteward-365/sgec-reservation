@@ -43,7 +43,7 @@ export default function ProfilePage() {
       .then((data: { user: UserData }) => {
         setUser(data.user);
         setName(data.user.name);
-        setPhoneNumber(formatPhoneNumber(data.user.phoneNumber));
+        setPhoneNumber(data.user.phoneNumber);
       })
       .catch(() => {
         toast.error('정보를 불러오지 못했습니다.');
@@ -84,7 +84,7 @@ export default function ProfilePage() {
 
       setUser(data.user);
       setName(data.user.name);
-      setPhoneNumber(formatPhoneNumber(data.user.phoneNumber));
+      setPhoneNumber(data.user.phoneNumber);
       toast.success('기본 정보가 저장되었습니다.');
       router.refresh();
     } catch {
@@ -214,12 +214,13 @@ export default function ProfilePage() {
                     <Input
                       value={phoneNumber}
                       onChange={(e) =>
-                        setPhoneNumber(formatPhoneNumber(e.target.value))
+                        setPhoneNumber(e.target.value.replace(/[^0-9]/g, ''))
                       }
-                      placeholder="010-0000-0000"
+                      placeholder="01012345678"
                       type="tel"
                       inputMode="numeric"
-                      maxLength={13}
+                      pattern="[0-9]*"
+                      maxLength={11}
                     />
                   </div>
                   <Button
