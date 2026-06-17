@@ -22,9 +22,7 @@ export default async function RootPage() {
     redirect('/api/auth/logout');
   }
 
-  if (user && !user.username) {
-    redirect('/setup-account');
-  }
+
 
   if (user.status === 'approved') {
     redirect('/reserve');

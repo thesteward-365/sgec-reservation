@@ -28,16 +28,18 @@ export default async function AdminLayout({
   });
 
   if (!user || user.status !== 'approved') {
-    redirect('/api/auth/logout');
+    if (user && user.status === 'pending') {
+      redirect('/pending');
+    } else {
+      redirect('/api/auth/logout');
+    }
   }
 
   if (user.role !== 'admin') {
     redirect('/');
   }
 
-  if (user && (!user.username || user.username === user.name)) {
-    redirect('/setup-account');
-  }
+
 
   return <AdminShell>{children}</AdminShell>;
 }
