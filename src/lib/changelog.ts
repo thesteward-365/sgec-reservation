@@ -62,12 +62,22 @@ export const CHANGELOG: ChangelogEntry[] = [
         ],
       },
       {
-        title: '모바일 전화번호 입력 편의성 개선',
+        title: '전화번호 입력 편의성 개선',
         type: 'improvement',
         images: ['/images/changelog/v26.06.17-number-input.jpeg'],
         details: [
           '회원가입, 프로필 관리, 관리자 사용자 정보 편집 화면에서 전화번호를 입력할 때 모바일 전용 숫자 키패드가 나타나도록 최적화했습니다.',
           '숫자가 아닌 문자(하이픈, 공백 등)는 입력 시 자동으로 정제되도록 보완하여 회원가입 및 수정 절차가 편리해졌습니다.',
+        ],
+      },
+      {
+        title: '예약 목록 가독성 및 디자인 개선',
+        type: 'improvement',
+        beforeImage: '/images/changelog/v26.06.17-reservation-before.jpg',
+        afterImage: '/images/changelog/v26.06.17-reservation-after.png',
+        details: [
+          '예약 목록에서 기존에 한 줄로 나열되던 예약 목적과 예약자명을 각각 줄바꿈하여 두 줄로 분리하고, 직관적인 아이콘(말풍선, 사람)을 배치하여 가독성을 개선했습니다.',
+          '특히 예약 목적이 길어질 경우 신청 정보가 가로로 밀려 잘리거나 줄바꿈되던 현상을 해결하여 한눈에 일정을 파악할 수 있도록 보완했습니다.',
         ],
       },
     ],
