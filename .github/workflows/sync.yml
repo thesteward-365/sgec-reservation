@@ -11,5 +11,9 @@ jobs:
     steps:
       - name: Call Sync API
         run: |
-          curl -X POST "${{ secrets.APP_URL }}/api/external-events/sync" \
-          -H "Authorization: Bearer ${{ secrets.SYNC_TOKEN }}"
+          if [ -z "${{ secrets.APP_URL }}" ]; then
+            echo "::error::APP_URL secret is not configured in GitHub Repository Secrets."
+            exit 1
+          fi
+          curl -f -X POST "${{ secrets.APP_URL }}/api/external-events/sync" \
+            -H "Authorization: Bearer ${{ secrets.SYNC_TOKEN }}"
