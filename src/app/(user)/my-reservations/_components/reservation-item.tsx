@@ -1,6 +1,6 @@
 'use client';
 
-import { EllipsisVerticalIcon } from '@heroicons/react/24/outline';
+import { EllipsisVerticalIcon, UserCircleIcon, ChatBubbleOvalLeftEllipsisIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 import { Chip } from '@/components/ui/chip';
 import { formatTime } from '@/lib/date-utils';
@@ -82,19 +82,25 @@ export function ReservationItem({
             </span>
           )}
         </div>
-        <p className="text-muted-foreground! mt-2 text-[14px]! leading-snug">
+        <div className="mt-2 flex flex-col gap-0.5 text-[14px]! leading-snug">
+          {reservation.purpose && (
+            <div className="flex items-center gap-1.5 text-neutral-900!">
+              <ChatBubbleOvalLeftEllipsisIcon className="h-4 w-4 shrink-0" />
+              <span className="truncate">{reservation.purpose}</span>
+            </div>
+          )}
           {reservation.userName && (
-            <span
+            <div
               className={cn(
-                isMine ? 'text-primary font-bold' : 'text-muted-foreground'
+                'flex items-center gap-1.5',
+                isMine ? 'text-primary font-bold!' : 'text-neutral-900!'
               )}
             >
-              {reservation.userName}
-            </span>
+              <UserCircleIcon className="h-4 w-4 shrink-0" />
+              <span>{reservation.userName}</span>
+            </div>
           )}
-          {reservation.userName ? ' · ' : ''}
-          {reservation.purpose}
-        </p>
+        </div>
       </div>
     </button>
   );

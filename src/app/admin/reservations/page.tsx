@@ -6,6 +6,8 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import {
   AdjustmentsHorizontalIcon,
   PlusIcon,
+  UserCircleIcon,
+  ChatBubbleOvalLeftEllipsisIcon,
 } from '@heroicons/react/24/outline';
 import { cn, getKSTToday } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -505,23 +507,29 @@ function ReservationsContent() {
                                     </span>
                                   )}
                                 </div>
-                                <p className="text-muted-foreground mt-2 text-[14px]! leading-snug">
-                                  {reservation.userName ? (
-                                    <span
+                                <div className="mt-2 flex flex-col gap-0.5 text-[14px]! leading-snug">
+                                  {reservation.purpose && (
+                                    <div className="flex items-center gap-1.5 text-neutral-900!">
+                                      <ChatBubbleOvalLeftEllipsisIcon className="h-4 w-4 shrink-0" />
+                                      <span className="truncate">
+                                        {reservation.purpose}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {reservation.userName && (
+                                    <div
                                       className={cn(
-                                        currentUser?.id ===
-                                          reservation.userId &&
-                                          'font-bold text-blue-600'
+                                        'flex items-center gap-1.5',
+                                        currentUser?.id === reservation.userId
+                                          ? 'font-bold! text-blue-600'
+                                          : 'text-neutral-900!'
                                       )}
                                     >
-                                      {reservation.userName}
-                                    </span>
-                                  ) : (
-                                    ''
+                                      <UserCircleIcon className="h-4 w-4 shrink-0" />
+                                      <span>{reservation.userName}</span>
+                                    </div>
                                   )}
-                                  {reservation.userName ? ' · ' : ''}
-                                  {reservation.purpose}
-                                </p>
+                                </div>
                               </div>
                             </div>
                           </button>
