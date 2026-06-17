@@ -95,6 +95,8 @@ function AdminReservationListInner({
         tab: listTab,
       });
       if (filter.floorId) params.set('floorId', filter.floorId.toString());
+      if (filter.tagId) params.set('tagId', filter.tagId.toString());
+      if (filter.onlyMine) params.set('onlyMine', 'true');
 
       const res = await fetch(`/api/admin/reservations/list?${params.toString()}`);
       if (!res.ok) throw new Error('Failed to fetch');
