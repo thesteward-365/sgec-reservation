@@ -361,16 +361,6 @@ export default function UsersPage() {
               </Chip>
             ))}
           </div>
-
-          {/* 소속 관리 버튼 */}
-          <button
-            onClick={() => router.push('/admin/departments')}
-            className="text-muted-foreground hover:text-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-neutral-200 active:bg-neutral-300"
-            aria-label="소속 관리"
-            title="소속 관리"
-          >
-            <Cog6ToothIcon className="h-5 w-5" />
-          </button>
         </div>
 
         {/* 컨텐츠 */}
@@ -378,32 +368,44 @@ export default function UsersPage() {
           {activeTab === '전체 사용자' && (
             <div className="flex items-center justify-between pb-3">
               <span className="text-body-sm text-muted-foreground font-medium">
-                소속 필터
-              </span>
-              <div className="relative min-w-[150px]">
-                <Select
-                  value={selectedDeptFilter}
-                  onValueChange={setSelectedDeptFilter}
-                  size="small"
+                소속
+              </span>{' '}
+              <div className="flex items-center gap-0.5">
+                <div className="relative min-w-[150px]">
+                  <Select
+                    value={selectedDeptFilter}
+                    onValueChange={setSelectedDeptFilter}
+                    size="small"
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="전체 소속" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">전체 소속</SelectItem>
+                      <SelectItem value="unassigned">미지정</SelectItem>
+                      {departments.map((dept) => {
+                        const memberCount =
+                          departmentGroups.find(([k]) => k === dept.name)?.[1]
+                            .length ?? 0;
+                        return (
+                          <SelectItem key={dept.id} value={dept.name}>
+                            {dept.name} ({memberCount})
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* 소속 관리 버튼 */}
+                <button
+                  onClick={() => router.push('/admin/departments')}
+                  className="text-muted-foreground hover:text-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-neutral-200 active:bg-neutral-300"
+                  aria-label="소속 관리"
+                  title="소속 관리"
                 >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="전체 소속" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">전체 소속</SelectItem>
-                    <SelectItem value="unassigned">미지정</SelectItem>
-                    {departments.map((dept) => {
-                      const memberCount =
-                        departmentGroups.find(([k]) => k === dept.name)?.[1]
-                          .length ?? 0;
-                      return (
-                        <SelectItem key={dept.id} value={dept.name}>
-                          {dept.name} ({memberCount})
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
+                  <Cog6ToothIcon className="h-5 w-5" />
+                </button>
               </div>
             </div>
           )}
