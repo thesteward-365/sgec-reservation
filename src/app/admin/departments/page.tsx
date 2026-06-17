@@ -31,6 +31,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 
 interface Department {
@@ -250,7 +251,7 @@ export default function DepartmentsPage() {
         {!sortMode && (
           <Card className="p-4">
             <div className="flex gap-2">
-              <input
+              <Input
                 ref={newDeptInputRef}
                 type="text"
                 value={newDeptName}
@@ -263,7 +264,7 @@ export default function DepartmentsPage() {
                 }}
                 placeholder="새 소속 입력 (ex: 청년회)"
                 maxLength={50}
-                className="border-border bg-muted/40 text-foreground placeholder:text-muted-foreground focus:border-foreground h-10 flex-1 rounded-md border px-3 text-[14px] transition-colors outline-none focus:bg-white"
+                className="bg-muted/40 placeholder:text-muted-foreground focus-visible:bg-white h-10 flex-1 px-3 text-[14px]"
               />
               <Button
                 variant="contained"
@@ -320,7 +321,7 @@ export default function DepartmentsPage() {
                 >
                   {editingDeptId === dept.id ? (
                     <>
-                      <input
+                      <Input
                         ref={editInputRef}
                         type="text"
                         value={editingDeptName}
@@ -331,7 +332,7 @@ export default function DepartmentsPage() {
                         }}
                         maxLength={50}
                         autoFocus
-                        className="border-foreground text-foreground flex-1 rounded border-b bg-transparent pb-0.5 text-[14px] font-medium outline-none"
+                        className="h-8 flex-1 px-2.5 py-1 text-[14px]"
                       />
                       <button
                         onClick={() => handleRenameDept(dept.id)}
