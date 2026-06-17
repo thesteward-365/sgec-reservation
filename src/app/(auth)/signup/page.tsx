@@ -15,26 +15,17 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { XMarkIcon } from '@heroicons/react/24/solid';
 import { Eye, EyeOff } from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 
 type FormData = z.infer<typeof signupSchema>;
 
-interface Department {
-  id: number;
-  name: string;
-}
+
 
 export default function SignupPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [departments, setDepartments] = useState<Department[]>([]);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
 
   const {
     register,
@@ -47,47 +38,26 @@ export default function SignupPage() {
     mode: 'onChange',
   });
 
-  useEffect(() => {
-    register('departmentId');
-  }, [register]);
 
-  useEffect(() => {
-    fetch('/api/departments')
-      .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setDepartments(data);
-        }
-      })
-      .catch(console.error);
-  }, []);
 
   const username = watch('username');
   const password = watch('password');
   const name = watch('name');
   const phoneNumber = watch('phoneNumber');
-  const departmentId = watch('departmentId');
 
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);
     try {
-      const payload = {
-        ...data,
-        departmentId: data.departmentId ? Number(data.departmentId) : null,
-      };
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(data),
       });
 
       const result = await res.json();
 
       if (res.ok) {
-        toast.success(
-          '회원가입이 완료되었습니다! 관리자 승인 후 이용 가능합니다.'
-        );
-        router.push('/pending');
+        setShowSuccessModal(true);
       } else {
         toast.error(result.error || '회원가입에 실패했습니다.');
       }
@@ -204,8 +174,15 @@ export default function SignupPage() {
           <div className="relative">
             <Input
               id="phoneNumber"
+              type="tel"
+              inputMode="numeric"
+              pattern="[0-9]*"
               placeholder="01012345678"
-              {...register('phoneNumber')}
+              {...register('phoneNumber', {
+                onChange: (e) => {
+                  e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                }
+              })}
               className={cn(phoneNumber && 'pr-10')}
             />
             {phoneNumber && (
@@ -224,38 +201,7 @@ export default function SignupPage() {
           )}
         </div>
 
-        {/* 소속 */}
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="departmentId">
-            소속{' '}
-            <span className="text-muted-foreground text-body-xs font-normal">
-              (선택)
-            </span>
-          </Label>
-          <Select
-            value={departmentId || 'none'}
-            onValueChange={(val) => {
-              setValue('departmentId', val === 'none' ? null : val, { shouldValidate: true });
-            }}
-          >
-            <SelectTrigger id="departmentId" className="w-full">
-              <SelectValue placeholder="소속 선택 안 함" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">소속 선택 안 함</SelectItem>
-              {departments.map((dept) => (
-                <SelectItem key={dept.id} value={String(dept.id)}>
-                  {dept.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.departmentId && (
-            <p className="text-sm text-red-500">
-              {errors.departmentId.message}
-            </p>
-          )}
-        </div>
+
         <p className="text-body-xs text-muted-foreground mt-4 text-center">
           가입 시{' '}
           <Link href="/privacy" className="underline underline-offset-4">
@@ -275,6 +221,35 @@ export default function SignupPage() {
           로그인하기
         </Link>
       </p>
+
+      {/* 가입 완료 성공 모달 (닫기 불가) */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-5 animate-in fade-in duration-200">
+          <div className="bg-card w-full max-w-xs rounded-2xl p-6 shadow-2xl border border-neutral-100 flex flex-col items-center text-center animate-in zoom-in-95 duration-200">
+            {/* 체크 아이콘 */}
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 mb-4">
+              <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            
+            <h2 className="text-title-3 font-bold text-foreground mb-2">가입 신청 완료</h2>
+            
+            <p className="text-body-sm text-muted-foreground leading-relaxed mb-6">
+              회원가입이 정상적으로 접수되었습니다.<br />
+              관리자 승인이 완료되면 로그인하실 수 있습니다.
+            </p>
+            
+            <Button 
+              onClick={() => router.replace('/login')} 
+              className="w-full font-semibold"
+              size="large"
+            >
+              로그인하러 가기
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
