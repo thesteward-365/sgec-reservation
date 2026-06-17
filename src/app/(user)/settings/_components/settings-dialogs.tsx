@@ -331,6 +331,11 @@ export function GuideDialog({ open, onOpenChange }: GuideDialogProps) {
           <p>• 예약 후 취소 또는 시간 변경이 가능합니다.</p>
           <p>• 다른 예약과 시간이 겹칠 경우 예약이 불가합니다.</p>
           <p>• 문의사항은 담당 사역자에게 연락해 주세요.</p>
+          <p>
+            • 가입 승인은 문화사역 담당자, 방송 관계자, 교역자 및 기관 리더,
+            리더에 의한 임명자에 한하며, 활동은 언제든 관리자의 제지를 받을 수
+            있습니다.
+          </p>
         </div>
       </DialogContent>
     </Dialog>
