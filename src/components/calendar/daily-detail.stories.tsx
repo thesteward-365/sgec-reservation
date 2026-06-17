@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { CalendarIcon } from '@heroicons/react/24/outline';
+import { CalendarIcon, UserCircleIcon, ChatBubbleOvalLeftEllipsisIcon } from '@heroicons/react/24/outline';
 
 // 공통 스타일 및 컴포넌트 모사
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
@@ -55,9 +55,20 @@ const ReservationListItem = ({ time, place, user, purpose, status }: any) => (
             <Badge className="bg-red-100 text-red-600">취소됨</Badge>
           )}
         </div>
-        <p className="text-muted-foreground mt-1 text-[14px] leading-snug truncate">
-          {user ? `${user} · ` : ''}{purpose}
-        </p>
+        <div className="mt-2 flex flex-col gap-0.5 text-[14px]! leading-snug">
+          {purpose && (
+            <div className="flex items-center gap-1.5 text-neutral-900!">
+              <ChatBubbleOvalLeftEllipsisIcon className="h-4 w-4 shrink-0" />
+              <span className="truncate">{purpose}</span>
+            </div>
+          )}
+          {user && (
+            <div className="flex items-center gap-1.5 text-neutral-900!">
+              <UserCircleIcon className="h-4 w-4 shrink-0" />
+              <span>{user}</span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   </button>

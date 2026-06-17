@@ -4,6 +4,7 @@ export interface ChangelogItem {
   details?: string[];
   beforeImage?: string;
   afterImage?: string;
+  images?: string[];
 }
 
 export interface ChangelogEntry {
@@ -13,6 +14,74 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '26.06.17',
+    date: '2026-06-17',
+    items: [
+      {
+        title: '소속(부서) 관리 기능 추가',
+        type: 'feature',
+        images: [
+          '/images/changelog/v26.06.16-dept_page.png',
+          '/images/changelog/v26.06.16-dept_select.png',
+        ],
+        details: [
+          '회원 정보에 소속(부서)을 추가하여, 회원이 속한 소속을 관리할 수 있는 기능을 도입했습니다.',
+          '회원관리 화면에서 소속의 순서를 마우스 드래그로 손쉽게 정렬하고 배치할 수 있습니다.',
+        ],
+      },
+      {
+        title: '회원 정보 수정 화면 개선',
+        type: 'feature',
+        images: ['/images/changelog/v26.06.16-edit_page.png'],
+        details: [
+          '회원의 이름, 연락처, 소속 수정 및 비밀번호 재설정을 한 화면에서 처리할 수 있도록 수정하였습니다.',
+        ],
+      },
+      {
+        title: '계정 영구 삭제 기능 추가',
+        type: 'feature',
+        images: ['/images/changelog/v26.06.16-user_delete.png'],
+        details: [
+          '관리자가 탈퇴하거나 활동하지 않는 회원의 계정을 완전히 삭제할 수 있는 기능을 추가했습니다.',
+          '회원정보 우측 상단의 더보기 버튼을 통해 접근할 수 있습니다.',
+          '회원을 삭제하더라도 해당 회원이 이전에 등록해 둔 과거 예약 내역은 보존됩니다.',
+        ],
+      },
+      {
+        title: '로그인/회원가입 접속 오류 해결',
+        type: 'fix',
+        images: [
+          '/images/changelog/v26.06.17-safari-error.jpeg',
+          '/images/changelog/v26.06.17-pwa-error.jpeg',
+          '/images/changelog/v26.06.17-kakaotalk-error.jpeg',
+        ],
+        details: [
+          '일부 모바일 Safari 브라우저, 홈 화면에 추가된 PWA(독립형 앱 모드) 및 카카오톡 인앱 브라우저에서 회원가입 직후(대기 상태 화면 진입 시) 발생하던 무한 리다이렉션 오류를 해결했습니다.',
+          '회원가입 완료 시 가입 완료 안내 모달 팝업이 노출되며, 로그인 화면으로의 이동을 명확히 안내하도록 개선했습니다.',
+        ],
+      },
+      {
+        title: '전화번호 입력 편의성 개선',
+        type: 'improvement',
+        images: ['/images/changelog/v26.06.17-number-input.jpeg'],
+        details: [
+          '회원가입, 프로필 관리, 관리자 사용자 정보 편집 화면에서 전화번호를 입력할 때 모바일 전용 숫자 키패드가 나타나도록 최적화했습니다.',
+          '숫자가 아닌 문자(하이픈, 공백 등)는 입력 시 자동으로 정제되도록 보완하여 회원가입 및 수정 절차가 편리해졌습니다.',
+        ],
+      },
+      {
+        title: '예약 목록 가독성 및 디자인 개선',
+        type: 'improvement',
+        beforeImage: '/images/changelog/v26.06.17-reservation-before.jpg',
+        afterImage: '/images/changelog/v26.06.17-reservation-after.png',
+        details: [
+          '예약 목록에서 기존에 한 줄로 나열되던 예약 목적과 예약자명을 각각 줄바꿈하여 두 줄로 분리하고, 직관적인 아이콘(말풍선, 사람)을 배치하여 가독성을 개선했습니다.',
+          '특히 예약 목적이 길어질 경우 신청 정보가 가로로 밀려 잘리거나 줄바꿈되던 현상을 해결하여 한눈에 일정을 파악할 수 있도록 보완했습니다.',
+        ],
+      },
+    ],
+  },
   {
     version: '26.06.15',
     date: '2026-06-15',

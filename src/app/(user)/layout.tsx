@@ -20,12 +20,14 @@ export default async function UserLayout({ children }: { children: React.ReactNo
   });
 
   if (!user || user.status !== 'approved') {
-    redirect('/api/auth/logout');
+    if (user && user.status === 'pending') {
+      redirect('/pending');
+    } else {
+      redirect('/api/auth/logout');
+    }
   }
 
-  if (user && (!user.username || user.username === user.name)) {
-    redirect('/setup-account');
-  }
+
 
   return <AppShell>{children}</AppShell>;
 }

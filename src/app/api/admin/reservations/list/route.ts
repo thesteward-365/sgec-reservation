@@ -19,6 +19,8 @@ export async function GET(request: Request) {
   
   // Filter params
   const floorId = searchParams.get('floorId');
+  const tagId = searchParams.get('tagId');
+  const onlyMine = searchParams.get('onlyMine') === 'true';
   const includeCancelled = searchParams.get('includeCancelled') === 'true';
   const tab = searchParams.get('tab'); // '예정', '지난 예약', '전체'
 
@@ -31,6 +33,17 @@ export async function GET(request: Request) {
 
   if (floorId) {
     queryCondition = and(queryCondition, eq(places.floorId, parseInt(floorId, 10)));
+  }
+
+  if (onlyMine && session.user.id) {
+    queryCondition = and(queryCondition, eq(reservations.userId, session.user.id));
+  }
+
+  if (tagId) {
+    queryCondition = and(
+      queryCondition,
+      sql`exists (select 1 from place_tags where place_tags.place_id = ${reservations.placeId} and place_tags.tag_id = ${parseInt(tagId, 10)})`
+    );
   }
 
   if (tab === '예정') {

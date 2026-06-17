@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { authSchema, migrationSchema } from '@/lib/validations/auth';
+import { authSchema } from '@/lib/validations/auth';
 
 describe('Authentication Validation', () => {
   describe('Username Validation', () => {
@@ -52,18 +52,5 @@ describe('Authentication Validation', () => {
     });
   });
 
-  describe('Migration Schema', () => {
-    it('should reject non-matching passwords', () => {
-      const data = {
-        username: 'newuser',
-        password: 'Password123!',
-        confirmPassword: 'Password124!',
-      };
-      const result = migrationSchema.safeParse(data);
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.issues[0].message).toBe('비밀번호가 일치하지 않습니다.');
-      }
-    });
-  });
+
 });

@@ -54,26 +54,13 @@ export async function POST(request: NextRequest) {
         password: hashedPassword,
         name,
         phoneNumber,
+        departmentId: null,
         role: 'user',
         status: 'pending',
       })
       .returning();
 
-    const session = await getIronSession<SessionData>(
-      await cookies(),
-      sessionOptions
-    );
-    session.user = {
-      id: newUser.id,
-      name: newUser.name,
-      username: newUser.username || '',
-      phoneNumber: newUser.phoneNumber,
-      role: newUser.role,
-      status: newUser.status,
-    };
-    await session.save();
-
-    return NextResponse.json({ success: true, user: session.user });
+    return NextResponse.json({ success: true, user: { id: newUser.id, name: newUser.name, username: newUser.username } });
   } catch (error) {
     console.error('Signup error:', error);
     return NextResponse.json(

@@ -23,5 +23,11 @@ export async function GET(request: NextRequest) {
     sessionOptions
   );
   session.destroy();
-  return NextResponse.redirect(new URL('/login', request.url));
+  return new NextResponse(null, {
+    status: 307,
+    headers: {
+      Location: '/login',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    },
+  });
 }

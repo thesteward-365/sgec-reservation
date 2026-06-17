@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -18,10 +18,14 @@ import { Eye, EyeOff } from 'lucide-react';
 
 type FormData = z.infer<typeof signupSchema>;
 
+
+
 export default function SignupPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
 
   const {
     register,
@@ -33,6 +37,8 @@ export default function SignupPage() {
     resolver: zodResolver(signupSchema),
     mode: 'onChange',
   });
+
+
 
   const username = watch('username');
   const password = watch('password');
@@ -51,10 +57,7 @@ export default function SignupPage() {
       const result = await res.json();
 
       if (res.ok) {
-        toast.success(
-          '회원가입이 완료되었습니다! 관리자 승인 후 이용 가능합니다.'
-        );
-        router.push('/pending');
+        setShowSuccessModal(true);
       } else {
         toast.error(result.error || '회원가입에 실패했습니다.');
       }
@@ -171,8 +174,15 @@ export default function SignupPage() {
           <div className="relative">
             <Input
               id="phoneNumber"
+              type="tel"
+              inputMode="numeric"
+              pattern="[0-9]*"
               placeholder="01012345678"
-              {...register('phoneNumber')}
+              {...register('phoneNumber', {
+                onChange: (e) => {
+                  e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                }
+              })}
               className={cn(phoneNumber && 'pr-10')}
             />
             {phoneNumber && (
@@ -190,6 +200,8 @@ export default function SignupPage() {
             <p className="text-sm text-red-500">{errors.phoneNumber.message}</p>
           )}
         </div>
+
+
         <p className="text-body-xs text-muted-foreground mt-4 text-center">
           가입 시{' '}
           <Link href="/privacy" className="underline underline-offset-4">
@@ -209,6 +221,35 @@ export default function SignupPage() {
           로그인하기
         </Link>
       </p>
+
+      {/* 가입 완료 성공 모달 (닫기 불가) */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-5 animate-in fade-in duration-200">
+          <div className="bg-card w-full max-w-xs rounded-2xl p-6 shadow-2xl border border-neutral-100 flex flex-col items-center text-center animate-in zoom-in-95 duration-200">
+            {/* 체크 아이콘 */}
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 mb-4">
+              <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            
+            <h2 className="text-title-3 font-bold text-foreground mb-2">가입 신청 완료</h2>
+            
+            <p className="text-body-sm text-muted-foreground leading-relaxed mb-6">
+              회원가입이 정상적으로 접수되었습니다.<br />
+              관리자 승인이 완료되면 로그인하실 수 있습니다.
+            </p>
+            
+            <Button 
+              onClick={() => router.replace('/login')} 
+              className="w-full font-semibold"
+              size="large"
+            >
+              로그인하러 가기
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
