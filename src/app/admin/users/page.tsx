@@ -378,10 +378,10 @@ export default function UsersPage() {
                     size="small"
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="전체 소속" />
+                      <SelectValue placeholder="전체" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">전체 소속</SelectItem>
+                      <SelectItem value="all">전체</SelectItem>
                       <SelectItem value="unassigned">미지정</SelectItem>
                       {departments.map((dept) => {
                         const memberCount =
