@@ -30,13 +30,34 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // 정적 파일 및 API 경로는 무조건 통과
+  // 정적 파일 및 API 경로는 무조건 통과 (HTTPS 리다이렉트나 세션 체크 등을 타지 않음)
   if (
     pathname.includes('.') ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api')
   ) {
     return NextResponse.next();
+  }
+
+  // HTTP -> HTTPS 자동 리다이렉션 (External Proxy Reverse Proxy의 X-Forwarded-Proto 헤더 기준)
+  const isDev = process.env.NODE_ENV === 'development' && !process.env.VITEST;
+  const forwardedProto = request.headers.get('x-forwarded-proto');
+  const forwardedHost = request.headers.get('x-forwarded-host');
+  const host = request.headers.get('host') || '';
+
+  // 로컬 호스트, 루프백 IP 및 사설 IP 대역(10.x.x.x, 172.x.x.x, 192.168.x.x)인 경우 로컬 접속으로 인정합니다.
+  const isLocal =
+    host.includes('localhost') ||
+    host.includes('127.0.0.1') ||
+    host.startsWith('192.168.') ||
+    host.startsWith('10.') ||
+    host.startsWith('172.');
+
+  if (forwardedProto === 'http' && !isDev && !isLocal) {
+    const httpsUrl = new URL(request.url);
+    httpsUrl.protocol = 'https:';
+    httpsUrl.port = ''; // HTTPS 표준 포트(443)로 전환하기 위해 포트 제거
+    return NextResponse.redirect(httpsUrl);
   }
 
   const session = await getIronSession<SessionData>(
