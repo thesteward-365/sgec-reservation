@@ -18,53 +18,21 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // HTTP -> HTTPS 자동 리다이렉션 (Synology Reverse Proxy의 X-Forwarded-Proto 헤더 기준)
-  const isDev = process.env.NODE_ENV === 'development' && !process.env.VITEST;
-  const forwardedProto = request.headers.get('x-forwarded-proto');
-  const forwardedHost = request.headers.get('x-forwarded-host');
-  const host = request.headers.get('host') || '';
-
-  // 로컬 호스트, 루프백 IP 및 사설 IP 대역(10.x.x.x, 172.x.x.x, 192.168.x.x)인 경우 로컬 접속으로 인정합니다.
-  const isLocal =
-    host.includes('localhost') ||
-    host.includes('127.0.0.1') ||
-    host.startsWith('192.168.') ||
-    host.startsWith('10.') ||
-    host.startsWith('172.');
-
-  if (forwardedProto === 'http' && !isDev && !isLocal) {
-    const httpsUrl = new URL(request.url);
-    httpsUrl.protocol = 'https:';
-    httpsUrl.port = ''; // HTTPS 표준 포트(443)로 전환하기 위해 포트 제거
-    return NextResponse.redirect(httpsUrl);
-  }
-
   const session = await getIronSession<SessionData>(
     await cookies(),
     sessionOptions
   );
   const user = session.user;
 
-  // 프록시 헤더를 신뢰하여 절대 경로를 안전하게 구성하는 헬퍼 함수
-  const getAbsoluteUrl = (path: string) => {
-    const url = new URL(path, request.url);
-    const forwardedProto = request.headers.get('x-forwarded-proto');
-    const forwardedHost = request.headers.get('x-forwarded-host');
-
-    if (forwardedProto) {
-      url.protocol = forwardedProto.endsWith(':') ? forwardedProto : `${forwardedProto}:`;
-    }
-    if (forwardedHost) {
-      url.host = forwardedHost;
-    }
-
-    return url;
-  };
-
   // 캐시 방지 헤더를 동반한 리다이렉트 응답 생성 함수
   const redirectWithNoCache = (path: string) => {
-    const absoluteUrl = getAbsoluteUrl(path);
-    const response = NextResponse.redirect(absoluteUrl);
+    const requestUrl = new URL(request.url);
+    const nginxProto = request.headers.get('x-nginx-proto') || requestUrl.protocol.replace(':', '');
+    const nginxHost = request.headers.get('x-nginx-host') || requestUrl.host;
+    const proto = nginxProto.startsWith('https') ? 'https' : 'http';
+    const absoluteUrl = new URL(path, `${proto}://${nginxHost}`);
+
+    const response = NextResponse.redirect(absoluteUrl, 307);
     response.headers.set(
       'Cache-Control',
       'no-store, no-cache, must-revalidate, proxy-revalidate'

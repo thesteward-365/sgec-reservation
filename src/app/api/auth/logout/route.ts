@@ -9,12 +9,14 @@ export async function POST(request: NextRequest) {
     sessionOptions
   );
   session.destroy();
-  return new NextResponse(null, {
-    status: 303,
-    headers: {
-      Location: '/login',
-    },
-  });
+
+  const requestUrl = new URL(request.url);
+  const nginxProto = request.headers.get('x-nginx-proto') || requestUrl.protocol.replace(':', '');
+  const nginxHost = request.headers.get('x-nginx-host') || requestUrl.host;
+  const proto = nginxProto.startsWith('https') ? 'https' : 'http';
+  const absoluteUrl = new URL('/login', `${proto}://${nginxHost}`);
+  console.log("############", requestUrl, nginxHost, nginxProto, proto, absoluteUrl)
+  return NextResponse.redirect(absoluteUrl, 303);
 }
 
 export async function GET(request: NextRequest) {
@@ -23,11 +25,17 @@ export async function GET(request: NextRequest) {
     sessionOptions
   );
   session.destroy();
-  return new NextResponse(null, {
-    status: 307,
-    headers: {
-      Location: '/login',
-      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-    },
-  });
+
+  const requestUrl = new URL(request.url);
+  const nginxProto = request.headers.get('x-nginx-proto') || requestUrl.protocol.replace(':', '');
+  const nginxHost = request.headers.get('x-nginx-host') || requestUrl.host;
+  const proto = nginxProto.startsWith('https') ? 'https' : 'http';
+  const absoluteUrl = new URL('/login', `${proto}://${nginxHost}`);
+
+  const response = NextResponse.redirect(absoluteUrl, 307);
+  response.headers.set(
+    'Cache-Control',
+    'no-store, no-cache, must-revalidate, proxy-revalidate'
+  );
+  return response;
 }

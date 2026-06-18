@@ -7,10 +7,24 @@ services:
     image: ghcr.io/thesteward-365/sgec-reservation:main
     container_name: yeyak
     env_file: .env
-    ports:
-      - '3000:3000'
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    expose:
+      - '3000'
     depends_on:
       - db
+    restart: always
+
+  # 1.5. Nginx Proxy: 최전선에서 외부 포트 3000번 접속을 감당하여 안전하게 Next.js로 패스
+  proxy:
+    image: nginx:alpine
+    container_name: yeyak-proxy
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app
     restart: always
 
   # 2. Watchtower: GHCR 이미지 갱신 확인 및 자동 재시작

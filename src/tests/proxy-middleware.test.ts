@@ -21,19 +21,9 @@ describe('Proxy Middleware (proxy.ts)', () => {
     vi.clearAllMocks();
   });
 
-  it('HTTP -> HTTPS 자동 프로토콜 리다이렉션 검증', async () => {
+  it('HTTP 요청도 미들웨어에서 HTTPS 리다이렉션하지 않고 인증 흐름만 처리', async () => {
     const request = new NextRequest(new URL('http://example.com/reserve'));
-    request.headers.set('x-forwarded-proto', 'http');
-
-    const response = await proxy(request);
-
-    expect(response.status).toBe(307);
-    expect(response.headers.get('Location')).toBe('https://example.com/reserve');
-  });
-
-  it('비인증 사용자 접근 시 절대 경로 /login 리다이렉트 및 캐시 방지 검증', async () => {
-    const request = new NextRequest(new URL('https://example.com/reserve'));
-    request.headers.set('x-forwarded-proto', 'https');
+    request.headers.set('x-nginx-proto', 'http');
 
     vi.mocked(getIronSession).mockResolvedValue({
       user: undefined,
@@ -41,16 +31,30 @@ describe('Proxy Middleware (proxy.ts)', () => {
 
     const response = await proxy(request);
 
-    // 절대 경로 검증 (Location: https://example.com/login)
+    expect(response.status).toBe(307);
+    expect(response.headers.get('Location')).toBe('http://example.com/login');
+  });
+
+  it('비인증 사용자 접근 시 상대 경로 /login 리다이렉트 및 캐시 방지 검증', async () => {
+    const request = new NextRequest(new URL('https://example.com/reserve'));
+    request.headers.set('x-nginx-proto', 'https');
+
+    vi.mocked(getIronSession).mockResolvedValue({
+      user: undefined,
+    } as any);
+
+    const response = await proxy(request);
+
+    // 상대 경로 검증 (Location: /login) -> 절대 경로 검증
     expect(response.status).toBe(307);
     expect(response.headers.get('Location')).toBe('https://example.com/login');
     // 캐시 방지 헤더 검증
     expect(response.headers.get('Cache-Control')).toContain('no-store');
   });
 
-  it('이미 승인된(approved) 사용자가 로그인/가입 화면 진입 시 /reserve로 절대 경로 리다이렉트', async () => {
+  it('이미 승인된(approved) 사용자가 로그인/가입 화면 진입 시 /reserve로 상대 경로 리다이렉트', async () => {
     const request = new NextRequest(new URL('https://example.com/login'));
-    request.headers.set('x-forwarded-proto', 'https');
+    request.headers.set('x-nginx-proto', 'https');
 
     vi.mocked(getIronSession).mockResolvedValue({
       user: { id: 1, name: '테스터', status: 'approved', role: 'user' },
@@ -64,7 +68,7 @@ describe('Proxy Middleware (proxy.ts)', () => {
 
   it('승인 대기(pending) 상태의 사용자가 /pending 진입 시 미들웨어가 통과(Pass)시키는지 검증', async () => {
     const request = new NextRequest(new URL('https://example.com/pending'));
-    request.headers.set('x-forwarded-proto', 'https');
+    request.headers.set('x-nginx-proto', 'https');
 
     vi.mocked(getIronSession).mockResolvedValue({
       user: { id: 1, name: '대기자', status: 'pending', role: 'user' },
@@ -78,7 +82,7 @@ describe('Proxy Middleware (proxy.ts)', () => {
 
   it('일반 승인 사용자가 권한 내의 경로 진입 시 미들웨어 패스 검증', async () => {
     const request = new NextRequest(new URL('https://example.com/reserve'));
-    request.headers.set('x-forwarded-proto', 'https');
+    request.headers.set('x-nginx-proto', 'https');
 
     vi.mocked(getIronSession).mockResolvedValue({
       user: { id: 1, name: '승인자', status: 'approved', role: 'user' },
@@ -90,8 +94,10 @@ describe('Proxy Middleware (proxy.ts)', () => {
   });
 
   it('일반 사용자가 관리자 경로(/admin) 진입 시 /reserve로 리다이렉트 검증', async () => {
-    const request = new NextRequest(new URL('https://example.com/admin/dashboard'));
-    request.headers.set('x-forwarded-proto', 'https');
+    const request = new NextRequest(
+      new URL('https://example.com/admin/dashboard')
+    );
+    request.headers.set('x-nginx-proto', 'https');
 
     vi.mocked(getIronSession).mockResolvedValue({
       user: { id: 1, name: '승인자', status: 'approved', role: 'user' },
