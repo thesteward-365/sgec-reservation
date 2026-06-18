@@ -44,6 +44,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # 마이그레이션 파일 복사 (번들된 단일 파일 + SQL 파일)
 COPY --from=builder --chown=nextjs:nodejs /app/migrate.bundle.js ./migrate.js
 COPY --from=builder --chown=nextjs:nodejs /app/drizzle-pg ./drizzle-pg
+COPY --from=builder --chown=nextjs:nodejs /app/start-logger.js ./start-logger.js
 
 USER nextjs
 
@@ -53,5 +54,5 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 
-# 마이그레이션 실행 후 서버 시작
-CMD ["sh", "-c", "node migrate.js && node server.js"]
+# 마이그레이션 및 서버를 로거 스크립트를 통해 실행
+CMD ["node", "start-logger.js"]
