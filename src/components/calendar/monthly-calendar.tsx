@@ -65,11 +65,19 @@ export function MonthlyCalendar({
 
   // 그리드 생성 (각 주가 적어도 하루의 해당 월 날짜를 포함하도록 동적 크기 계산)
   const days = useMemo(() => {
-    const firstOfMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), 1);
+    const firstOfMonth = new Date(
+      viewMonth.getFullYear(),
+      viewMonth.getMonth(),
+      1
+    );
     const startOfGrid = new Date(firstOfMonth);
     startOfGrid.setDate(firstOfMonth.getDate() - firstOfMonth.getDay());
 
-    const daysInMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0).getDate();
+    const daysInMonth = new Date(
+      viewMonth.getFullYear(),
+      viewMonth.getMonth() + 1,
+      0
+    ).getDate();
     const gridLength = Math.ceil((firstOfMonth.getDay() + daysInMonth) / 7) * 7;
 
     return Array.from({ length: gridLength }, (_, i) => {
@@ -102,7 +110,9 @@ export function MonthlyCalendar({
   // 네비게이션 처리
   function handlePrev() {
     if (isExpanded) {
-      onChangeMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1));
+      onChangeMonth(
+        new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1)
+      );
     } else {
       const prevDate = new Date(selectedDate);
       prevDate.setDate(selectedDate.getDate() - 7);
@@ -115,7 +125,9 @@ export function MonthlyCalendar({
 
   function handleNext() {
     if (isExpanded) {
-      onChangeMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1));
+      onChangeMonth(
+        new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1)
+      );
     } else {
       const nextDate = new Date(selectedDate);
       nextDate.setDate(selectedDate.getDate() + 7);
@@ -133,14 +145,14 @@ export function MonthlyCalendar({
   }
 
   return (
-    <div className="flex flex-col gap-3 w-full">
+    <div className="flex w-full flex-col gap-3">
       {/* 캘린더 헤더: 토글 + 네비게이션 */}
-      <div className="flex items-center justify-between mb-1">
+      <div className="mb-1 flex items-center justify-between">
         {/* 좌측: 연월 표시 (토글 버튼) 및 오늘 버튼 */}
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="flex items-center gap-1.5 rounded-lg py-1 pr-1.5 pl-1 -ml-1 transition-colors hover:bg-neutral-100 active:bg-neutral-200"
+            className="-ml-1 flex items-center gap-1.5 rounded-lg py-1 pr-1.5 pl-1 transition-colors hover:bg-neutral-100 active:bg-neutral-200"
             aria-label={isExpanded ? '달력 접기' : '달력 펼치기'}
           >
             <span className="text-foreground text-[18px] font-bold tracking-tight">
@@ -152,11 +164,11 @@ export function MonthlyCalendar({
               <ChevronDownIcon className="text-muted-foreground size-4 stroke-[3]" />
             )}
           </button>
-          
+
           <button
             type="button"
             onClick={goToday}
-            className="text-primary hover:bg-primary/5 rounded-full px-2.5 py-0.5 text-[12px] font-bold transition-colors bg-neutral-50"
+            className="text-primary hover:bg-primary/5 rounded-full bg-neutral-50 px-2.5 py-0.5 text-[12px] font-bold transition-colors"
           >
             오늘
           </button>
@@ -166,15 +178,15 @@ export function MonthlyCalendar({
         <div className="flex items-center">
           <button
             onClick={handlePrev}
-            className="flex items-center justify-center p-3 transition-colors rounded-full hover:bg-neutral-100 active:bg-neutral-200"
+            className="flex items-center justify-center rounded-full p-3 transition-colors hover:bg-neutral-100 active:bg-neutral-200"
             aria-label="이전"
           >
             <ChevronLeftIcon className="text-foreground size-5 stroke-[2.5]" />
           </button>
-          <div className="w-px h-4 bg-neutral-200 mx-1" aria-hidden="true" />
+          <div className="mx-1 h-4 w-px bg-neutral-200" aria-hidden="true" />
           <button
             onClick={handleNext}
-            className="flex items-center justify-center p-3 transition-colors rounded-full hover:bg-neutral-100 active:bg-neutral-200"
+            className="flex items-center justify-center rounded-full p-3 transition-colors hover:bg-neutral-100 active:bg-neutral-200"
             aria-label="다음"
           >
             <ChevronRightIcon className="text-foreground size-5 stroke-[2.5]" />
@@ -202,10 +214,11 @@ export function MonthlyCalendar({
 
         {displayDays.map((day, i) => {
           const inMonth = day.getMonth() === viewMonth.getMonth();
+          const isActiveDay = isExpanded ? inMonth : true;
           const isSel = isSameDay(day, selectedDate);
           const isToday = isSameDay(day, today);
           const ymd = toYMD(day);
-          const hasIndicator = inMonth && indicators?.has(ymd) && !isSel;
+          const hasIndicator = isActiveDay && indicators?.has(ymd) && !isSel;
           const dow = day.getDay();
 
           const dayEvents = showEvents
@@ -216,15 +229,15 @@ export function MonthlyCalendar({
 
           return (
             <button
-              key={ymd + "-" + i}
+              key={ymd + '-' + i}
               onClick={() => onSelectDate(day)}
               className={cn(
                 'group relative flex aspect-square flex-col items-center justify-center rounded-lg transition-colors',
-                !inMonth && isExpanded && 'opacity-30'
+                !isActiveDay && 'opacity-30'
               )}
             >
               {/* 이벤트 배경 */}
-              <div className="absolute inset-x-0 flex flex-col items-center justify-center gap-0.5 px-0 pointer-events-none">
+              <div className="pointer-events-none absolute inset-x-0 flex flex-col items-center justify-center gap-0.5 px-0">
                 {dayEvents.map((event) => {
                   const isStart = ymd === event.startDate || dow === 0;
                   const isEnd = ymd === event.endDate || dow === 6;
@@ -257,11 +270,16 @@ export function MonthlyCalendar({
                     ? 'bg-(--color-fg-strong) font-bold text-white shadow-sm'
                     : [
                         'group-hover:bg-neutral-100 group-focus:bg-neutral-100',
-                        inMonth && dow === 0 && 'text-destructive',
-                        inMonth && dow === 6 && 'text-primary',
-                        !inMonth && isExpanded && 'text-muted-foreground',
-                        inMonth && dow !== 0 && dow !== 6 && 'text-foreground',
-                        isToday && !isSel && 'bg-blue-100 font-bold ring-1 ring-blue-100',
+                        isActiveDay && dow === 0 && 'text-destructive',
+                        isActiveDay && dow === 6 && 'text-primary',
+                        !isActiveDay && 'text-muted-foreground',
+                        isActiveDay &&
+                          dow !== 0 &&
+                          dow !== 6 &&
+                          'text-foreground',
+                        isToday &&
+                          !isSel &&
+                          'bg-blue-100 font-bold ring-1 ring-blue-100',
                         dayEvents.length > 0 && 'font-bold',
                       ]
                 )}

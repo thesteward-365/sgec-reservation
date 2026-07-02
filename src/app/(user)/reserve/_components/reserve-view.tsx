@@ -177,6 +177,7 @@ export function ReserveView({ userName }: ReserveViewProps) {
 
   // 외부 행사 로딩 (선택된 날짜의 월 기준)
   useEffect(() => {
+    setExternalEvents([]); // 월 변경 시 이전 달의 데이터를 즉시 비워 Stale 데이터 노출 방지
     fetch(`/api/external-events?month=${viewMonthKey}`)
       .then((r) => r.json())
       .then((data: ExternalEventResponse[]) => {
